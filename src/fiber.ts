@@ -2,19 +2,20 @@ import { classify } from './classify';
 import { isNodeModulesPath, normalizeSourcePath, parseStackLocation } from './source';
 import type { Classification, InspectInfo, OwnerEntry, SourceLocation } from './types';
 
-// React の Fiber tag (dev/prod 共通の内部定数)
-const FunctionComponent = 0;
-const ClassComponent = 1;
-const ForwardRef = 11;
-const MemoComponent = 14;
-const SimpleMemoComponent = 15;
+// React の Fiber tag (dev/prod 共通の内部定数)。値は React の WorkTag に対応:
+// FunctionComponent / ClassComponent / ForwardRef / MemoComponent / SimpleMemoComponent
+const TAG_FUNCTION_COMPONENT = 0;
+const TAG_CLASS_COMPONENT = 1;
+const TAG_FORWARD_REF = 11;
+const TAG_MEMO_COMPONENT = 14;
+const TAG_SIMPLE_MEMO_COMPONENT = 15;
 
 export const COMPONENT_TAGS = new Set([
-  FunctionComponent,
-  ClassComponent,
-  ForwardRef,
-  MemoComponent,
-  SimpleMemoComponent,
+  TAG_FUNCTION_COMPONENT,
+  TAG_CLASS_COMPONENT,
+  TAG_FORWARD_REF,
+  TAG_MEMO_COMPONENT,
+  TAG_SIMPLE_MEMO_COMPONENT,
 ]);
 
 type Fiber = any;

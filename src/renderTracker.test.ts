@@ -122,4 +122,50 @@ describe('RenderTracker', () => {
     expect(snap.stats[0].count).toBe(3);
     expect(snap.stats[1].name).toBe('B');
   });
+
+  it('stopRecording 後のコミットは stats に加算しない', () => {
+    const tracker = new RenderTracker();
+    tracker.startRecording();
+    tracker.handleCommit(root(fiber({ tag: 0, type: function A() {}, actualDuration: 1 })));
+    tracker.stopRecording();
+    tracker.handleCommit(root(fiber({ tag: 0, type: function B() {}, actualDuration: 1 })));
+    const names = tracker.snapshot().stats.map((s) => s.name);
+    expect(names).toEqual(['A']);
+    expect(names).not.toContain('B');
+  });
+
+  it('reset は stats と flashCounts(heat) をクリアする', () => {
+    const el = mockElement();
+    const host = () => fiber({ tag: 5, type: 'div', actualDuration: 2, stateNode: el });
+    const tracker = new RenderTracker();
+    tracker.startRecording();
+    tracker.handleCommit(root(host()));
+    expect(tracker.handleCommit(root(host())).flashes[0].heat).toBe(2);
+
+    tracker.reset();
+    expect(tracker.snapshot().stats).toHaveLength(0);
+    // heat がリセットされ 1 から再カウント
+    expect(tracker.handleCommit(root(host())).flashes[0].heat).toBe(1);
+  });
+
+  it('host のみ (composite 無し) のコミットは commits を増やさない', () => {
+    const el = mockElement();
+    const tracker = new RenderTracker();
+    tracker.startRecording();
+    tracker.handleCommit(root(fiber({ tag: 5, type: 'div', actualDuration: 2, stateNode: el })));
+    const snap = tracker.snapshot();
+    expect(snap.commits).toBe(0);
+    expect(snap.stats).toHaveLength(0);
+  });
+
+  it('同数のときは self 時間の大きい方が上位 (tie-break)', () => {
+    const tracker = new RenderTracker();
+    tracker.startRecording();
+    // Slow: self=5, Fast: self=1、どちらも 1 回
+    tracker.handleCommit(root(fiber({ tag: 0, type: function Slow() {}, actualDuration: 5 })));
+    tracker.handleCommit(root(fiber({ tag: 0, type: function Fast() {}, actualDuration: 1 })));
+    const snap = tracker.snapshot();
+    expect(snap.stats[0].name).toBe('Slow');
+    expect(snap.stats[1].name).toBe('Fast');
+  });
 });

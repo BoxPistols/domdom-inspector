@@ -129,17 +129,24 @@ export class Inspector {
     }
   };
 
-  private onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (this.overlay.isChainPanelOpen()) {
-        this.overlay.hideChainPanel();
-      } else {
-        this.disable();
-      }
-      return;
+  /**
+   * Esc 処理。owner パネルが開いていれば閉じ、そうでなければモード解除。
+   * 何か消費したら true。Esc は content script の中央ハンドラが所有し、
+   * インスペクタ→レンダーの優先順で 1 度に 1 つだけ閉じる (両モード同時 ON の競合回避)。
+   */
+  onEscape(): boolean {
+    if (this.overlay.isChainPanelOpen()) {
+      this.overlay.hideChainPanel();
+      return true;
     }
+    if (this.enabled) {
+      this.disable();
+      return true;
+    }
+    return false;
+  }
+
+  private onKeyDown = (event: KeyboardEvent) => {
     // ↑: 親コンポーネントへ / ↓: 遡った履歴を子へ戻る (FR-04 補完)
     if (event.key === 'ArrowUp') {
       event.preventDefault();

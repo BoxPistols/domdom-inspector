@@ -34,6 +34,19 @@ describe('normalizeSourcePath', () => {
       ]),
     ).toBe('/Users/me/proj/src/App.tsx');
   });
+
+  it('ハッシュフラグメントを除去する', () => {
+    expect(normalizeSourcePath('http://localhost/src/App.tsx#L10')).toBe('/src/App.tsx');
+  });
+
+  it('複数マッピングは最初に一致した prefix だけ適用 (first-match-wins)', () => {
+    expect(
+      normalizeSourcePath('http://localhost/src/App.tsx', [
+        { from: '/src', to: '/a/src' },
+        { from: '/src/App.tsx', to: '/should-not-apply' },
+      ]),
+    ).toBe('/a/src/App.tsx');
+  });
 });
 
 describe('parseStackLocation', () => {
@@ -60,6 +73,14 @@ describe('parseStackLocation', () => {
     const stack =
       '    at x (http://localhost:3000/node_modules/@mui/material/Button/Button.js:5:1)';
     expect(parseStackLocation(stack)).toBeNull();
+  });
+
+  it('括弧も @ も無い "at <path>:line:col" 形式を解釈する', () => {
+    expect(parseStackLocation('    at /src/App.tsx:10:5')).toEqual({
+      fileName: '/src/App.tsx',
+      lineNumber: 10,
+      columnNumber: 5,
+    });
   });
 });
 

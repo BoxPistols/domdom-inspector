@@ -111,6 +111,12 @@
     <details>
       <summary data-i18n="helpSummary">How to use</summary>
 
+      <!--
+        ヘルプ本文だけは _locales ではなく HTML に英/日を直書きし data-help で出し分ける。
+        色凡例 span・表・code など内部マークアップが多く、messages.json (プレーン文字列 +
+        getMessage) に載せると可読性・保守性が落ちるため意図的にこの方式を採る。
+        ラベル類は data-i18n + _locales に統一 (単純文字列は共通経路)。
+      -->
       <div class="help" data-help="en">
         <p><b>Setup</b>: open a React app (dev build) on localhost, then turn inspect mode ON
         with the button above or Alt+Shift+I.</p>

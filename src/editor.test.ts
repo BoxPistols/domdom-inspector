@@ -43,4 +43,19 @@ describe('buildEditorUrl', () => {
       buildEditorUrl(DEFAULT_SETTINGS, { ...loc, columnNumber: 0 }),
     ).toBe('vscode://file/src/App.tsx:12:1');
   });
+
+  it('webstorm テンプレートは {column} を持たず line までで生成する', () => {
+    const settings: Settings = { ...DEFAULT_SETTINGS, editor: 'webstorm' };
+    expect(buildEditorUrl(settings, loc)).toBe('webstorm://open?file=/src/App.tsx&line=12');
+  });
+
+  it('webpack-internal ソースも先頭スラッシュ 1 個に正規化してリンクする', () => {
+    expect(
+      buildEditorUrl(DEFAULT_SETTINGS, {
+        fileName: 'webpack-internal:///./src/App.tsx',
+        lineNumber: 3,
+        columnNumber: 2,
+      }),
+    ).toBe('vscode://file/src/App.tsx:3:2');
+  });
 });

@@ -22,6 +22,20 @@ export default defineContentScript({
     const inspector = new Inspector(hookState, overlay, strings);
     const renderDebugger = new RenderDebugger(hookState, overlay, strings);
 
+    // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化の順に
+    // 1 度で 1 つだけ閉じる。両モード同時 ON でも競合しない。
+    window.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.key !== 'Escape') return;
+        if (inspector.onEscape() || renderDebugger.onEscape()) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+
     window.addEventListener('message', (event: MessageEvent) => {
       if (event.source !== window) return;
       const data = event.data;

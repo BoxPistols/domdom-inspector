@@ -15,8 +15,9 @@ export class RenderDebugger {
   private enabled = false;
   private tracker = new RenderTracker();
   private unsubscribe: (() => void) | null = null;
-  private pendingRoots = new Set<unknown>();
-  private processRaf = 0;
+  /** 描画のみ rAF で束ねる。走査 (記録カウント) はコミットごとに即実行する */
+  private pendingFlashes: { element: Element; heat: number }[] = [];
+  private flashRaf = 0;
   /** 記録トグルキー (設定で変更可、既定 'r') */
   private recordKey = 'r';
 
@@ -68,9 +69,9 @@ export class RenderDebugger {
     this.unsubscribe?.();
     this.unsubscribe = null;
     window.removeEventListener('keydown', this.onKeyDown, true);
-    cancelAnimationFrame(this.processRaf);
-    this.processRaf = 0;
-    this.pendingRoots.clear();
+    cancelAnimationFrame(this.flashRaf);
+    this.flashRaf = 0;
+    this.pendingFlashes = [];
     this.tracker.stopRecording();
     this.overlay.clearRenderFlashes();
     this.overlay.hideRenderStats();
@@ -91,26 +92,31 @@ export class RenderDebugger {
     if (event.key.length === 1 && event.key.toLowerCase() === this.recordKey) {
       event.preventDefault();
       this.toggleRecording();
-    } else if (event.key === 'Escape') {
-      this.disable();
     }
   };
+
+  /** Esc 処理 (content script の中央ハンドラから呼ぶ)。有効なら解除して true */
+  onEscape(): boolean {
+    if (!this.enabled) return false;
+    this.disable();
+    return true;
+  }
 
   private onCommit = (root: unknown) => {
-    this.pendingRoots.add(root);
-    if (!this.processRaf) {
-      this.processRaf = requestAnimationFrame(this.flush);
+    // コミットごとに即走査 (記録の再描画回数を過少計上しないため #4)。
+    // Set で root を束ねると同一 root の複数コミットが 1 回に潰れて数が合わなくなる。
+    const { flashes } = this.tracker.handleCommit(root);
+    if (flashes.length) {
+      this.pendingFlashes.push(...flashes);
+      // 明滅の canvas 描画だけは rAF で束ねてフレーム落ちを避ける
+      if (!this.flashRaf) this.flashRaf = requestAnimationFrame(this.flushFlashes);
     }
   };
 
-  private flush = () => {
-    this.processRaf = 0;
-    const roots = [...this.pendingRoots];
-    this.pendingRoots.clear();
-    const flashes: { element: Element; heat: number }[] = [];
-    for (const root of roots) {
-      flashes.push(...this.tracker.handleCommit(root).flashes);
-    }
+  private flushFlashes = () => {
+    this.flashRaf = 0;
+    const flashes = this.pendingFlashes;
+    this.pendingFlashes = [];
     if (flashes.length) this.overlay.flashRenders(flashes);
   };
 
