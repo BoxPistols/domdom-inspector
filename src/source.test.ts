@@ -14,9 +14,12 @@ describe('normalizeSourcePath', () => {
     ).toBe('/Users/me/proj/src/Button.tsx');
   });
 
-  it('webpack-internal スキームを剥がす', () => {
+  it('webpack-internal スキームを剥がし先頭スラッシュを付ける (./ 有無どちらも)', () => {
     expect(normalizeSourcePath('webpack-internal:///./src/pages/index.tsx')).toBe(
-      'src/pages/index.tsx',
+      '/src/pages/index.tsx',
+    );
+    expect(normalizeSourcePath('webpack-internal:///src/pages/index.tsx')).toBe(
+      '/src/pages/index.tsx',
     );
   });
 

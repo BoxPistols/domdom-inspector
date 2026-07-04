@@ -7,12 +7,13 @@
   "cmdToggleRender": { "message": "レンダー可視化モードの切替" },
 
   "popupToggleInspect": { "message": "このタブでインスペクトモード切替" },
-  "popupToggleInspectHint": { "message": "ショートカット: Alt+Shift+I / 解除: Esc" },
+  "popupToggleInspectHint": { "message": "ショートカット: {key} / 解除: Esc" },
   "popupToggleRender": { "message": "レンダー可視化モード切替" },
-  "popupToggleRenderHint": { "message": "ショートカット: Alt+Shift+R / 記録: R / 解除: Esc" },
+  "popupToggleRenderHint": { "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc" },
   "labelEditor": { "message": "エディタ" },
   "labelCustomUrl": { "message": "カスタム URL テンプレート" },
   "labelMuiSkip": { "message": "MUI 内部をスキップして自作コードへジャンプ" },
+  "labelOpenEditor": { "message": "クリックでエディタを開く" },
   "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
   "hintTarget": { "message": "対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。" },
   "helpSummary": { "message": "使い方ヘルプ" },
@@ -34,6 +35,9 @@
     "message": "ソース位置を解決できませんでした (React 19 では babel plugin なしの場合があります)"
   },
   "jumpProd": { "message": "production ビルドのためソースジャンプは利用できません" },
+  "editorLinkOff": {
+    "message": "エディタ連携は OFF です (ポップアップで切替)。Alt+クリックは owner ツリーを開きます。"
+  },
   "sourceUnavailable": { "message": "ソース不明" },
   "prodSafeMode": { "message": "production ビルド (セーフモード)" },
   "ownerPanelTitle": { "message": "描画元 (クリックでエディタへ)" },
@@ -44,6 +48,9 @@
     "message": "レンダー可視化 ON — dev ビルド未検出のため時間計測は不可 (明滅のみ)"
   },
   "renderOff": { "message": "レンダー可視化 OFF" },
+  "ctrlTitle": { "message": "レンダー可視化" },
+  "ctrlRecord": { "message": "記録" },
+  "ctrlStop": { "message": "停止" },
   "recordStart": {
     "message": "記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示"
   },

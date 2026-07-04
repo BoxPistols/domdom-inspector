@@ -7,12 +7,13 @@
   "cmdToggleRender": { "message": "Toggle render visualization mode" },
 
   "popupToggleInspect": { "message": "Toggle inspect mode on this tab" },
-  "popupToggleInspectHint": { "message": "Shortcut: Alt+Shift+I / Exit: Esc" },
+  "popupToggleInspectHint": { "message": "Shortcut: {key} / Exit: Esc" },
   "popupToggleRender": { "message": "Toggle render visualization mode" },
-  "popupToggleRenderHint": { "message": "Shortcut: Alt+Shift+R / Record: R / Exit: Esc" },
+  "popupToggleRenderHint": { "message": "Shortcut: {key} / Record: {rec} / Exit: Esc" },
   "labelEditor": { "message": "Editor" },
   "labelCustomUrl": { "message": "Custom URL template" },
   "labelMuiSkip": { "message": "Skip MUI internals and jump to your own code" },
+  "labelOpenEditor": { "message": "Open editor on click" },
   "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
   "hintTarget": { "message": "Only localhost / 127.0.0.1 dev servers. Settings save automatically." },
   "helpSummary": { "message": "How to use" },
@@ -34,6 +35,9 @@
     "message": "Could not resolve source location (React 19 may need the Babel source plugin)"
   },
   "jumpProd": { "message": "Source jump is unavailable on production builds" },
+  "editorLinkOff": {
+    "message": "Editor link is off (toggle it in the popup). Alt+Click still opens the owner tree."
+  },
   "sourceUnavailable": { "message": "source unavailable" },
   "prodSafeMode": { "message": "production build (safe mode)" },
   "ownerPanelTitle": { "message": "Rendered by (click to open editor)" },
@@ -44,6 +48,9 @@
     "message": "Render viz ON — no dev build detected, timing unavailable (flash only)"
   },
   "renderOff": { "message": "Render viz OFF" },
+  "ctrlTitle": { "message": "Render viz" },
+  "ctrlRecord": { "message": "Record" },
+  "ctrlStop": { "message": "Stop" },
   "recordStart": {
     "message": "Recording — interact to trigger re-renders, press R to stop and see the ranking"
   },

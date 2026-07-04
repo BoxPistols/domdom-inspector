@@ -115,6 +115,11 @@ export class Inspector {
       this.overlay.hideChainPanel();
       return;
     }
+    // エディタ連携 OFF: ハイライトはするがクリックでは開かない (Alt+クリックは上で処理済み)
+    if (!this.settings.openEditorOnClick) {
+      this.overlay.toast(this.strings.editorLinkOff);
+      return;
+    }
     if (this.currentInfo.jumpTarget) {
       this.overlay.openEditor(this.currentInfo.jumpTarget);
     } else {

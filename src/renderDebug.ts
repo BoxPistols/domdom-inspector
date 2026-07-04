@@ -44,10 +44,23 @@ export class RenderDebugger {
     this.tracker.reset();
     this.unsubscribe = this.hookState.onCommit(this.onCommit);
     window.addEventListener('keydown', this.onKeyDown, true);
+    this.renderControl();
     this.overlay.toast(
       this.hookState.devMode ? this.strings.renderOn : this.strings.renderOnNoDev,
       4000,
     );
+  }
+
+  /** 常設コントロールを現在状態で描画 (記録中はボタンが停止に切替) */
+  private renderControl() {
+    const recording = this.tracker.isRecording();
+    const base = recording ? this.strings.ctrlStop : this.strings.ctrlRecord;
+    this.overlay.showRenderControl({
+      title: this.strings.ctrlTitle,
+      recording,
+      toggleLabel: `${base} (${this.recordKey.toUpperCase()})`,
+      onToggle: () => this.toggleRecording(),
+    });
   }
 
   private disable() {
@@ -61,6 +74,7 @@ export class RenderDebugger {
     this.tracker.stopRecording();
     this.overlay.clearRenderFlashes();
     this.overlay.hideRenderStats();
+    this.overlay.hideRenderControl();
     this.overlay.toast(this.strings.renderOff);
   }
 
@@ -115,5 +129,7 @@ export class RenderDebugger {
       this.tracker.startRecording();
       this.overlay.toast(this.strings.recordStart);
     }
+    // ボタン表示 (記録⇔停止) と REC インジケータを最新状態に更新
+    this.renderControl();
   }
 }

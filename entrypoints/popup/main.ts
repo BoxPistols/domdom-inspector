@@ -21,8 +21,27 @@ function applyI18n() {
 const editorEl = $<HTMLSelectElement>('editor');
 const templateEl = $<HTMLInputElement>('customUrlTemplate');
 const muiSkipEl = $<HTMLInputElement>('muiSkip');
+const openEditorEl = $<HTMLInputElement>('openEditorOnClick');
 const mappingsEl = $<HTMLTextAreaElement>('pathMappings');
 const recordKeyEl = $<HTMLInputElement>('recordKey');
+
+// モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
+// OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
+async function applyShortcutHints() {
+  type MsgKey = Parameters<typeof browser.i18n.getMessage>[0];
+  const t = (k: MsgKey) => browser.i18n.getMessage(k) || '';
+  const cmds = await browser.commands.getAll();
+  const shortcutOf = (name: string) =>
+    cmds.find((c) => c.name === name)?.shortcut || '(unset)';
+  const rec = (recordKeyEl.value || 'r').toUpperCase();
+  $('hintInspect').textContent = t('popupToggleInspectHint').replace(
+    '{key}',
+    shortcutOf('toggle-inspect'),
+  );
+  $('hintRender').textContent = t('popupToggleRenderHint')
+    .replace('{key}', shortcutOf('toggle-render'))
+    .replace('{rec}', rec);
+}
 
 function parseMappings(text: string): PathMapping[] {
   return text
@@ -41,9 +60,11 @@ async function load() {
   editorEl.value = settings.editor;
   templateEl.value = settings.customUrlTemplate;
   muiSkipEl.checked = settings.muiSkip;
+  openEditorEl.checked = settings.openEditorOnClick;
   mappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
   recordKeyEl.value = settings.recordKey;
   syncTemplateState();
+  void applyShortcutHints();
 }
 
 async function save() {
@@ -52,11 +73,13 @@ async function save() {
     editor: editorEl.value as Settings['editor'],
     customUrlTemplate: templateEl.value || DEFAULT_SETTINGS.customUrlTemplate,
     muiSkip: muiSkipEl.checked,
+    openEditorOnClick: openEditorEl.checked,
     pathMappings: parseMappings(mappingsEl.value),
     // 単一キーのみ (空・複数は既定 'r')
     recordKey: recordKeyEl.value.length === 1 ? recordKeyEl.value.toLowerCase() : DEFAULT_SETTINGS.recordKey,
   };
   await browser.storage.local.set({ settings });
+  void applyShortcutHints();
 }
 
 // カスタム URL テンプレートは editor === 'custom' の時だけ編集可能
@@ -64,7 +87,7 @@ function syncTemplateState() {
   templateEl.disabled = editorEl.value !== 'custom';
 }
 
-for (const el of [editorEl, templateEl, muiSkipEl, mappingsEl, recordKeyEl]) {
+for (const el of [editorEl, templateEl, muiSkipEl, openEditorEl, mappingsEl, recordKeyEl]) {
   el.addEventListener('change', () => {
     syncTemplateState();
     void save();

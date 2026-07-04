@@ -82,12 +82,31 @@ describe('RenderTracker', () => {
     expect(second.flashes[0].heat).toBe(2);
   });
 
-  it('actualDuration が無い (production) 場合は supported=false', () => {
-    const f = fiber({ tag: 0, type: function C() {}, actualDuration: undefined as never });
+  it('actualDuration が無い (production) 場合は supported=false、検出は alternate/props 差分で近似', () => {
+    // mount 相当 (alternate なし) → 再描画とみなす
+    const mounted = fiber({ tag: 0, type: function C() {}, actualDuration: undefined as never });
     const tracker = new RenderTracker();
-    const result = tracker.handleCommit(root(f));
-    expect(result.supported).toBe(false);
-    expect(result.rendered).toBe(0);
+    const r1 = tracker.handleCommit(root(mounted));
+    expect(r1.supported).toBe(false);
+    expect(r1.rendered).toBe(1);
+  });
+
+  it('タイマ無し: alternate と props が同一なら再描画とみなさない (フォールバック)', () => {
+    const props = { a: 1 };
+    const alt = fiber({ tag: 0, type: function C() {}, actualDuration: undefined as never });
+    (alt as { memoizedProps?: unknown }).memoizedProps = props;
+    const cur = fiber({ tag: 0, type: function C() {}, actualDuration: undefined as never });
+    (cur as { memoizedProps?: unknown; alternate?: unknown }).memoizedProps = props;
+    (cur as { alternate?: unknown }).alternate = alt;
+
+    const tracker = new RenderTracker();
+    const same = tracker.handleCommit(root(cur));
+    expect(same.rendered).toBe(0);
+
+    // props 参照が変われば再描画とみなす
+    (cur as { memoizedProps?: unknown }).memoizedProps = { a: 2 };
+    const changed = tracker.handleCommit(root(cur));
+    expect(changed.rendered).toBe(1);
   });
 
   it('記録の集計は回数の多い順に並ぶ', () => {

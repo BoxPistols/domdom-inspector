@@ -56,14 +56,12 @@
     <h1 data-i18n="extName">MUI Design Inspector</h1>
 
     <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
-    <div class="hint" data-i18n="popupToggleInspectHint">Shortcut: Alt+Shift+I / Exit: Esc</div>
+    <div class="hint" id="hintInspect">Shortcut: Alt+Shift+I / Exit: Esc</div>
 
     <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
       Toggle render visualization mode
     </button>
-    <div class="hint" data-i18n="popupToggleRenderHint">
-      Shortcut: Alt+Shift+R / Record: R / Exit: Esc
-    </div>
+    <div class="hint" id="hintRender">Shortcut: Alt+Shift+R / Record: R / Exit: Esc</div>
 
     <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
       Change toggle shortcuts…
@@ -94,6 +92,11 @@
     <label class="check">
       <input type="checkbox" id="muiSkip" />
       <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
+    </label>
+
+    <label class="check">
+      <input type="checkbox" id="openEditorOnClick" />
+      <span data-i18n="labelOpenEditor">Open editor on click</span>
     </label>
 
     <label for="pathMappings" data-i18n="labelPathMappings">

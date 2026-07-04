@@ -25,6 +25,7 @@ export class Overlay {
   private badge!: HTMLDivElement;
   private panel!: HTMLDivElement;
   private statsPanel!: HTMLDivElement;
+  private renderControl!: HTMLDivElement;
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D | null;
   private toastEl!: HTMLDivElement;
@@ -158,6 +159,25 @@ export class Overlay {
       .stats .r .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .stats .r .ct { font-weight: 700; text-align: right; }
       .stats .r .ms { opacity: 0.6; text-align: right; }
+      .rctl {
+        position: fixed; z-index: 2147483647; display: none;
+        pointer-events: auto; left: 12px; bottom: 12px;
+        align-items: center; gap: 10px; padding: 8px 12px;
+        border-radius: 999px; background: rgba(20,20,24,0.94); color: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      }
+      .rctl.on { display: inline-flex; }
+      .rctl .st { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+      .rctl .st .d { width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+      .rctl.rec .st .d { background: #ef4444; animation: rctlblink 1s steps(2, start) infinite; }
+      @keyframes rctlblink { 50% { opacity: 0.25; } }
+      .rctl button {
+        all: unset; cursor: pointer; padding: 4px 12px; border-radius: 999px;
+        background: #ef4444; color: #fff; font-weight: 700; font-size: 12px;
+      }
+      .rctl.rec button { background: #6b7280; }
+      .rctl button:hover { filter: brightness(1.1); }
     `;
     root.appendChild(style);
 
@@ -174,7 +194,17 @@ export class Overlay {
     this.ctx = this.canvas.getContext('2d');
     this.statsPanel = document.createElement('div');
     this.statsPanel.className = 'stats';
-    root.append(this.canvas, this.box, this.badge, this.panel, this.statsPanel, this.toastEl);
+    this.renderControl = document.createElement('div');
+    this.renderControl.className = 'rctl';
+    root.append(
+      this.canvas,
+      this.box,
+      this.badge,
+      this.panel,
+      this.statsPanel,
+      this.renderControl,
+      this.toastEl,
+    );
     document.documentElement.appendChild(this.host);
   }
 
@@ -410,6 +440,37 @@ export class Overlay {
 
   hideRenderStats() {
     if (this.host) this.statsPanel.style.display = 'none';
+  }
+
+  /**
+   * レンダーモードの常設コントロール (状態表示 + 記録トグルボタン)。
+   * キー操作を知らなくても記録を開始/停止できるようにする。
+   */
+  showRenderControl(opts: {
+    title: string;
+    recording: boolean;
+    toggleLabel: string;
+    onToggle: () => void;
+  }) {
+    this.ensureMounted();
+    this.renderControl.replaceChildren();
+    const status = document.createElement('span');
+    status.className = 'st';
+    const dot = document.createElement('span');
+    dot.className = 'd';
+    const label = document.createElement('span');
+    label.textContent = opts.recording ? 'REC' : opts.title;
+    status.append(dot, label);
+    const btn = document.createElement('button');
+    btn.textContent = opts.toggleLabel;
+    btn.addEventListener('click', opts.onToggle);
+    this.renderControl.append(status, btn);
+    this.renderControl.classList.toggle('rec', opts.recording);
+    this.renderControl.classList.add('on');
+  }
+
+  hideRenderControl() {
+    if (this.host) this.renderControl.classList.remove('on', 'rec');
   }
 
   toast(message: string, ms = 2600) {

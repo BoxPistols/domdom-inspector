@@ -25,24 +25,18 @@ export interface CommitResult {
   supported: boolean;
 }
 
-function children(fiber: Fiber): Fiber[] {
-  const out: Fiber[] = [];
-  let c = fiber.child;
-  while (c) {
-    out.push(c);
-    c = c.sibling;
-  }
-  return out;
-}
-
 /**
  * コミットされた Fiber ツリーを走査し、各コミットで「自分自身が」再描画した
  * コンポーネント / ホスト要素を検出する。
  *
- * actualDuration は子の分を含む累積値のため、そのままだと再描画した子を持つだけの
- * 祖先まで検出してしまう。子の actualDuration 合計を差し引いた「自己時間 (self)」が
- * 正のものだけを「自分が render した」とみなすことで祖先の過剰報告を避ける。
+ * 判定方式は 2 系統:
+ * - Profiler タイマあり (dev ビルド): actualDuration は子を含む累積値のため、子の合計を
+ *   差し引いた「自己時間 (self)」が正のものだけを「自分が render した」とみなし、再描画した
+ *   子を持つだけの祖先の過剰報告を避ける。self 時間はランキングにも使う。
+ * - Profiler タイマなし (production 等): actualDuration が無いので self では判定できない。
+ *   alternate/props の差分で「mount または props 変化」を近似検出する (時間計測は不可)。
  *
+ * 走査は子への push と子の actualDuration 合計を 1 パスで行い、fiber ごとの配列確保を避ける。
  * ヒートマップの色は、要素ごとの累積再描画回数 (flashCounts) で決める。
  */
 export class RenderTracker {
@@ -88,25 +82,39 @@ export class RenderTracker {
     const stack: Fiber[] = [rootFiber];
     while (stack.length) {
       const fiber = stack.pop();
-      const kids = children(fiber);
-      for (const k of kids) stack.push(k);
+      // 1 パス: 子を stack に積みつつ子の actualDuration を合計 (配列/クロージャ確保なし)
+      let childSum = 0;
+      let c = fiber.child;
+      while (c) {
+        stack.push(c);
+        const d = c.actualDuration;
+        if (typeof d === 'number') childSum += d;
+        c = c.sibling;
+      }
 
       const actual = fiber.actualDuration;
-      if (typeof actual === 'number') this.sawDuration = true;
-      const childSum = kids.reduce(
-        (sum, k) => sum + (typeof k.actualDuration === 'number' ? k.actualDuration : 0),
-        0,
-      );
-      const self = (typeof actual === 'number' ? actual : 0) - childSum;
-      // 自己時間が実質ゼロ = このコミットで自分は render していない (子の伝播のみ)
-      if (self <= 0.01) continue;
+      const hasTiming = typeof actual === 'number';
+      if (hasTiming) this.sawDuration = true;
+      const self = (hasTiming ? actual : 0) - childSum;
 
+      // このコミットで「自分が」render したか。タイマがあれば自己時間、無ければ
+      // alternate/props 差分 (mount または props 変化) で近似する。
+      let didRender: boolean;
+      if (hasTiming) {
+        didRender = self > 0.01;
+      } else {
+        const alt = fiber.alternate;
+        didRender = !alt || alt.memoizedProps !== fiber.memoizedProps;
+      }
+      if (!didRender) continue;
+
+      const selfMs = hasTiming ? Math.max(self, 0) : 0;
       const isComposite = COMPONENT_TAGS.has(fiber.tag);
       const isHost = typeof fiber.type === 'string' && fiber.stateNode instanceof Element;
 
       if (isComposite) {
         rendered += 1;
-        durationMs += self;
+        durationMs += selfMs;
         if (this.recording) {
           const name = getFiberName(fiber) ?? 'Anonymous';
           const stat = this.stats.get(name) ?? {
@@ -116,7 +124,7 @@ export class RenderTracker {
             lastCommit: 0,
           };
           stat.count += 1;
-          stat.selfMs += self;
+          stat.selfMs += selfMs;
           stat.lastCommit = this.commitSeq;
           this.stats.set(name, stat);
         }

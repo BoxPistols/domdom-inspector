@@ -4,7 +4,8 @@ import type { PathMapping, SourceLocation } from './types';
  * バンドラ由来の fileName をローカルパスへ正規化する。
  * - dev サーバ URL (http://localhost:3000/src/App.tsx?t=123) → /src/App.tsx
  * - Vite の /@fs/абс パス → 絶対パス
- * - webpack-internal:///./src/App.tsx → src/App.tsx
+ * - webpack-internal:///./src/App.tsx → /src/App.tsx
+ * 出力は先頭スラッシュ有りに揃える (バンドラ間でパスマッピングの prefix 一致を安定させるため)。
  * 最後にユーザー定義のパスマッピング (prefix 置換) を適用する。
  */
 export function normalizeSourcePath(fileName: string, mappings: PathMapping[] = []): string {
@@ -12,7 +13,8 @@ export function normalizeSourcePath(fileName: string, mappings: PathMapping[] = 
 
   const webpackInternal = path.match(/^webpack-internal:\/{3}(?:\.\/)?(.*)$/);
   if (webpackInternal) {
-    path = webpackInternal[1];
+    // URL 経路 (pathname は先頭スラッシュ有り) と揃える
+    path = '/' + webpackInternal[1].replace(/^\/+/, '');
   } else if (/^[a-z][a-z0-9+.-]*:\/\//i.test(path)) {
     try {
       path = new URL(path).pathname;

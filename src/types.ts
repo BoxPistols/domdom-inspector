@@ -43,6 +43,11 @@ export interface Settings {
   customUrlTemplate: string;
   /** MUI/サードパーティを飛ばして自作コンポーネントの callsite へジャンプ (FR-09) */
   muiSkip: boolean;
+  /**
+   * クリックでエディタを開くか。false ならクリックしてもエディタ連携せず、
+   * ハイライト/ホバー確認だけ行う (Alt+クリックの owner ツリーは維持)。
+   */
+  openEditorOnClick: boolean;
   colors: {
     mui: string;
     custom: string;
@@ -62,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   editor: 'vscode',
   customUrlTemplate: 'vscode://file{file}:{line}:{column}',
   muiSkip: true,
+  openEditorOnClick: true,
   colors: {
     mui: '#2196f3',
     custom: '#4caf50',
@@ -84,6 +90,7 @@ export interface UiStrings {
   noOuterComponent: string;
   jumpUnresolved: string;
   jumpProd: string;
+  editorLinkOff: string;
   sourceUnavailable: string;
   prodSafeMode: string;
   ownerPanelTitle: string;
@@ -91,6 +98,9 @@ export interface UiStrings {
   renderOnNoDev: string;
   renderOff: string;
   recordStart: string;
+  ctrlTitle: string;
+  ctrlRecord: string;
+  ctrlStop: string;
   statsTitle: string;
   statsColsSupported: string;
   statsColsUnsupported: string;
@@ -104,6 +114,7 @@ export const DEFAULT_STRINGS: UiStrings = {
   noOuterComponent: 'No further outer component',
   jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',
   jumpProd: 'Source jump is unavailable on production builds',
+  editorLinkOff: 'Editor link is off (toggle it in the popup). Alt+Click still opens the owner tree.',
   sourceUnavailable: 'source unavailable',
   prodSafeMode: 'production build (safe mode)',
   ownerPanelTitle: 'Rendered by (click to open editor)',
@@ -112,6 +123,9 @@ export const DEFAULT_STRINGS: UiStrings = {
   renderOnNoDev: 'Render viz ON — no dev build detected, timing unavailable (flash only)',
   renderOff: 'Render viz OFF',
   recordStart: 'Recording — interact to trigger re-renders, press R to stop and see the ranking',
+  ctrlTitle: 'Render viz',
+  ctrlRecord: 'Record',
+  ctrlStop: 'Stop',
   statsTitle: 'Re-render ranking ({n} commits)',
   statsColsSupported: 'Columns: component / re-renders / cumulative self time (ms)',
   statsColsUnsupported: 'Profiler timer unavailable here; time shows 0 (needs a dev build)',
