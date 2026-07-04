@@ -22,6 +22,7 @@ const editorEl = $<HTMLSelectElement>('editor');
 const templateEl = $<HTMLInputElement>('customUrlTemplate');
 const muiSkipEl = $<HTMLInputElement>('muiSkip');
 const mappingsEl = $<HTMLTextAreaElement>('pathMappings');
+const recordKeyEl = $<HTMLInputElement>('recordKey');
 
 function parseMappings(text: string): PathMapping[] {
   return text
@@ -41,6 +42,7 @@ async function load() {
   templateEl.value = settings.customUrlTemplate;
   muiSkipEl.checked = settings.muiSkip;
   mappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
+  recordKeyEl.value = settings.recordKey;
   syncTemplateState();
 }
 
@@ -51,6 +53,8 @@ async function save() {
     customUrlTemplate: templateEl.value || DEFAULT_SETTINGS.customUrlTemplate,
     muiSkip: muiSkipEl.checked,
     pathMappings: parseMappings(mappingsEl.value),
+    // 単一キーのみ (空・複数は既定 'r')
+    recordKey: recordKeyEl.value.length === 1 ? recordKeyEl.value.toLowerCase() : DEFAULT_SETTINGS.recordKey,
   };
   await browser.storage.local.set({ settings });
 }
@@ -60,7 +64,7 @@ function syncTemplateState() {
   templateEl.disabled = editorEl.value !== 'custom';
 }
 
-for (const el of [editorEl, templateEl, muiSkipEl, mappingsEl]) {
+for (const el of [editorEl, templateEl, muiSkipEl, mappingsEl, recordKeyEl]) {
   el.addEventListener('change', () => {
     syncTemplateState();
     void save();
@@ -77,6 +81,13 @@ async function sendToActiveTab(type: string) {
 
 $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
 $('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-render'));
+
+// モード切替 (Alt+Shift+I / Alt+Shift+R) の再割当は Chrome 純正ページに委ねる
+// (拡張からショートカットを直接書き換える API は存在しないため)
+$('configureShortcuts').addEventListener('click', () => {
+  void browser.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  window.close();
+});
 
 applyI18n();
 void load();

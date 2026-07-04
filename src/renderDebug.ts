@@ -17,13 +17,19 @@ export class RenderDebugger {
   private unsubscribe: (() => void) | null = null;
   private pendingRoots = new Set<unknown>();
   private processRaf = 0;
-  private warnedUnsupported = false;
+  /** 記録トグルキー (設定で変更可、既定 'r') */
+  private recordKey = 'r';
 
   constructor(
     private hookState: HookState,
     private overlay: Overlay,
     private strings: UiStrings = DEFAULT_STRINGS,
   ) {}
+
+  applySettings(recordKey: string) {
+    // 単一キーのみ受け付ける (空・複数文字は既定へフォールバック)
+    this.recordKey = recordKey && recordKey.length === 1 ? recordKey.toLowerCase() : 'r';
+  }
 
   toggle() {
     this.enabled ? this.disable() : this.enable();
@@ -68,7 +74,7 @@ export class RenderDebugger {
     ) {
       return;
     }
-    if (event.key === 'r' || event.key === 'R') {
+    if (event.key.length === 1 && event.key.toLowerCase() === this.recordKey) {
       event.preventDefault();
       this.toggleRecording();
     } else if (event.key === 'Escape') {
@@ -88,16 +94,10 @@ export class RenderDebugger {
     const roots = [...this.pendingRoots];
     this.pendingRoots.clear();
     const flashes: { element: Element; heat: number }[] = [];
-    let supported = false;
     for (const root of roots) {
-      const result = this.tracker.handleCommit(root);
-      flashes.push(...result.flashes);
-      supported = supported || result.supported;
+      flashes.push(...this.tracker.handleCommit(root).flashes);
     }
     if (flashes.length) this.overlay.flashRenders(flashes);
-    if (!supported && !this.warnedUnsupported && this.hookState.devMode) {
-      this.warnedUnsupported = true;
-    }
   };
 
   /** 記録モードのトグル (R キー)。停止時にランキングパネルを開く */

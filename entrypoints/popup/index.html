@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>MUI Design Inspector</title>
@@ -53,7 +53,7 @@
     </style>
   </head>
   <body>
-    <h1>MUI Design Inspector</h1>
+    <h1 data-i18n="extName">MUI Design Inspector</h1>
 
     <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
     <div class="hint" data-i18n="popupToggleInspectHint">Shortcut: Alt+Shift+I / Exit: Esc</div>
@@ -64,6 +64,16 @@
     <div class="hint" data-i18n="popupToggleRenderHint">
       Shortcut: Alt+Shift+R / Record: R / Exit: Esc
     </div>
+
+    <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
+      Change toggle shortcuts…
+    </button>
+    <div class="hint" data-i18n="hintConfigureShortcuts">
+      Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys.
+    </div>
+
+    <label for="recordKey" data-i18n="labelRecordKey">Record key (in render mode)</label>
+    <input type="text" id="recordKey" maxlength="1" style="width: 60px" />
 
     <label for="editor" data-i18n="labelEditor">Editor</label>
     <select id="editor">

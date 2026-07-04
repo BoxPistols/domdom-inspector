@@ -50,6 +50,12 @@ export interface Settings {
   };
   /** ビルド時パス → ローカル絶対パスの書き換え */
   pathMappings: PathMapping[];
+  /**
+   * レンダー可視化モード中の「記録トグル」キー (ページ内、単一キー)。
+   * モード切替 (Alt+Shift+I / Alt+Shift+R) は manifest commands 側で
+   * chrome://extensions/shortcuts から任意再設定できるため、ここには含めない。
+   */
+  recordKey: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -62,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
     thirdParty: '#9e9e9e',
   },
   pathMappings: [],
+  recordKey: 'r',
 };
 
 /**

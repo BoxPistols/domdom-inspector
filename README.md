@@ -28,6 +28,12 @@ pnpm test       # ユニットテスト
 
 対象オリジンは `localhost` / `127.0.0.1` のみ(権限最小化)。
 
+## ショートカットの再設定
+
+- **モード切替**(`Alt+Shift+I` インスペクト / `Alt+Shift+R` レンダー可視化)は manifest commands。ポップアップの「切替ショートカットを変更」ボタンから **`chrome://extensions/shortcuts`** を開き、任意のキーへ再割当できます(競合検出も Chrome 純正機能に委任)。拡張からショートカットを直接書き換える API は存在しないため、この純正ページ経由が正攻法
+- **ページ内の記録キー**(レンダーモード中の記録トグル、既定 `R`)はポップアップの設定値。`chrome.storage` に保存され、bridge 経由で MAIN world の RenderDebugger に反映
+- `Esc`(解除)・`↑`/`↓`(親子移動)は固定の慣用キー
+
 ## 多言語 (i18n)
 
 `chrome.i18n` で英語 (`default_locale`) と日本語に対応。ブラウザの UI 言語で自動切替します。

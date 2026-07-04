@@ -16,6 +16,11 @@
   "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
   "hintTarget": { "message": "対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。" },
   "helpSummary": { "message": "使い方ヘルプ" },
+  "btnConfigureShortcuts": { "message": "切替ショートカットを変更…" },
+  "hintConfigureShortcuts": {
+    "message": "chrome://extensions/shortcuts を開き、Alt+Shift+I / Alt+Shift+R を任意のキーに再割当できます。"
+  },
+  "labelRecordKey": { "message": "記録キー (レンダーモード中)" },
 
   "inspectOn": {
     "message": "Inspect ON — クリック: エディタ / Alt+クリック: owner ツリー / ↑↓: 親子移動 / Esc: 解除"
@@ -29,9 +34,9 @@
     "message": "ソース位置を解決できませんでした (React 19 では babel plugin なしの場合があります)"
   },
   "jumpProd": { "message": "production ビルドのためソースジャンプは利用できません" },
-  "sourceUnavailable": { "message": "source unavailable" },
-  "prodSafeMode": { "message": "production build (safe mode)" },
-  "ownerPanelTitle": { "message": "Rendered by (クリックでエディタへ)" },
+  "sourceUnavailable": { "message": "ソース不明" },
+  "prodSafeMode": { "message": "production ビルド (セーフモード)" },
+  "ownerPanelTitle": { "message": "描画元 (クリックでエディタへ)" },
   "renderOn": {
     "message": "レンダー可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF"
   },

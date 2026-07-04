@@ -16,6 +16,11 @@
   "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
   "hintTarget": { "message": "Only localhost / 127.0.0.1 dev servers. Settings save automatically." },
   "helpSummary": { "message": "How to use" },
+  "btnConfigureShortcuts": { "message": "Change toggle shortcuts…" },
+  "hintConfigureShortcuts": {
+    "message": "Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys."
+  },
+  "labelRecordKey": { "message": "Record key (in render mode)" },
 
   "inspectOn": {
     "message": "Inspect ON — Click: editor / Alt+Click: owner tree / ↑↓: parent/child / Esc: exit"

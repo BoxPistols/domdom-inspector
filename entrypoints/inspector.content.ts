@@ -29,6 +29,7 @@ export default defineContentScript({
       if (data.type === 'settings') {
         inspector.applySettings(data.payload);
         overlay.updateSettings(data.payload);
+        renderDebugger.applySettings(data.payload.recordKey);
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
       if (data.type === 'toggle') inspector.toggle();
