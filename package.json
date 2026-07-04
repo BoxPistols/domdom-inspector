@@ -1,0 +1,21 @@
+{
+  "name": "mui-inspector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MUI Design Inspector — React/MUI コンポーネントのホバー識別・エディタジャンプ Chrome 拡張",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "wxt": "^0.20.0"
+  }
+}

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MUI Design Inspector</title>
+    <style>
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 14px;
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        color: #1a1a1f;
+      }
+      h1 { font-size: 14px; margin: 0 0 12px; }
+      label { display: block; margin: 10px 0 4px; font-weight: 600; }
+      select, input[type="text"], textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 12px;
+      }
+      textarea { height: 56px; font-family: ui-monospace, monospace; }
+      .check { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-weight: 600; }
+      button {
+        width: 100%;
+        margin-top: 14px;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        background: #2196f3;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:hover { background: #1976d2; }
+      .hint { margin-top: 8px; color: #666; font-size: 11px; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <h1>MUI Design Inspector</h1>
+
+    <button id="toggle">このタブでインスペクトモード切替</button>
+    <div class="hint">ショートカット: Alt+Shift+I / 解除: Esc</div>
+
+    <label for="editor">エディタ</label>
+    <select id="editor">
+      <option value="vscode">VS Code</option>
+      <option value="cursor">Cursor</option>
+      <option value="webstorm">WebStorm</option>
+      <option value="custom">カスタム URL</option>
+    </select>
+
+    <label for="customUrlTemplate">カスタム URL テンプレート</label>
+    <input
+      type="text"
+      id="customUrlTemplate"
+      placeholder="vscode://file{file}:{line}:{column} ({file} は / 始まり)"
+    />
+
+    <label class="check">
+      <input type="checkbox" id="muiSkip" />
+      MUI 内部をスキップして自作コードへジャンプ
+    </label>
+
+    <label for="pathMappings">パスマッピング (1 行 1 件: from=to)</label>
+    <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
+
+    <div class="hint">
+      対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
