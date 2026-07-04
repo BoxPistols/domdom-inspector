@@ -154,7 +154,8 @@ export class Overlay {
     name.textContent = `<${info.name}>`;
     const meta = document.createElement('span');
     meta.className = 'meta';
-    meta.textContent = ` ${propsText}${propsText ? ' · ' : ''}${file}`;
+    const metaParts = [info.internalName, propsText, file].filter(Boolean).join(' · ');
+    meta.textContent = ` ${metaParts}`;
     this.badge.append(name, meta);
 
     const badgeTop = rect.top > 40 ? rect.top - 34 : rect.bottom + 6;

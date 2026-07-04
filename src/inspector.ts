@@ -1,4 +1,4 @@
-import { inspectElement } from './fiber';
+import { getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
 import { DEFAULT_SETTINGS, type InspectInfo, type Settings } from './types';
@@ -14,6 +14,11 @@ export class Inspector {
   private rafId = 0;
   private currentElement: Element | null = null;
   private currentInfo: InspectInfo | null = null;
+  /** ↑ で遡った子要素の履歴 (↓ で戻る) */
+  private navStack: Element[] = [];
+  /** キーボード選択中はマウスの微動でホバー追従に戻さないためのフラグ */
+  private keyboardNav = false;
+  private lastPointer = { x: 0, y: 0 };
 
   constructor(private hookState: HookState) {}
 
@@ -41,7 +46,10 @@ export class Inspector {
         4000,
       );
     } else {
-      this.overlay.toast('Inspect ON — クリックでエディタ / Alt+クリックで owner ツリー / Esc で解除');
+      this.overlay.toast(
+        'Inspect ON — クリック: エディタ / Alt+クリック: owner ツリー / ↑↓: 親子移動 / Esc: 解除',
+        4000,
+      );
     }
   }
 
@@ -56,22 +64,39 @@ export class Inspector {
     this.overlay.hideAll();
     this.currentElement = null;
     this.currentInfo = null;
+    this.navStack = [];
+    this.keyboardNav = false;
     this.overlay.toast('Inspect OFF');
+  }
+
+  private select(element: Element) {
+    this.currentElement = element;
+    this.currentInfo = inspectElement(element, this.settings.muiSkip);
+    if (this.currentInfo) {
+      this.overlay.show(element, this.currentInfo);
+    } else {
+      this.overlay.hideHighlight();
+    }
   }
 
   private onPointerMove = (event: PointerEvent) => {
     if (this.overlay.containsTarget(event.target)) return;
+    // キーボードで親子選択中は、マウスの微動 (16px 未満) でホバー追従に戻さない
+    if (this.keyboardNav) {
+      const distance = Math.hypot(
+        event.clientX - this.lastPointer.x,
+        event.clientY - this.lastPointer.y,
+      );
+      if (distance < 16) return;
+      this.keyboardNav = false;
+      this.navStack = [];
+    }
+    this.lastPointer = { x: event.clientX, y: event.clientY };
     cancelAnimationFrame(this.rafId);
     this.rafId = requestAnimationFrame(() => {
       const element = document.elementFromPoint(event.clientX, event.clientY);
       if (!element || element === this.currentElement) return;
-      this.currentElement = element;
-      this.currentInfo = inspectElement(element, this.settings.muiSkip);
-      if (this.currentInfo) {
-        this.overlay.show(element, this.currentInfo);
-      } else {
-        this.overlay.hideHighlight();
-      }
+      this.select(element);
     });
   };
 
@@ -114,6 +139,31 @@ export class Inspector {
       } else {
         this.disable();
       }
+      return;
+    }
+    // ↑: 親コンポーネントへ / ↓: 遡った履歴を子へ戻る (FR-04 補完)
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!this.currentElement) return;
+      const parent = getParentComponentElement(this.currentElement);
+      if (parent) {
+        this.navStack.push(this.currentElement);
+        this.keyboardNav = true;
+        this.select(parent);
+      } else {
+        this.overlay.toast('これ以上外側のコンポーネントはありません');
+      }
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const child = this.navStack.pop();
+      if (child?.isConnected) {
+        this.keyboardNav = true;
+        this.select(child);
+      }
     }
   };
 
@@ -121,5 +171,7 @@ export class Inspector {
     // スクロール中は座標がずれるため一旦隠す (次の pointermove で再表示)
     this.overlay.hideHighlight();
     this.currentElement = null;
+    this.navStack = [];
+    this.keyboardNav = false;
   };
 }

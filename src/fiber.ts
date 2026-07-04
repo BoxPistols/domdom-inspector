@@ -83,6 +83,47 @@ export function getNearestComponentFiber(fiber: Fiber): Fiber | null {
   return null;
 }
 
+/** コンポーネント Fiber がレンダリングする最初の host 要素を DFS で探す */
+export function getHostElementOfFiber(fiber: Fiber): Element | null {
+  let node: Fiber = fiber.child;
+  while (node) {
+    if (typeof node.type === 'string' && node.stateNode instanceof Element) {
+      return node.stateNode;
+    }
+    if (node.child) {
+      node = node.child;
+      continue;
+    }
+    // sibling が無ければ subtree を抜けない範囲で親へ戻る
+    while (node && node !== fiber && !node.sibling) {
+      node = node.return;
+    }
+    if (!node || node === fiber) return null;
+    node = node.sibling;
+  }
+  return null;
+}
+
+/**
+ * ↑ キーによる親コンポーネント選択: 現在要素を DOM として包含する
+ * 「1 つ外側のコンポーネント」の host 要素を Fiber ツリーから返す。
+ * 同じ DOM を包むだけの wrapper (styled スロット等) は読み飛ばす。
+ */
+export function getParentComponentElement(element: Element): Element | null {
+  const hostFiber = getFiberFromElement(element);
+  if (!hostFiber) return null;
+  const base = hostFiber.stateNode instanceof Element ? hostFiber.stateNode : element;
+  let node = (getNearestComponentFiber(hostFiber) ?? hostFiber).return;
+  while (node) {
+    if (COMPONENT_TAGS.has(node.tag)) {
+      const host = getHostElementOfFiber(node);
+      if (host && host !== base && host.contains(base)) return host;
+    }
+    node = node.return;
+  }
+  return null;
+}
+
 /** _debugOwner を遡って owner チェーンを収集する */
 export function getOwnerChain(fiber: Fiber, limit = 20): Fiber[] {
   const chain: Fiber[] = [];
@@ -154,6 +195,7 @@ function safeModeInfo(element: Element): InspectInfo {
   const name = muiClass ? muiClass.split('-')[0] : element.tagName.toLowerCase();
   return {
     name,
+    internalName: null,
     classification: muiClass ? 'mui' : 'third-party',
     props: {},
     jumpTarget: null,
@@ -184,10 +226,22 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     };
   });
 
+  // セマンティック名: callsite が node_modules 外の最初の owner (= ユーザーが JSX に書いた
+  // コンポーネント)。MuiCardContentRoot のような内部 styled スロット名の代わりに
+  // CardContent / Card を主名として表示し、ジャンプ先とバッジの意味を一致させる。
+  const rawName = getFiberName(componentFiber) ?? 'Anonymous';
+  const semanticFiber = chain.find((fiber) => {
+    const source = getFiberSource(fiber);
+    return source && !isNodeModulesPath(normalizeSourcePath(source.fileName));
+  });
+  const semanticName = semanticFiber ? getFiberName(semanticFiber) : null;
+  const name = semanticName ?? rawName;
+
   return {
-    name: getFiberName(componentFiber) ?? 'Anonymous',
+    name,
+    internalName: name !== rawName ? rawName : null,
     classification: classifyFiber(componentFiber, element),
-    props: summarizeProps(componentFiber),
+    props: summarizeProps(semanticFiber ?? componentFiber),
     jumpTarget: resolveJumpTarget(chain, muiSkip),
     ownerChain,
     devMode: true,

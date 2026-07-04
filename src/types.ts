@@ -18,6 +18,8 @@ export interface OwnerEntry {
 /** ホバー中の要素について収集した情報 */
 export interface InspectInfo {
   name: string;
+  /** name がセマンティック名 (owner 由来) の場合、元の内部名 (例: MuiCardContentRoot) */
+  internalName: string | null;
   classification: Classification;
   /** 表示用の主要 props (primitive のみ) */
   props: Record<string, string>;
@@ -36,7 +38,7 @@ export interface PathMapping {
 
 export interface Settings {
   /** インスペクタ有効/無効の既定 (オリジン単位の制御は Phase 2) */
-  editor: 'vscode' | 'cursor' | 'webstorm' | 'custom';
+  editor: 'vscode' | 'cursor' | 'antigravity' | 'webstorm' | 'custom';
   /** editor === 'custom' 時の URL テンプレート ({file} {line} {column}) */
   customUrlTemplate: string;
   /** MUI/サードパーティを飛ばして自作コンポーネントの callsite へジャンプ (FR-09) */

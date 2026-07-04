@@ -5,6 +5,7 @@ import type { Settings, SourceLocation } from './types';
 const EDITOR_TEMPLATES: Record<Exclude<Settings['editor'], 'custom'>, string> = {
   vscode: 'vscode://file{file}:{line}:{column}',
   cursor: 'cursor://file{file}:{line}:{column}',
+  antigravity: 'antigravity://file{file}:{line}:{column}',
   webstorm: 'webstorm://open?file={file}&line={line}',
 };
 

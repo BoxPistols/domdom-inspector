@@ -38,6 +38,16 @@
       }
       button:hover { background: #1976d2; }
       .hint { margin-top: 8px; color: #666; font-size: 11px; line-height: 1.5; }
+      input:disabled { background: #f2f2f2; color: #999; }
+      details { margin-top: 12px; }
+      summary { cursor: pointer; font-weight: 600; font-size: 12px; color: #1976d2; }
+      .help { margin-top: 6px; font-size: 11px; line-height: 1.6; color: #444; }
+      .help p { margin: 6px 0; }
+      .help table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+      .help td { padding: 3px 6px 3px 0; vertical-align: top; }
+      .help td:first-child { white-space: nowrap; font-weight: 600; }
+      .help code { background: #f2f2f2; padding: 1px 4px; border-radius: 4px; }
+      .legend { font-weight: 600; }
     </style>
   </head>
   <body>
@@ -50,6 +60,7 @@
     <select id="editor">
       <option value="vscode">VS Code</option>
       <option value="cursor">Cursor</option>
+      <option value="antigravity">Antigravity</option>
       <option value="webstorm">WebStorm</option>
       <option value="custom">カスタム URL</option>
     </select>
@@ -72,6 +83,33 @@
     <div class="hint">
       対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。
     </div>
+
+    <details>
+      <summary>使い方ヘルプ</summary>
+      <div class="help">
+        <p><b>準備</b>: localhost で動く React アプリ (dev ビルド) を開き、上のボタンか
+        Alt+Shift+I でインスペクトモードを ON にします。</p>
+        <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
+        <span class="legend" style="color:#1976d2">青 = MUI</span> /
+        <span class="legend" style="color:#2e7d32">緑 = 自作</span> /
+        <span class="legend" style="color:#616161">グレー = その他ライブラリ</span>。
+        バッジは「コンポーネント名 (内部名 · props · ファイル:行)」です。</p>
+        <table>
+          <tr><td>クリック</td><td>エディタでソースの該当行を開く</td></tr>
+          <tr><td>Alt+クリック</td><td>owner ツリー (誰が描画したか) を表示。行クリックでジャンプ</td></tr>
+          <tr><td>↑ / ↓</td><td>親コンポーネント ⇔ 子へ選択を移動 (Card の中身から Card 本体へ等)</td></tr>
+          <tr><td>Esc</td><td>パネルを閉じる / モード解除</td></tr>
+        </table>
+        <p><b>MUI 内部スキップ</b>: ON だと MUI のライブラリ内部ではなく、自分の JSX
+        (例: SurfacesPage.tsx の &lt;Card&gt; を書いた行) へジャンプします。</p>
+        <p><b>パスマッピング</b>: クリックしてもエディタでファイルが開かない場合、
+        dev サーバのパスをローカルの絶対パスに変換します
+        (例: <code>/src=/Users/you/project/src</code>)。</p>
+        <p><b>Antigravity</b>: <code>antigravity://</code> スキームで起動します。
+        開かない場合は「カスタム URL」で調整してください。</p>
+        <p>production ビルドのページでは名前推定のみのセーフモードになります。</p>
+      </div>
+    </details>
 
     <script type="module" src="./main.ts"></script>
   </body>

@@ -25,6 +25,7 @@ async function load() {
   templateEl.value = settings.customUrlTemplate;
   muiSkipEl.checked = settings.muiSkip;
   mappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
+  syncTemplateState();
 }
 
 async function save() {
@@ -38,8 +39,16 @@ async function save() {
   await browser.storage.local.set({ settings });
 }
 
+// カスタム URL テンプレートは editor === 'custom' の時だけ編集可能
+function syncTemplateState() {
+  templateEl.disabled = editorEl.value !== 'custom';
+}
+
 for (const el of [editorEl, templateEl, muiSkipEl, mappingsEl]) {
-  el.addEventListener('change', () => void save());
+  el.addEventListener('change', () => {
+    syncTemplateState();
+    void save();
+  });
 }
 
 $('toggle').addEventListener('click', async () => {
