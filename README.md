@@ -49,7 +49,9 @@ pnpm test       # ユニットテスト
 
 ## ストア配信 (Chrome Web Store)
 
-限定公開 (Unlisted) 前提。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシーは `PRIVACY.md`(公開 URL でホストが必要)。アイコンは `public/icon/{16,32,48,96,128}.png`。残: スクリーンショット、デベロッパー登録、プライバシーポリシーの公開ホスティング。
+限定公開 (Unlisted) 前提。**公開手順の全ステップは [`PUBLISHING.md`](./PUBLISHING.md) に集約**(zip 作成 → プライバシー URL ホスト → デベロッパー登録 → 掲載情報入力 → 審査 → 更新リリース)。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシー本文は `PRIVACY.md`。アイコンは `public/icon/{16,32,48,96,128}.png`。
+
+配布用 zip は `pnpm zip`(→ `.output/mui-inspector-<version>-chrome.zip`)。残作業: スクリーンショット撮影、プライバシーポリシーの公開ホスティング、デベロッパー登録($5)。
 
 ## アーキテクチャ
 
