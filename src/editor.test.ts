@@ -24,9 +24,9 @@ describe('buildEditorUrl', () => {
     );
   });
 
-  it('antigravity スキームを生成する', () => {
+  it('Antigravity IDE のスキーム (antigravity-ide://) を生成する', () => {
     const settings: Settings = { ...DEFAULT_SETTINGS, editor: 'antigravity' };
-    expect(buildEditorUrl(settings, loc)).toBe('antigravity://file/src/App.tsx:12:5');
+    expect(buildEditorUrl(settings, loc)).toBe('antigravity-ide://file/src/App.tsx:12:5');
   });
 
   it('カスタムテンプレートのプレースホルダを置換する', () => {
