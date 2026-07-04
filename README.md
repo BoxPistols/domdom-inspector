@@ -28,6 +28,17 @@ pnpm test       # ユニットテスト
 
 対象オリジンは `localhost` / `127.0.0.1` のみ(権限最小化)。
 
+## 多言語 (i18n)
+
+`chrome.i18n` で英語 (`default_locale`) と日本語に対応。ブラウザの UI 言語で自動切替します。
+- カタログ: `public/_locales/{en,ja}/messages.json`(単一の真実のソース)
+- MAIN world の inspector/overlay/renderDebug は拡張 API を使えないため、bridge (ISOLATED) が `browser.i18n` で解決した文字列を postMessage で流し込む。英語をコード内の既定値として持ち、解決前でも動作する
+- popup は `data-i18n` 属性を `browser.i18n.getMessage` で流し込み、ヘルプは UI 言語に応じて英/日ブロックを出し分け
+
+## ストア配信 (Chrome Web Store)
+
+限定公開 (Unlisted) 前提。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシーは `PRIVACY.md`(公開 URL でホストが必要)。アイコンは `public/icon/{16,32,48,96,128}.png`。残: スクリーンショット、デベロッパー登録、プライバシーポリシーの公開ホスティング。
+
 ## アーキテクチャ
 
 ```

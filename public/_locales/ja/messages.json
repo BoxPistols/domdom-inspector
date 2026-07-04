@@ -1,0 +1,51 @@
+{
+  "extName": { "message": "MUI Design Inspector" },
+  "extDescription": {
+    "message": "React/MUI コンポーネントをホバーで識別しソースへジャンプ。軽量なレンダー/パフォーマンスデバッガ付き。"
+  },
+  "cmdToggleInspect": { "message": "インスペクトモードの切替" },
+  "cmdToggleRender": { "message": "レンダー可視化モードの切替" },
+
+  "popupToggleInspect": { "message": "このタブでインスペクトモード切替" },
+  "popupToggleInspectHint": { "message": "ショートカット: Alt+Shift+I / 解除: Esc" },
+  "popupToggleRender": { "message": "レンダー可視化モード切替" },
+  "popupToggleRenderHint": { "message": "ショートカット: Alt+Shift+R / 記録: R / 解除: Esc" },
+  "labelEditor": { "message": "エディタ" },
+  "labelCustomUrl": { "message": "カスタム URL テンプレート" },
+  "labelMuiSkip": { "message": "MUI 内部をスキップして自作コードへジャンプ" },
+  "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
+  "hintTarget": { "message": "対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。" },
+  "helpSummary": { "message": "使い方ヘルプ" },
+
+  "inspectOn": {
+    "message": "Inspect ON — クリック: エディタ / Alt+クリック: owner ツリー / ↑↓: 親子移動 / Esc: 解除"
+  },
+  "inspectOnSafe": {
+    "message": "Inspect ON — dev ビルド未検出のためセーフモード (名前のみ表示 / Esc で解除)"
+  },
+  "inspectOff": { "message": "Inspect OFF" },
+  "noOuterComponent": { "message": "これ以上外側のコンポーネントはありません" },
+  "jumpUnresolved": {
+    "message": "ソース位置を解決できませんでした (React 19 では babel plugin なしの場合があります)"
+  },
+  "jumpProd": { "message": "production ビルドのためソースジャンプは利用できません" },
+  "sourceUnavailable": { "message": "source unavailable" },
+  "prodSafeMode": { "message": "production build (safe mode)" },
+  "ownerPanelTitle": { "message": "Rendered by (クリックでエディタへ)" },
+  "renderOn": {
+    "message": "レンダー可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF"
+  },
+  "renderOnNoDev": {
+    "message": "レンダー可視化 ON — dev ビルド未検出のため時間計測は不可 (明滅のみ)"
+  },
+  "renderOff": { "message": "レンダー可視化 OFF" },
+  "recordStart": {
+    "message": "記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示"
+  },
+  "statsTitle": { "message": "再描画ランキング ({n} commits)" },
+  "statsColsSupported": { "message": "列: コンポーネント / 再描画回数 / 累積 self 時間(ms)" },
+  "statsColsUnsupported": {
+    "message": "このページでは Profiler タイマが取得できず時間は 0 表示 (dev ビルドが必要)"
+  },
+  "statsEmpty": { "message": "再描画は記録されませんでした" }
+}

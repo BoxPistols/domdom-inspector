@@ -1,5 +1,5 @@
 import { buildEditorUrl } from './editor';
-import type { Classification, InspectInfo, Settings } from './types';
+import { DEFAULT_STRINGS, type Classification, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /**
  * 対象ページと干渉しない Shadow DOM 隔離オーバーレイ (v3.0 §7)。
@@ -33,7 +33,10 @@ export class Overlay {
   private flashRaf = 0;
   private readonly FLASH_MS = 500;
 
-  constructor(private settings: Settings) {}
+  constructor(
+    private settings: Settings,
+    private strings: UiStrings = DEFAULT_STRINGS,
+  ) {}
 
   updateSettings(settings: Settings) {
     this.settings = settings;
@@ -206,8 +209,8 @@ export class Overlay {
     const file = info.jumpTarget
       ? `${info.jumpTarget.fileName.split('/').pop()}:${info.jumpTarget.lineNumber}`
       : info.devMode
-        ? 'source unavailable'
-        : 'production build (safe mode)';
+        ? this.strings.sourceUnavailable
+        : this.strings.prodSafeMode;
     this.badge.replaceChildren();
     const name = document.createElement('span');
     name.className = 'name';
@@ -239,7 +242,7 @@ export class Overlay {
     this.panel.replaceChildren();
     const title = document.createElement('div');
     title.className = 'title';
-    title.textContent = 'Rendered by (クリックでエディタへ)';
+    title.textContent = this.strings.ownerPanelTitle;
     this.panel.appendChild(title);
 
     for (const entry of info.ownerChain) {
@@ -364,7 +367,7 @@ export class Overlay {
     const head = document.createElement('div');
     head.className = 'head';
     const title = document.createElement('span');
-    title.textContent = `再描画ランキング (${snapshot.commits} commits)`;
+    title.textContent = this.strings.statsTitle.replace('{n}', String(snapshot.commits));
     const close = document.createElement('button');
     close.textContent = '×';
     close.addEventListener('click', () => {
@@ -377,14 +380,14 @@ export class Overlay {
     const sub = document.createElement('div');
     sub.className = 'sub';
     sub.textContent = supported
-      ? '列: コンポーネント / 再描画回数 / 累積 self 時間(ms)'
-      : 'このページでは Profiler タイマが取得できず時間は 0 表示 (dev ビルドが必要)';
+      ? this.strings.statsColsSupported
+      : this.strings.statsColsUnsupported;
     this.statsPanel.appendChild(sub);
 
     if (snapshot.stats.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'r';
-      empty.textContent = '再描画は記録されませんでした';
+      empty.textContent = this.strings.statsEmpty;
       this.statsPanel.appendChild(empty);
     }
     for (const s of snapshot.stats.slice(0, 100)) {

@@ -55,43 +55,79 @@
   <body>
     <h1>MUI Design Inspector</h1>
 
-    <button id="toggle">このタブでインスペクトモード切替</button>
-    <div class="hint">ショートカット: Alt+Shift+I / 解除: Esc</div>
+    <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
+    <div class="hint" data-i18n="popupToggleInspectHint">Shortcut: Alt+Shift+I / Exit: Esc</div>
 
-    <button id="toggleRender" class="secondary">レンダー可視化モード切替</button>
-    <div class="hint">ショートカット: Alt+Shift+R / 記録: R / 解除: Esc</div>
+    <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
+      Toggle render visualization mode
+    </button>
+    <div class="hint" data-i18n="popupToggleRenderHint">
+      Shortcut: Alt+Shift+R / Record: R / Exit: Esc
+    </div>
 
-    <label for="editor">エディタ</label>
+    <label for="editor" data-i18n="labelEditor">Editor</label>
     <select id="editor">
       <option value="vscode">VS Code</option>
       <option value="cursor">Cursor</option>
       <option value="antigravity">Antigravity</option>
       <option value="webstorm">WebStorm</option>
-      <option value="custom">カスタム URL</option>
+      <option value="custom">Custom URL</option>
     </select>
 
-    <label for="customUrlTemplate">カスタム URL テンプレート</label>
+    <label for="customUrlTemplate" data-i18n="labelCustomUrl">Custom URL template</label>
     <input
       type="text"
       id="customUrlTemplate"
-      placeholder="vscode://file{file}:{line}:{column} ({file} は / 始まり)"
+      placeholder="vscode://file{file}:{line}:{column}"
     />
 
     <label class="check">
       <input type="checkbox" id="muiSkip" />
-      MUI 内部をスキップして自作コードへジャンプ
+      <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
     </label>
 
-    <label for="pathMappings">パスマッピング (1 行 1 件: from=to)</label>
+    <label for="pathMappings" data-i18n="labelPathMappings">
+      Path mappings (one per line: from=to)
+    </label>
     <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
 
-    <div class="hint">
-      対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。
+    <div class="hint" data-i18n="hintTarget">
+      Only localhost / 127.0.0.1 dev servers. Settings save automatically.
     </div>
 
     <details>
-      <summary>使い方ヘルプ</summary>
-      <div class="help">
+      <summary data-i18n="helpSummary">How to use</summary>
+
+      <div class="help" data-help="en">
+        <p><b>Setup</b>: open a React app (dev build) on localhost, then turn inspect mode ON
+        with the button above or Alt+Shift+I.</p>
+        <p><b>Hover</b>: an outline and badge appear. Outline color is
+        <span class="legend" style="color:#1976d2">blue = MUI</span> /
+        <span class="legend" style="color:#2e7d32">green = your code</span> /
+        <span class="legend" style="color:#616161">gray = other libraries</span>.
+        The badge shows "component name (internal name · props · file:line)".</p>
+        <table>
+          <tr><td>Click</td><td>open the source line in your editor</td></tr>
+          <tr><td>Alt+Click</td><td>show the owner tree (who rendered it); click a row to jump</td></tr>
+          <tr><td>↑ / ↓</td><td>move selection to parent / child component</td></tr>
+          <tr><td>Esc</td><td>close panel / exit mode</td></tr>
+        </table>
+        <p><b>Skip MUI internals</b>: when ON, jumps to your own JSX instead of MUI library files.</p>
+        <p><b>Path mappings</b>: if clicking doesn't open the file, map the dev-server path to a
+        local absolute path (e.g. <code>/src=/Users/you/project/src</code>).</p>
+        <p><b>Antigravity</b>: launches via the <code>antigravity-ide://</code> scheme.
+        If it doesn't open, adjust with "Custom URL".</p>
+        <p>On production builds it falls back to a name-only safe mode.</p>
+        <p><b>Render visualization</b> (Alt+Shift+R): re-rendered elements flash, colored as a
+        heatmap of re-render count (<span class="legend" style="color:#3b82f6">blue=few</span> →
+        <span class="legend" style="color:#22c55e">green</span> →
+        <span class="legend" style="color:#eab308">yellow</span> →
+        <span class="legend" style="color:#ef4444">red=many</span>).
+        Press <b>R</b> to record, interact to trigger re-renders, then <b>R</b> to stop and see a
+        per-component ranking of re-render count and self time (timing needs a dev build).</p>
+      </div>
+
+      <div class="help" data-help="ja" hidden>
         <p><b>準備</b>: localhost で動く React アプリ (dev ビルド) を開き、上のボタンか
         Alt+Shift+I でインスペクトモードを ON にします。</p>
         <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
@@ -110,7 +146,7 @@
         <p><b>パスマッピング</b>: クリックしてもエディタでファイルが開かない場合、
         dev サーバのパスをローカルの絶対パスに変換します
         (例: <code>/src=/Users/you/project/src</code>)。</p>
-        <p><b>Antigravity</b>: <code>antigravity://</code> スキームで起動します。
+        <p><b>Antigravity</b>: <code>antigravity-ide://</code> スキームで起動します。
         開かない場合は「カスタム URL」で調整してください。</p>
         <p>production ビルドのページでは名前推定のみのセーフモードになります。</p>
         <p><b>レンダー可視化</b> (Alt+Shift+R): 再描画が起きた要素が明滅します。色は

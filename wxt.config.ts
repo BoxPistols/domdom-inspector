@@ -2,18 +2,18 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
   manifest: {
-    name: 'MUI Design Inspector',
-    description:
-      'React/MUI コンポーネントをホバーで識別し、ソースコードへワンクリックでジャンプする開発者向けインスペクタ',
+    name: '__MSG_extName__',
+    description: '__MSG_extDescription__',
+    default_locale: 'en',
     permissions: ['storage'],
     commands: {
       'toggle-inspect': {
         suggested_key: { default: 'Alt+Shift+I' },
-        description: 'インスペクトモードの切替',
+        description: '__MSG_cmdToggleInspect__',
       },
       'toggle-render': {
         suggested_key: { default: 'Alt+Shift+R' },
-        description: 'レンダー可視化モードの切替',
+        description: '__MSG_cmdToggleRender__',
       },
     },
   },

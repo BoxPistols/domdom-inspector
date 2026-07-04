@@ -1,7 +1,7 @@
 import { getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
-import { DEFAULT_SETTINGS, type InspectInfo, type Settings } from './types';
+import { DEFAULT_SETTINGS, DEFAULT_STRINGS, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /**
  * インスペクトモードの状態機械 (FR-01〜04)。
@@ -22,6 +22,7 @@ export class Inspector {
   constructor(
     private hookState: HookState,
     private overlay: Overlay,
+    private strings: UiStrings = DEFAULT_STRINGS,
   ) {}
 
   applySettings(settings: Settings) {
@@ -42,17 +43,10 @@ export class Inspector {
     window.addEventListener('keydown', this.onKeyDown, true);
     window.addEventListener('scroll', this.onScroll, true);
 
-    if (!this.hookState.devMode) {
-      this.overlay.toast(
-        'Inspect ON — dev ビルド未検出のためセーフモード (名前のみ表示 / Esc で解除)',
-        4000,
-      );
-    } else {
-      this.overlay.toast(
-        'Inspect ON — クリック: エディタ / Alt+クリック: owner ツリー / ↑↓: 親子移動 / Esc: 解除',
-        4000,
-      );
-    }
+    this.overlay.toast(
+      this.hookState.devMode ? this.strings.inspectOn : this.strings.inspectOnSafe,
+      4000,
+    );
   }
 
   private disable() {
@@ -68,7 +62,7 @@ export class Inspector {
     this.currentInfo = null;
     this.navStack = [];
     this.keyboardNav = false;
-    this.overlay.toast('Inspect OFF');
+    this.overlay.toast(this.strings.inspectOff);
   }
 
   private select(element: Element) {
@@ -125,9 +119,7 @@ export class Inspector {
       this.overlay.openEditor(this.currentInfo.jumpTarget);
     } else {
       this.overlay.toast(
-        this.currentInfo.devMode
-          ? 'ソース位置を解決できませんでした (React 19 では babel plugin なしの場合があります)'
-          : 'production ビルドのためソースジャンプは利用できません',
+        this.currentInfo.devMode ? this.strings.jumpUnresolved : this.strings.jumpProd,
       );
     }
   };
@@ -154,7 +146,7 @@ export class Inspector {
         this.keyboardNav = true;
         this.select(parent);
       } else {
-        this.overlay.toast('これ以上外側のコンポーネントはありません');
+        this.overlay.toast(this.strings.noOuterComponent);
       }
       return;
     }

@@ -1,9 +1,10 @@
 import { DEV_MATCHES } from '../src/matches';
-import { BRIDGE_SOURCE, DEFAULT_SETTINGS } from '../src/types';
+import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, type UiStrings } from '../src/types';
 
 /**
  * ISOLATED world ブリッジ: browser.storage の設定と background からのトグル指示を
- * postMessage で MAIN world に中継する。
+ * postMessage で MAIN world に中継する。MAIN world は browser.i18n を使えないため、
+ * ロケール解決済みの UI 文字列もここで作って渡す。
  */
 export default defineContentScript({
   matches: DEV_MATCHES,
@@ -21,6 +22,16 @@ export default defineContentScript({
       );
     };
 
+    // UiStrings の各キーを _locales から解決 (欠落時は英語既定にフォールバック)
+    const pushStrings = () => {
+      const resolved = {} as UiStrings;
+      for (const key of Object.keys(DEFAULT_STRINGS) as (keyof UiStrings)[]) {
+        resolved[key] = browser.i18n.getMessage(key) || DEFAULT_STRINGS[key];
+      }
+      window.postMessage({ source: BRIDGE_SOURCE, type: 'i18n', payload: resolved }, '*');
+    };
+
+    pushStrings();
     void pushSettings();
     browser.storage.onChanged.addListener((_changes, area) => {
       if (area === 'local') void pushSettings();

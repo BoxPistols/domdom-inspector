@@ -1,0 +1,53 @@
+{
+  "extName": { "message": "MUI Design Inspector" },
+  "extDescription": {
+    "message": "Hover to identify React/MUI components and jump to their source, with a lightweight render/performance debugger."
+  },
+  "cmdToggleInspect": { "message": "Toggle inspect mode" },
+  "cmdToggleRender": { "message": "Toggle render visualization mode" },
+
+  "popupToggleInspect": { "message": "Toggle inspect mode on this tab" },
+  "popupToggleInspectHint": { "message": "Shortcut: Alt+Shift+I / Exit: Esc" },
+  "popupToggleRender": { "message": "Toggle render visualization mode" },
+  "popupToggleRenderHint": { "message": "Shortcut: Alt+Shift+R / Record: R / Exit: Esc" },
+  "labelEditor": { "message": "Editor" },
+  "labelCustomUrl": { "message": "Custom URL template" },
+  "labelMuiSkip": { "message": "Skip MUI internals and jump to your own code" },
+  "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
+  "hintTarget": { "message": "Only localhost / 127.0.0.1 dev servers. Settings save automatically." },
+  "helpSummary": { "message": "How to use" },
+
+  "inspectOn": {
+    "message": "Inspect ON — Click: editor / Alt+Click: owner tree / ↑↓: parent/child / Esc: exit"
+  },
+  "inspectOnSafe": {
+    "message": "Inspect ON — no dev build detected, safe mode (names only / Esc to exit)"
+  },
+  "inspectOff": { "message": "Inspect OFF" },
+  "noOuterComponent": { "message": "No further outer component" },
+  "jumpUnresolved": {
+    "message": "Could not resolve source location (React 19 may need the Babel source plugin)"
+  },
+  "jumpProd": { "message": "Source jump is unavailable on production builds" },
+  "sourceUnavailable": { "message": "source unavailable" },
+  "prodSafeMode": { "message": "production build (safe mode)" },
+  "ownerPanelTitle": { "message": "Rendered by (click to open editor)" },
+  "renderOn": {
+    "message": "Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit"
+  },
+  "renderOnNoDev": {
+    "message": "Render viz ON — no dev build detected, timing unavailable (flash only)"
+  },
+  "renderOff": { "message": "Render viz OFF" },
+  "recordStart": {
+    "message": "Recording — interact to trigger re-renders, press R to stop and see the ranking"
+  },
+  "statsTitle": { "message": "Re-render ranking ({n} commits)" },
+  "statsColsSupported": {
+    "message": "Columns: component / re-renders / cumulative self time (ms)"
+  },
+  "statsColsUnsupported": {
+    "message": "Profiler timer unavailable here; time shows 0 (needs a dev build)"
+  },
+  "statsEmpty": { "message": "No re-renders were recorded" }
+}

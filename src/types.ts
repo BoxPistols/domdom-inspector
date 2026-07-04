@@ -64,6 +64,53 @@ export const DEFAULT_SETTINGS: Settings = {
   pathMappings: [],
 };
 
+/**
+ * MAIN world (inspector / overlay / renderDebug) が表示する UI 文字列。
+ * MAIN world は拡張 API (browser.i18n) を使えないため、bridge (ISOLATED) が
+ * browser.i18n で解決して postMessage で流し込む。既定は英語 (default_locale=en)。
+ * statsTitle の {n} は表示時に commit 数へ置換する。
+ */
+export interface UiStrings {
+  inspectOn: string;
+  inspectOnSafe: string;
+  inspectOff: string;
+  noOuterComponent: string;
+  jumpUnresolved: string;
+  jumpProd: string;
+  sourceUnavailable: string;
+  prodSafeMode: string;
+  ownerPanelTitle: string;
+  renderOn: string;
+  renderOnNoDev: string;
+  renderOff: string;
+  recordStart: string;
+  statsTitle: string;
+  statsColsSupported: string;
+  statsColsUnsupported: string;
+  statsEmpty: string;
+}
+
+export const DEFAULT_STRINGS: UiStrings = {
+  inspectOn: 'Inspect ON — Click: editor / Alt+Click: owner tree / ↑↓: parent/child / Esc: exit',
+  inspectOnSafe: 'Inspect ON — no dev build detected, safe mode (names only / Esc to exit)',
+  inspectOff: 'Inspect OFF',
+  noOuterComponent: 'No further outer component',
+  jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',
+  jumpProd: 'Source jump is unavailable on production builds',
+  sourceUnavailable: 'source unavailable',
+  prodSafeMode: 'production build (safe mode)',
+  ownerPanelTitle: 'Rendered by (click to open editor)',
+  renderOn:
+    'Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit',
+  renderOnNoDev: 'Render viz ON — no dev build detected, timing unavailable (flash only)',
+  renderOff: 'Render viz OFF',
+  recordStart: 'Recording — interact to trigger re-renders, press R to stop and see the ranking',
+  statsTitle: 'Re-render ranking ({n} commits)',
+  statsColsSupported: 'Columns: component / re-renders / cumulative self time (ms)',
+  statsColsUnsupported: 'Profiler timer unavailable here; time shows 0 (needs a dev build)',
+  statsEmpty: 'No re-renders were recorded',
+};
+
 /** page (MAIN world) と bridge (ISOLATED) 間の postMessage 識別子 */
 export const BRIDGE_SOURCE = 'mui-inspector-bridge';
 export const PAGE_SOURCE = 'mui-inspector-page';

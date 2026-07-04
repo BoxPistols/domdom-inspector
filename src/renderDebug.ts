@@ -1,6 +1,7 @@
 import type { HookState } from './hook';
 import type { Overlay } from './overlay';
 import { RenderTracker } from './renderTracker';
+import { DEFAULT_STRINGS, type UiStrings } from './types';
 
 /**
  * レンダーデバッガ (React DevTools Profiler の軽量版):
@@ -21,6 +22,7 @@ export class RenderDebugger {
   constructor(
     private hookState: HookState,
     private overlay: Overlay,
+    private strings: UiStrings = DEFAULT_STRINGS,
   ) {}
 
   toggle() {
@@ -37,9 +39,7 @@ export class RenderDebugger {
     this.unsubscribe = this.hookState.onCommit(this.onCommit);
     window.addEventListener('keydown', this.onKeyDown, true);
     this.overlay.toast(
-      this.hookState.devMode
-        ? 'レンダー可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF'
-        : 'レンダー可視化 ON — dev ビルド未検出のため時間計測は不可 (明滅のみ)',
+      this.hookState.devMode ? this.strings.renderOn : this.strings.renderOnNoDev,
       4000,
     );
   }
@@ -55,7 +55,7 @@ export class RenderDebugger {
     this.tracker.stopRecording();
     this.overlay.clearRenderFlashes();
     this.overlay.hideRenderStats();
-    this.overlay.toast('レンダー可視化 OFF');
+    this.overlay.toast(this.strings.renderOff);
   }
 
   private onKeyDown = (event: KeyboardEvent) => {
@@ -113,7 +113,7 @@ export class RenderDebugger {
     } else {
       this.overlay.hideRenderStats();
       this.tracker.startRecording();
-      this.overlay.toast('記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示');
+      this.overlay.toast(this.strings.recordStart);
     }
   }
 }
