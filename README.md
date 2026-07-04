@@ -1,7 +1,7 @@
 # MUI Design Inspector
 
 React / MUI コンポーネントをブラウザ上でホバー識別し、ソースコードへワンクリックでジャンプする Chrome 拡張機能。
-要件定義書 v3.0 の **Phase 1: インスペクタ MVP**(FR-01〜04, 08, 09, 12)実装。
+要件定義書 v3.0 の **Phase 1: インスペクタ MVP**(FR-01〜04, 08, 09, 12)に加え、レンダー可視化・パフォーマンスデバッグ、英日 i18n、ストア配信準備までを実装。
 
 ## 機能
 
@@ -43,10 +43,10 @@ pnpm test       # ユニットテスト
 
 ```
 entrypoints/
-  inspector.content.ts  MAIN world / document_start。DevTools フック確立 + インスペクタ本体
-  bridge.content.ts     ISOLATED world。chrome.storage / background ↔ MAIN world の中継
-  background.ts         キーボードショートカット → タブへトグル指示
-  popup/                設定 UI (エディタ・MUI スキップ・パスマッピング)
+  inspector.content.ts  MAIN world / document_start。DevTools フック確立 + インスペクタ / レンダーデバッガ本体
+  bridge.content.ts     ISOLATED world。設定・トグル指示の中継 + i18n 文字列を browser.i18n で解決して MAIN world へ注入
+  background.ts         キーボードショートカット (inspect / render) → タブへトグル指示
+  popup/                設定 UI (エディタ・MUI スキップ・パスマッピング) + インスペクト/レンダー切替ボタン + 使い方ヘルプ
 src/
   hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ シム (React 読み込み前に設置)
   fiber.ts       Fiber 解析 (名前・分類・owner チェーン・ソース解決)
