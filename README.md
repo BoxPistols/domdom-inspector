@@ -13,6 +13,7 @@ React / MUI コンポーネントをブラウザ上でホバー識別し、ソ�
 - **MUI スキップ** — MUI 内部実装を飛ばし、自作コードの JSX callsite へジャンプ(設定で切替可)
 - **Alt+クリック** — owner チェーン(誰がレンダリングしたか)のパネル表示、各行からジャンプ可能
 - **Production セーフモード** — dev ビルド未検出時は `Mui*` クラス由来の名前表示のみに自動縮退
+- **レンダー可視化 / パフォーマンスデバッグ** (`Alt+Shift+R`) — 各コミットで再描画した要素を Shadow DOM 上の canvas でヒートマップ明滅(青=低頻度→赤=高頻度)。`R` で記録開始→停止でコンポーネント別の再描画回数・自己時間ランキングを表示。React DevTools Profiler より軽量で「どこが何回・どの順で再描画したか」を画面上で直接確認できる
 
 ## セットアップ
 
@@ -41,9 +42,15 @@ src/
   source.ts      パス正規化 + React 19 _debugStack のスタック解析 (純関数)
   classify.ts    MUI / 自作 / サードパーティ分類 (純関数)
   editor.ts      エディタ URL 生成 (純関数)
-  overlay.ts     Shadow DOM 隔離のハイライト / バッジ / owner パネル
+  overlay.ts     Shadow DOM 隔離のハイライト / バッジ / owner パネル / レンダー明滅 canvas / 統計パネル
   inspector.ts   インスペクトモードの状態機械
+  renderTracker.ts  コミット走査による再描画検出・集計 (純関数寄り、self 時間で祖先を除外)
+  renderDebug.ts    レンダー可視化モードの制御 (commit 購読 → 明滅 / 記録 → ランキング)
 ```
+
+### レンダー可視化の仕組み
+
+`onCommitFiberRoot` を購読し、コミットごとに Fiber ツリーを走査。`actualDuration`(dev ビルドの Profiler タイマ)から子の分を差し引いた「自己時間」が正の fiber のみを「自分が再描画した」とみなすことで、再描画した子を持つだけの祖先の過剰報告を防ぐ。走査は `requestAnimationFrame` でコミットを束ねて実行し、対象ページのフレーム落ちを避ける。production ビルドでは `actualDuration` が無いため明滅のみ(時間計測不可)。
 
 ### ソース位置解決の多層戦略
 

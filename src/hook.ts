@@ -4,10 +4,15 @@
  * - 本物の DevTools フックが既にあれば壊さずに piggyback する
  * dev ビルド検出 (FR-12) は renderer.bundleType === 1 を一次シグナルとする。
  */
+export type CommitListener = (root: unknown) => void;
+
 export interface HookState {
   renderers: Map<number, unknown>;
   roots: Set<unknown>;
   devMode: boolean;
+  /** onCommitFiberRoot ごとに通知するリスナ (レンダーデバッガが購読) */
+  commitListeners: Set<CommitListener>;
+  onCommit(listener: CommitListener): () => void;
 }
 
 const STATE_KEY = '__MUI_INSPECTOR_STATE__';
@@ -16,15 +21,33 @@ export function installHook(): HookState {
   const w = window as any;
   if (w[STATE_KEY]) return w[STATE_KEY];
 
+  const commitListeners = new Set<CommitListener>();
   const state: HookState = {
     renderers: new Map(),
     roots: new Set(),
     devMode: false,
+    commitListeners,
+    onCommit(listener: CommitListener) {
+      commitListeners.add(listener);
+      return () => commitListeners.delete(listener);
+    },
   };
   Object.defineProperty(w, STATE_KEY, { value: state, enumerable: false });
 
   const record = (renderer: any) => {
     if (renderer && renderer.bundleType === 1) state.devMode = true;
+  };
+
+  const notifyCommit = (root: unknown) => {
+    state.roots.add(root);
+    // リスナ側の例外がページの描画を止めないよう握りつぶす
+    for (const listener of commitListeners) {
+      try {
+        listener(root);
+      } catch {
+        /* noop */
+      }
+    }
   };
 
   const existing = w.__REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -38,7 +61,7 @@ export function installHook(): HookState {
     };
     const origCommit = existing.onCommitFiberRoot?.bind(existing);
     existing.onCommitFiberRoot = (id: number, root: any, ...rest: unknown[]) => {
-      state.roots.add(root);
+      notifyCommit(root);
       return origCommit?.(id, root, ...rest);
     };
     return state;
@@ -57,7 +80,7 @@ export function installHook(): HookState {
       return id;
     },
     onCommitFiberRoot(_id: number, root: any) {
-      state.roots.add(root);
+      notifyCommit(root);
     },
     onCommitFiberUnmount() {},
     onPostCommitFiberRoot() {},

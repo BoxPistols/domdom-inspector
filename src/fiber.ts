@@ -9,7 +9,7 @@ const ForwardRef = 11;
 const MemoComponent = 14;
 const SimpleMemoComponent = 15;
 
-const COMPONENT_TAGS = new Set([
+export const COMPONENT_TAGS = new Set([
   FunctionComponent,
   ClassComponent,
   ForwardRef,

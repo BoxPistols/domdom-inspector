@@ -51,12 +51,15 @@ for (const el of [editorEl, templateEl, muiSkipEl, mappingsEl]) {
   });
 }
 
-$('toggle').addEventListener('click', async () => {
+async function sendToActiveTab(type: string) {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (tab?.id != null) {
-    browser.tabs.sendMessage(tab.id, { type: 'toggle-inspect' }).catch(() => {});
+    browser.tabs.sendMessage(tab.id, { type }).catch(() => {});
   }
   window.close();
-});
+}
+
+$('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
+$('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-render'));
 
 void load();

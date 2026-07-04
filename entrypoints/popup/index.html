@@ -37,6 +37,8 @@
         cursor: pointer;
       }
       button:hover { background: #1976d2; }
+      button.secondary { background: #455a64; }
+      button.secondary:hover { background: #37474f; }
       .hint { margin-top: 8px; color: #666; font-size: 11px; line-height: 1.5; }
       input:disabled { background: #f2f2f2; color: #999; }
       details { margin-top: 12px; }
@@ -55,6 +57,9 @@
 
     <button id="toggle">このタブでインスペクトモード切替</button>
     <div class="hint">ショートカット: Alt+Shift+I / 解除: Esc</div>
+
+    <button id="toggleRender" class="secondary">レンダー可視化モード切替</button>
+    <div class="hint">ショートカット: Alt+Shift+R / 記録: R / 解除: Esc</div>
 
     <label for="editor">エディタ</label>
     <select id="editor">
@@ -108,6 +113,13 @@
         <p><b>Antigravity</b>: <code>antigravity://</code> スキームで起動します。
         開かない場合は「カスタム URL」で調整してください。</p>
         <p>production ビルドのページでは名前推定のみのセーフモードになります。</p>
+        <p><b>レンダー可視化</b> (Alt+Shift+R): 再描画が起きた要素が明滅します。色は
+        再描画回数のヒートマップ (<span class="legend" style="color:#3b82f6">青=少</span> →
+        <span class="legend" style="color:#22c55e">緑</span> →
+        <span class="legend" style="color:#eab308">黄</span> →
+        <span class="legend" style="color:#ef4444">赤=多</span>)。
+        <b>R</b> で記録を開始し、操作して再描画を発生させてから <b>R</b> で停止すると、
+        コンポーネント別の再描画回数・自己時間ランキングが出ます (dev ビルドで時間計測可)。</p>
       </div>
     </details>
 

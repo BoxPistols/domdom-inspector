@@ -11,6 +11,10 @@ export default defineConfig({
         suggested_key: { default: 'Alt+Shift+I' },
         description: 'インスペクトモードの切替',
       },
+      'toggle-render': {
+        suggested_key: { default: 'Alt+Shift+R' },
+        description: 'レンダー可視化モードの切替',
+      },
     },
   },
 });

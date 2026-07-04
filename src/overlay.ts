@@ -5,13 +5,33 @@ import type { Classification, InspectInfo, Settings } from './types';
  * 対象ページと干渉しない Shadow DOM 隔離オーバーレイ (v3.0 §7)。
  * ハイライト枠 + バッジは pointer-events: none、owner チェーンパネルのみ操作可能。
  */
+interface Flash {
+  rect: { left: number; top: number; width: number; height: number };
+  born: number;
+  heat: number;
+}
+
+/** 再描画ヒートマップの色: 回数が多いほど青→緑→黄→赤 */
+function heatColor(heat: number): string {
+  if (heat <= 1) return '96,165,250'; // 青
+  if (heat <= 3) return '52,211,153'; // 緑
+  if (heat <= 7) return '251,191,36'; // 黄
+  return '248,113,113'; // 赤
+}
+
 export class Overlay {
   private host: HTMLElement | null = null;
   private box!: HTMLDivElement;
   private badge!: HTMLDivElement;
   private panel!: HTMLDivElement;
+  private statsPanel!: HTMLDivElement;
+  private canvas!: HTMLCanvasElement;
+  private ctx!: CanvasRenderingContext2D | null;
   private toastEl!: HTMLDivElement;
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
+  private flashes: Flash[] = [];
+  private flashRaf = 0;
+  private readonly FLASH_MS = 500;
 
   constructor(private settings: Settings) {}
 
@@ -99,6 +119,42 @@ export class Overlay {
       .panel .row.jumpable:hover { background: rgba(255,255,255,0.08); }
       .panel .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; }
       .panel .file { opacity: 0.65; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .render-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; }
+      .stats {
+        position: fixed;
+        z-index: 2147483647;
+        display: none;
+        pointer-events: auto;
+        top: 12px;
+        right: 12px;
+        width: 340px;
+        max-height: 70vh;
+        overflow: auto;
+        border-radius: 8px;
+        background: rgba(20, 20, 24, 0.96);
+        color: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      }
+      .stats .head {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 12px; font-weight: 700; position: sticky; top: 0;
+        background: rgba(20,20,24,0.98);
+      }
+      .stats .head button {
+        all: unset; cursor: pointer; opacity: 0.6; font-size: 14px; padding: 0 4px;
+      }
+      .stats .head button:hover { opacity: 1; }
+      .stats .sub { padding: 0 12px 8px; opacity: 0.6; font-size: 11px; }
+      .stats .r {
+        display: grid; grid-template-columns: 1fr auto auto; gap: 8px;
+        padding: 4px 12px; align-items: baseline;
+      }
+      .stats .r:nth-child(even) { background: rgba(255,255,255,0.04); }
+      .stats .r .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .stats .r .ct { font-weight: 700; text-align: right; }
+      .stats .r .ms { opacity: 0.6; text-align: right; }
     `;
     root.appendChild(style);
 
@@ -110,7 +166,12 @@ export class Overlay {
     this.panel.className = 'panel';
     this.toastEl = document.createElement('div');
     this.toastEl.className = 'toast';
-    root.append(this.box, this.badge, this.panel, this.toastEl);
+    this.canvas = document.createElement('canvas');
+    this.canvas.className = 'render-canvas';
+    this.ctx = this.canvas.getContext('2d');
+    this.statsPanel = document.createElement('div');
+    this.statsPanel.className = 'stats';
+    root.append(this.canvas, this.box, this.badge, this.panel, this.statsPanel, this.toastEl);
     document.documentElement.appendChild(this.host);
   }
 
@@ -228,6 +289,124 @@ export class Overlay {
     const url = buildEditorUrl(this.settings, loc);
     // カスタムスキームはページ遷移せず外部プロトコルダイアログを開く
     window.location.href = url;
+  }
+
+  /** レンダーデバッグ: 再描画した要素群をヒートマップ色で明滅させる */
+  flashRenders(entries: { element: Element; heat: number }[]) {
+    this.ensureMounted();
+    const now = Date.now();
+    for (const { element, heat } of entries) {
+      const r = element.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      this.flashes.push({
+        rect: { left: r.left, top: r.top, width: r.width, height: r.height },
+        born: now,
+        heat,
+      });
+    }
+    // 過剰蓄積を防ぐ (古いものから捨てる)
+    if (this.flashes.length > 400) this.flashes.splice(0, this.flashes.length - 400);
+    if (!this.flashRaf) this.flashRaf = requestAnimationFrame(this.drawFlashes);
+  }
+
+  private drawFlashes = () => {
+    const canvas = this.canvas;
+    const ctx = this.ctx;
+    if (!ctx) {
+      this.flashRaf = 0;
+      return;
+    }
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const now = Date.now();
+    this.flashes = this.flashes.filter((f) => now - f.born < this.FLASH_MS);
+    for (const f of this.flashes) {
+      const alpha = 1 - (now - f.born) / this.FLASH_MS;
+      const rgb = heatColor(f.heat);
+      ctx.strokeStyle = `rgba(${rgb},${alpha})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(f.rect.left, f.rect.top, f.rect.width, f.rect.height);
+      ctx.fillStyle = `rgba(${rgb},${alpha * 0.12})`;
+      ctx.fillRect(f.rect.left, f.rect.top, f.rect.width, f.rect.height);
+    }
+
+    this.flashRaf = this.flashes.length ? requestAnimationFrame(this.drawFlashes) : 0;
+  };
+
+  clearRenderFlashes() {
+    this.flashes = [];
+    cancelAnimationFrame(this.flashRaf);
+    this.flashRaf = 0;
+    if (this.ctx && this.canvas) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+  }
+
+  /** レンダー記録の統計パネル (再描画回数ランキング) */
+  showRenderStats(
+    snapshot: { stats: { name: string; count: number; selfMs: number }[]; commits: number },
+    supported: boolean,
+    onClose: () => void,
+  ) {
+    this.ensureMounted();
+    this.statsPanel.replaceChildren();
+
+    const head = document.createElement('div');
+    head.className = 'head';
+    const title = document.createElement('span');
+    title.textContent = `再描画ランキング (${snapshot.commits} commits)`;
+    const close = document.createElement('button');
+    close.textContent = '×';
+    close.addEventListener('click', () => {
+      this.hideRenderStats();
+      onClose();
+    });
+    head.append(title, close);
+    this.statsPanel.appendChild(head);
+
+    const sub = document.createElement('div');
+    sub.className = 'sub';
+    sub.textContent = supported
+      ? '列: コンポーネント / 再描画回数 / 累積 self 時間(ms)'
+      : 'このページでは Profiler タイマが取得できず時間は 0 表示 (dev ビルドが必要)';
+    this.statsPanel.appendChild(sub);
+
+    if (snapshot.stats.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'r';
+      empty.textContent = '再描画は記録されませんでした';
+      this.statsPanel.appendChild(empty);
+    }
+    for (const s of snapshot.stats.slice(0, 100)) {
+      const row = document.createElement('div');
+      row.className = 'r';
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = s.name;
+      const ct = document.createElement('span');
+      ct.className = 'ct';
+      ct.textContent = String(s.count);
+      const ms = document.createElement('span');
+      ms.className = 'ms';
+      ms.textContent = s.selfMs > 0 ? s.selfMs.toFixed(1) : '—';
+      row.append(nm, ct, ms);
+      this.statsPanel.appendChild(row);
+    }
+    this.statsPanel.style.display = 'block';
+  }
+
+  hideRenderStats() {
+    if (this.host) this.statsPanel.style.display = 'none';
   }
 
   toast(message: string, ms = 2600) {

@@ -30,6 +30,9 @@ export default defineContentScript({
       if (message?.type === 'toggle-inspect') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
       }
+      if (message?.type === 'toggle-render') {
+        window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle-render' }, '*');
+      }
     });
   },
 });

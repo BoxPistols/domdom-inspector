@@ -10,7 +10,6 @@ import { DEFAULT_SETTINGS, type InspectInfo, type Settings } from './types';
 export class Inspector {
   private enabled = false;
   private settings: Settings = DEFAULT_SETTINGS;
-  private overlay = new Overlay(this.settings);
   private rafId = 0;
   private currentElement: Element | null = null;
   private currentInfo: InspectInfo | null = null;
@@ -20,7 +19,10 @@ export class Inspector {
   private keyboardNav = false;
   private lastPointer = { x: 0, y: 0 };
 
-  constructor(private hookState: HookState) {}
+  constructor(
+    private hookState: HookState,
+    private overlay: Overlay,
+  ) {}
 
   applySettings(settings: Settings) {
     this.settings = { ...DEFAULT_SETTINGS, ...settings };
