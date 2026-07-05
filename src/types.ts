@@ -48,6 +48,11 @@ export interface Settings {
    * ハイライト/ホバー確認だけ行う (Alt+クリックの owner ツリーは維持)。
    */
   openEditorOnClick: boolean;
+  /**
+   * バッジの情報量。compact=名前+場所のみ / normal=+内部名・主要props /
+   * detailed=全props を複数行で。file:line は常に独立行で表示し省略しない。
+   */
+  badgeDetail: 'compact' | 'normal' | 'detailed';
   colors: {
     mui: string;
     custom: string;
@@ -68,6 +73,7 @@ export const DEFAULT_SETTINGS: Settings = {
   customUrlTemplate: 'vscode://file{file}:{line}:{column}',
   muiSkip: true,
   openEditorOnClick: true,
+  badgeDetail: 'normal',
   colors: {
     mui: '#2196f3',
     custom: '#4caf50',

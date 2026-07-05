@@ -14,6 +14,7 @@
   "labelCustomUrl": { "message": "カスタム URL テンプレート" },
   "labelMuiSkip": { "message": "MUI 内部をスキップして自作コードへジャンプ" },
   "labelOpenEditor": { "message": "クリックでエディタを開く" },
+  "labelBadgeDetail": { "message": "バッジの情報量 (compact / normal / detailed)" },
   "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
   "hintTarget": { "message": "対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。" },
   "helpSummary": { "message": "使い方ヘルプ" },

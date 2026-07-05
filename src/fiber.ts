@@ -242,7 +242,8 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     name,
     internalName: name !== rawName ? rawName : null,
     classification: classifyFiber(componentFiber, element),
-    props: summarizeProps(semanticFiber ?? componentFiber),
+    // detailed バッジ用に多めに収集し、表示側 (overlay) が detail に応じてスライスする
+    props: summarizeProps(semanticFiber ?? componentFiber, 10),
     jumpTarget: resolveJumpTarget(chain, muiSkip),
     ownerChain,
     devMode: true,

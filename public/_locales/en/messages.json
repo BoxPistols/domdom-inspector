@@ -14,6 +14,7 @@
   "labelCustomUrl": { "message": "Custom URL template" },
   "labelMuiSkip": { "message": "Skip MUI internals and jump to your own code" },
   "labelOpenEditor": { "message": "Open editor on click" },
+  "labelBadgeDetail": { "message": "Badge detail level (compact / normal / detailed)" },
   "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
   "hintTarget": { "message": "Only localhost / 127.0.0.1 dev servers. Settings save automatically." },
   "helpSummary": { "message": "How to use" },

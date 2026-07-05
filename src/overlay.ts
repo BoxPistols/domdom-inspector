@@ -71,7 +71,7 @@ export class Overlay {
       .badge {
         pointer-events: none;
         display: none;
-        max-width: 480px;
+        max-width: 560px;
         padding: 6px 10px;
         border-radius: 6px;
         background: rgba(20, 20, 24, 0.92);
@@ -79,12 +79,13 @@ export class Overlay {
         font-size: 12px;
         line-height: 1.5;
         box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        /* 複数行を許可し肝心な file:line を省略しない */
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
-      .badge .name { font-weight: 700; }
-      .badge .meta { opacity: 0.75; }
+      .badge .name { font-weight: 700; display: block; }
+      .badge .meta { opacity: 0.8; display: block; }
+      .badge .file { opacity: 0.95; display: block; margin-top: 2px; }
       .toast {
         display: none;
         left: 50%;
@@ -233,31 +234,46 @@ export class Overlay {
       background: `${color}1a`,
     });
 
-    const propsText = Object.entries(info.props)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(' ');
+    // 情報量 (compact/normal/detailed) に応じて props の表示件数を決める。
+    // detailed=全件、normal=先頭4件、compact=無し。
+    const detail = this.settings.badgeDetail ?? 'normal';
+    const entries = Object.entries(info.props);
+    const propsShown = detail === 'compact' ? [] : detail === 'detailed' ? entries : entries.slice(0, 4);
+    const propsText = propsShown.map(([k, v]) => `${k}=${v}`).join(' ');
     const file = info.jumpTarget
       ? `${info.jumpTarget.fileName.split('/').pop()}:${info.jumpTarget.lineNumber}`
       : info.devMode
         ? this.strings.sourceUnavailable
         : this.strings.prodSafeMode;
+
     this.badge.replaceChildren();
     const name = document.createElement('span');
     name.className = 'name';
     name.style.color = color;
     name.textContent = `<${info.name}>`;
-    const meta = document.createElement('span');
-    meta.className = 'meta';
-    const metaParts = [info.internalName, propsText, file].filter(Boolean).join(' · ');
-    meta.textContent = ` ${metaParts}`;
-    this.badge.append(name, meta);
+    this.badge.append(name);
+    if (detail !== 'compact') {
+      const metaBits = [info.internalName, propsText].filter(Boolean).join(' · ');
+      if (metaBits) {
+        const meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = metaBits;
+        this.badge.append(meta);
+      }
+    }
+    // file:line は常に独立行で必ず表示する (最重要のジャンプ先を省略しない)
+    const fileEl = document.createElement('span');
+    fileEl.className = 'file';
+    fileEl.textContent = file;
+    this.badge.append(fileEl);
 
-    const badgeTop = rect.top > 40 ? rect.top - 34 : rect.bottom + 6;
-    Object.assign(this.badge.style, {
-      display: 'block',
-      left: `${Math.max(4, rect.left)}px`,
-      top: `${badgeTop}px`,
-    });
+    // 複数行で高さが可変になるため、実測してから上下配置を決める
+    this.badge.style.display = 'block';
+    this.badge.style.left = `${Math.max(4, rect.left)}px`;
+    this.badge.style.top = '0px';
+    const badgeHeight = this.badge.getBoundingClientRect().height;
+    const top = rect.top > badgeHeight + 8 ? rect.top - badgeHeight - 4 : rect.bottom + 6;
+    this.badge.style.top = `${top}px`;
   }
 
   hideHighlight() {

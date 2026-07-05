@@ -22,6 +22,7 @@ const editorEl = $<HTMLSelectElement>('editor');
 const templateEl = $<HTMLInputElement>('customUrlTemplate');
 const muiSkipEl = $<HTMLInputElement>('muiSkip');
 const openEditorEl = $<HTMLInputElement>('openEditorOnClick');
+const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
 const mappingsEl = $<HTMLTextAreaElement>('pathMappings');
 const recordKeyEl = $<HTMLInputElement>('recordKey');
 
@@ -61,6 +62,7 @@ async function load() {
   templateEl.value = settings.customUrlTemplate;
   muiSkipEl.checked = settings.muiSkip;
   openEditorEl.checked = settings.openEditorOnClick;
+  badgeDetailEl.value = settings.badgeDetail;
   mappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
   recordKeyEl.value = settings.recordKey;
   syncTemplateState();
@@ -74,6 +76,7 @@ async function save() {
     customUrlTemplate: templateEl.value || DEFAULT_SETTINGS.customUrlTemplate,
     muiSkip: muiSkipEl.checked,
     openEditorOnClick: openEditorEl.checked,
+    badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
     pathMappings: parseMappings(mappingsEl.value),
     // 単一キーのみ (空・複数は既定 'r')
     recordKey: recordKeyEl.value.length === 1 ? recordKeyEl.value.toLowerCase() : DEFAULT_SETTINGS.recordKey,
@@ -87,7 +90,7 @@ function syncTemplateState() {
   templateEl.disabled = editorEl.value !== 'custom';
 }
 
-for (const el of [editorEl, templateEl, muiSkipEl, openEditorEl, mappingsEl, recordKeyEl]) {
+for (const el of [editorEl, templateEl, muiSkipEl, openEditorEl, badgeDetailEl, mappingsEl, recordKeyEl]) {
   el.addEventListener('change', () => {
     syncTemplateState();
     void save();
