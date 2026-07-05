@@ -10,7 +10,7 @@
 **Name:** MUI Design Inspector
 
 **Summary (132 chars max):**
-Hover to identify React/MUI components, jump to their source, and visualize re-renders. A lightweight dev inspector.
+Inspect any React app: identify components on hover, jump to source, visualize re-renders. MUI-aware, works with any styling.
 
 **Category:** Developer Tools
 
@@ -63,7 +63,7 @@ local development.
 **名前:** MUI Design Inspector
 
 **概要(132 文字以内):**
-React/MUI コンポーネントをホバーで識別、ソースへジャンプ、再描画を可視化する軽量な開発者向けインスペクタ。
+あらゆる React アプリを検査: ホバーで識別・ソースへジャンプ・再描画を可視化。MUI 判別対応、任意のスタイルで動作する軽量インスペクタ。
 
 **カテゴリ:** デベロッパー ツール
 

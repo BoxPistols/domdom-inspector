@@ -2,8 +2,10 @@
 
 [![CI](https://github.com/BoxPistols/react-design-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/BoxPistols/react-design-inspector/actions/workflows/ci.yml)
 
-React / MUI コンポーネントをブラウザ上でホバー識別し、ソースコードへワンクリックでジャンプする Chrome 拡張機能。
+**あらゆる React アプリ**のコンポーネントをブラウザ上でホバー識別し、ソースコードへワンクリックでジャンプする Chrome 拡張機能。
 要件定義書 v3.0 の **Phase 1: インスペクタ MVP**(FR-01〜04, 08, 09, 12)に加え、レンダー可視化・パフォーマンスデバッグ、英日 i18n、ストア配信準備までを実装。
+
+> **対象範囲の要点**: インスペクト(コンポーネント識別・ツリー・エディタジャンプ)とレンダー/パフォーマンス計測は **React Fiber ベースで、スタイル手法に非依存**。Tailwind / styled-components / CSS Modules 等どの React アプリでも動く。**MUI 固有なのは ① 分類の「青=MUI」判別と ② 将来のデザイントークン計測・リント(Phase 3、MUI テーマ前提)** のみ。この MUI デザインガバナンス層が React DevTools との差別化点であり、名前に MUI を残す理由。Storybook はプレビューが iframe のため現状未対応(FR-13)。
 
 ## 機能
 

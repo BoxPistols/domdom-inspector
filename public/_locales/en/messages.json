@@ -1,7 +1,7 @@
 {
   "extName": { "message": "MUI Design Inspector" },
   "extDescription": {
-    "message": "Hover to identify React/MUI components and jump to their source, with a lightweight render/performance debugger."
+    "message": "Inspect any React app: identify components on hover, jump to source, visualize re-renders. MUI-aware, any styling."
   },
   "cmdToggleInspect": { "message": "Toggle inspect mode" },
   "cmdToggleRender": { "message": "Toggle render visualization mode" },

@@ -1,7 +1,7 @@
 {
   "extName": { "message": "MUI Design Inspector" },
   "extDescription": {
-    "message": "React/MUI コンポーネントをホバーで識別しソースへジャンプ。軽量なレンダー/パフォーマンスデバッガ付き。"
+    "message": "あらゆる React アプリを検査: ホバーで識別・ソースへジャンプ・再描画を可視化。MUI 判別対応、任意のスタイルで動作。"
   },
   "cmdToggleInspect": { "message": "インスペクトモードの切替" },
   "cmdToggleRender": { "message": "レンダー可視化モードの切替" },
