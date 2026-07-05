@@ -15,6 +15,12 @@ export interface OwnerEntry {
   source: SourceLocation | null;
 }
 
+/** computed style から抽出したデザインプロパティ (production でも取得可) */
+export interface DesignProp {
+  label: string;
+  value: string;
+}
+
 /** ホバー中の要素について収集した情報 */
 export interface InspectInfo {
   name: string;
@@ -29,6 +35,8 @@ export interface InspectInfo {
   ownerChain: OwnerEntry[];
   /** dev ビルドの Fiber から解決できたか (false = セーフモード) */
   devMode: boolean;
+  /** computed style 由来のデザインプロパティ (production/デザイナー向け、常に取得可) */
+  design: DesignProp[];
 }
 
 export interface PathMapping {

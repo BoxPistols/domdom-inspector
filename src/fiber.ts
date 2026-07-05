@@ -1,4 +1,5 @@
 import { classify } from './classify';
+import { extractDesignStyle } from './designStyle';
 import { isNodeModulesPath, normalizeSourcePath, parseStackLocation } from './source';
 import type { Classification, InspectInfo, OwnerEntry, SourceLocation } from './types';
 
@@ -197,6 +198,7 @@ function safeModeInfo(element: Element): InspectInfo {
   return {
     name,
     internalName: null,
+    design: extractDesignStyle(element),
     classification: muiClass ? 'mui' : 'third-party',
     props: {},
     jumpTarget: null,
@@ -247,5 +249,6 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     jumpTarget: resolveJumpTarget(chain, muiSkip),
     ownerChain,
     devMode: true,
+    design: extractDesignStyle(element),
   };
 }

@@ -90,6 +90,7 @@ export class Overlay {
       .badge .name { font-weight: 700; display: block; }
       .badge .meta { opacity: 0.8; display: block; }
       .badge .file { opacity: 0.95; display: block; margin-top: 2px; }
+      .badge .design { opacity: 0.85; display: block; margin-top: 3px; color: #a5d8ff; }
       .toast {
         display: none;
         left: 50%;
@@ -298,6 +299,15 @@ export class Overlay {
     fileEl.className = 'file';
     fileEl.textContent = file;
     this.badge.append(fileEl);
+
+    // デザイン情報 (computed style): production=セーフモード or detailed 時に表示。
+    // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。
+    if ((detail === 'detailed' || !info.devMode) && info.design.length) {
+      const designEl = document.createElement('span');
+      designEl.className = 'design';
+      designEl.textContent = info.design.map((p) => `${p.label}:${p.value}`).join(' · ');
+      this.badge.append(designEl);
+    }
 
     // 複数行で高さが可変になるため、実測してから上下配置を決める
     this.badge.style.display = 'block';
