@@ -15,6 +15,10 @@ export default defineConfig({
         suggested_key: { default: 'Alt+Shift+R' },
         description: '__MSG_cmdToggleRender__',
       },
+      'toggle-tree': {
+        suggested_key: { default: 'Alt+Shift+T' },
+        description: '__MSG_cmdToggleTree__',
+      },
     },
   },
 });

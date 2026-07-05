@@ -1,4 +1,5 @@
 import { buildEditorUrl } from './editor';
+import type { TreeNode } from './tree';
 import { DEFAULT_STRINGS, type Classification, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /**
@@ -26,6 +27,9 @@ export class Overlay {
   private panel!: HTMLDivElement;
   private statsPanel!: HTMLDivElement;
   private renderControl!: HTMLDivElement;
+  private treePanel!: HTMLDivElement;
+  /** ツリー行の nodeId → DOM 行 (scrollTreeTo 用) */
+  private treeRows = new Map<number, HTMLElement>();
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D | null;
   private toastEl!: HTMLDivElement;
@@ -179,6 +183,31 @@ export class Overlay {
       }
       .rctl.rec button { background: #6b7280; }
       .rctl button:hover { filter: brightness(1.1); }
+      .tree {
+        position: fixed; z-index: 2147483647; display: none;
+        pointer-events: auto; top: 12px; left: 12px;
+        width: 360px; max-height: 78vh; overflow: auto;
+        border-radius: 8px; background: rgba(20,20,24,0.96); color: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      }
+      .tree .head {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 12px; font-weight: 700; position: sticky; top: 0;
+        background: rgba(20,20,24,0.98);
+      }
+      .tree .head button { all: unset; cursor: pointer; opacity: 0.6; font-size: 14px; padding: 0 4px; }
+      .tree .head button:hover { opacity: 1; }
+      .tree .trow {
+        display: flex; align-items: center; gap: 6px;
+        padding: 3px 12px 3px 0; cursor: pointer; white-space: nowrap;
+      }
+      .tree .trow:hover { background: rgba(255,255,255,0.08); }
+      .tree .trow.hl { background: rgba(96,165,250,0.35); }
+      .tree .trow .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+      .tree .trow .nm { overflow: hidden; text-overflow: ellipsis; }
+      .tree .trow .tag { opacity: 0.4; font-size: 10px; }
+      .tree .empty { padding: 8px 12px; opacity: 0.6; }
     `;
     root.appendChild(style);
 
@@ -197,6 +226,8 @@ export class Overlay {
     this.statsPanel.className = 'stats';
     this.renderControl = document.createElement('div');
     this.renderControl.className = 'rctl';
+    this.treePanel = document.createElement('div');
+    this.treePanel.className = 'tree';
     root.append(
       this.canvas,
       this.box,
@@ -204,6 +235,7 @@ export class Overlay {
       this.panel,
       this.statsPanel,
       this.renderControl,
+      this.treePanel,
       this.toastEl,
     );
     document.documentElement.appendChild(this.host);
@@ -487,6 +519,74 @@ export class Overlay {
 
   hideRenderControl() {
     if (this.host) this.renderControl.classList.remove('on', 'rec');
+  }
+
+  /**
+   * ビジュアルツリーを描画 (FR-05)。nodes は buildTree/filterTree が返す depth 付き平坦配列。
+   * 行 hover → onHoverNode、クリック → onClickNode。owner 用 panel とは別サーフェス。
+   */
+  showTree(
+    nodes: TreeNode[],
+    opts: { title: string; onHoverNode: (node: TreeNode) => void; onClickNode: (node: TreeNode) => void; onClose: () => void },
+  ) {
+    this.ensureMounted();
+    this.treePanel.replaceChildren();
+    this.treeRows.clear();
+
+    const head = document.createElement('div');
+    head.className = 'head';
+    const title = document.createElement('span');
+    title.textContent = `${opts.title} (${nodes.length})`;
+    const close = document.createElement('button');
+    close.textContent = '×';
+    close.addEventListener('click', () => {
+      this.hideTree();
+      opts.onClose();
+    });
+    head.append(title, close);
+    this.treePanel.appendChild(head);
+
+    if (nodes.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = this.strings.statsEmpty;
+      this.treePanel.appendChild(empty);
+    }
+
+    for (const node of nodes) {
+      const row = document.createElement('div');
+      row.className = 'trow';
+      row.style.paddingLeft = `${8 + node.depth * 13}px`;
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = this.colorFor(node.classification);
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = node.name;
+      row.append(dot, nm);
+      row.addEventListener('mouseenter', () => opts.onHoverNode(node));
+      row.addEventListener('click', () => opts.onClickNode(node));
+      this.treePanel.appendChild(row);
+      this.treeRows.set(node.id, row);
+    }
+    this.treePanel.style.display = 'block';
+  }
+
+  hideTree() {
+    if (this.host) this.treePanel.style.display = 'none';
+  }
+
+  isTreeOpen(): boolean {
+    return !!this.host && this.treePanel.style.display === 'block';
+  }
+
+  /** 実 DOM hover → 該当ツリー行へスクロール&一時強調 (FR-07 逆方向) */
+  scrollTreeTo(nodeId: number) {
+    const row = this.treeRows.get(nodeId);
+    if (!row) return;
+    row.scrollIntoView({ block: 'nearest' });
+    for (const r of this.treeRows.values()) r.classList.remove('hl');
+    row.classList.add('hl');
   }
 
   toast(message: string, ms = 2600) {

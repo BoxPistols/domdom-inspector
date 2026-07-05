@@ -1,4 +1,4 @@
-const COMMANDS = new Set(['toggle-inspect', 'toggle-render']);
+const COMMANDS = new Set(['toggle-inspect', 'toggle-render', 'toggle-tree']);
 
 export default defineBackground(() => {
   // キーボードショートカット (manifest commands) → アクティブタブへトグル指示 (FR-01)

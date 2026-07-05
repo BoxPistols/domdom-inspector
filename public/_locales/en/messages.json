@@ -5,6 +5,7 @@
   },
   "cmdToggleInspect": { "message": "Toggle inspect mode" },
   "cmdToggleRender": { "message": "Toggle render visualization mode" },
+  "cmdToggleTree": { "message": "Toggle component tree mode" },
 
   "popupToggleInspect": { "message": "Toggle inspect mode on this tab" },
   "popupToggleInspectHint": { "message": "Shortcut: {key} / Exit: Esc" },
@@ -52,6 +53,12 @@
   "ctrlTitle": { "message": "Render viz" },
   "ctrlRecord": { "message": "Record" },
   "ctrlStop": { "message": "Stop" },
+  "treeOn": {
+    "message": "Component tree ON — hover a row to highlight, hover the page to locate it. Esc to close"
+  },
+  "treeOnSafe": { "message": "Component tree ON — no dev build detected, names are estimated" },
+  "treeOff": { "message": "Component tree OFF" },
+  "treeTitle": { "message": "Component tree" },
   "recordStart": {
     "message": "Recording — interact to trigger re-renders, press R to stop and see the ranking"
   },

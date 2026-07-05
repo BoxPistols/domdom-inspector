@@ -2,6 +2,7 @@ import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
 import { Overlay } from '../src/overlay';
 import { RenderDebugger } from '../src/renderDebug';
+import { TreeView } from '../src/treeView';
 import { DEV_MATCHES } from '../src/matches';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS } from '../src/types';
 
@@ -21,14 +22,15 @@ export default defineContentScript({
     const overlay = new Overlay(DEFAULT_SETTINGS, strings);
     const inspector = new Inspector(hookState, overlay, strings);
     const renderDebugger = new RenderDebugger(hookState, overlay, strings);
+    const treeView = new TreeView(hookState, overlay, strings);
 
-    // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化の順に
-    // 1 度で 1 つだけ閉じる。両モード同時 ON でも競合しない。
+    // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化 → ツリーの順に
+    // 1 度で 1 つだけ閉じる。複数モード同時 ON でも競合しない。
     window.addEventListener(
       'keydown',
       (event) => {
         if (event.key !== 'Escape') return;
-        if (inspector.onEscape() || renderDebugger.onEscape()) {
+        if (inspector.onEscape() || renderDebugger.onEscape() || treeView.onEscape()) {
           event.preventDefault();
           event.stopImmediatePropagation();
         }
@@ -44,10 +46,12 @@ export default defineContentScript({
         inspector.applySettings(data.payload);
         overlay.updateSettings(data.payload);
         renderDebugger.applySettings(data.payload.recordKey);
+        treeView.applySettings(data.payload);
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
       if (data.type === 'toggle') inspector.toggle();
       if (data.type === 'toggle-render') renderDebugger.toggle();
+      if (data.type === 'toggle-tree') treeView.toggle();
     });
   },
 });

@@ -5,6 +5,7 @@
   },
   "cmdToggleInspect": { "message": "インスペクトモードの切替" },
   "cmdToggleRender": { "message": "レンダー可視化モードの切替" },
+  "cmdToggleTree": { "message": "コンポーネントツリーモードの切替" },
 
   "popupToggleInspect": { "message": "このタブでインスペクトモード切替" },
   "popupToggleInspectHint": { "message": "ショートカット: {key} / 解除: Esc" },
@@ -52,6 +53,12 @@
   "ctrlTitle": { "message": "レンダー可視化" },
   "ctrlRecord": { "message": "記録" },
   "ctrlStop": { "message": "停止" },
+  "treeOn": {
+    "message": "コンポーネントツリー ON — 行 hover でハイライト / ページ hover で該当行へ / Esc で解除"
+  },
+  "treeOnSafe": { "message": "コンポーネントツリー ON — dev ビルド未検出のため名前は推定" },
+  "treeOff": { "message": "コンポーネントツリー OFF" },
+  "treeTitle": { "message": "コンポーネントツリー" },
   "recordStart": {
     "message": "記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示"
   },

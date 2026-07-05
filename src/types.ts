@@ -107,6 +107,10 @@ export interface UiStrings {
   ctrlTitle: string;
   ctrlRecord: string;
   ctrlStop: string;
+  treeOn: string;
+  treeOnSafe: string;
+  treeOff: string;
+  treeTitle: string;
   statsTitle: string;
   statsColsSupported: string;
   statsColsUnsupported: string;
@@ -132,6 +136,10 @@ export const DEFAULT_STRINGS: UiStrings = {
   ctrlTitle: 'Render viz',
   ctrlRecord: 'Record',
   ctrlStop: 'Stop',
+  treeOn: 'Component tree ON — hover a row to highlight, hover the page to locate it. Esc to close',
+  treeOnSafe: 'Component tree ON — no dev build detected, names are estimated',
+  treeOff: 'Component tree OFF',
+  treeTitle: 'Component tree',
   statsTitle: 'Re-render ranking ({n} commits)',
   statsColsSupported: 'Columns: component / re-renders / cumulative self time (ms)',
   statsColsUnsupported: 'Profiler timer unavailable here; time shows 0 (needs a dev build)',
