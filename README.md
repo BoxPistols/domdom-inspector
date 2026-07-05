@@ -1,5 +1,7 @@
 # MUI Design Inspector
 
+[![CI](https://github.com/BoxPistols/react-design-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/BoxPistols/react-design-inspector/actions/workflows/ci.yml)
+
 React / MUI コンポーネントをブラウザ上でホバー識別し、ソースコードへワンクリックでジャンプする Chrome 拡張機能。
 要件定義書 v3.0 の **Phase 1: インスペクタ MVP**(FR-01〜04, 08, 09, 12)に加え、レンダー可視化・パフォーマンスデバッグ、英日 i18n、ストア配信準備までを実装。
 

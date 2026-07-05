@@ -5,3 +5,8 @@ stats.html
 stats-*.json
 .env
 .DS_Store
+
+# Claude Code セッション成果物 (リポジトリに含めない)
+.claude/
+memory/
+plans/
