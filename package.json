@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "MUI Design Inspector — React/MUI コンポーネントのホバー識別・エディタジャンプ Chrome 拡張",
+  "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
