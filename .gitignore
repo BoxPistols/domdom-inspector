@@ -10,3 +10,20 @@ stats-*.json
 .claude/
 memory/
 plans/
+
+# UI/UX PRO MAX (uipro init で各自ローカル生成 / git 非管理)
+# Claude Code は上の .claude/ 一括 ignore で既に除外済み。他 AI 環境はディレクトリ単位で指定
+# (.github/ 全体を無視すると Actions/Issue テンプレに影響するため ui-ux-pro-max/ のみ)
+.cursor/skills/ui-ux-pro-max/
+.windsurf/skills/ui-ux-pro-max/
+.agent/skills/ui-ux-pro-max/
+.github/prompts/ui-ux-pro-max/
+.kiro/steering/ui-ux-pro-max/
+.codebuddy/skills/ui-ux-pro-max/
+.codex/skills/ui-ux-pro-max/
+.continue/skills/ui-ux-pro-max/
+.gemini/skills/ui-ux-pro-max/
+.opencode/skills/ui-ux-pro-max/
+.qoder/skills/ui-ux-pro-max/
+.roo/skills/ui-ux-pro-max/
+.trae/skills/ui-ux-pro-max/
