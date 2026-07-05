@@ -93,6 +93,15 @@ src/
 - RSC(Server Components)はクライアント側 Fiber が無いため対象外
 - iframe(Storybook)・Portal 対応、ビジュアルツリーは Phase 2
 
+## デプロイ済み / production App での利用(デザイナー向け)
+
+localhost を立てないデザイナーが、デプロイ済み(=production ビルド)の App を検査するための「両対応・自動縮退」を実装済み。
+
+- **任意オリジン対応(M1)**: ポップアップの「現在のサイトで有効化」で、そのオリジンへのアクセスを**ユーザー明示許可**(既定は localhost のみ=権限最小化)。`browser.scripting.registerContentScripts`(`world:'MAIN'` / `runAt:'document_start'`)で動的登録するため、許可後に**1度リロード**すれば React 読み込み前にフックが効く
+- **production computed-style インスペクト(M2)**: production は Fiber の dev フィールドが剥がれソースジャンプ等が不可。代わりに **computed style(color / bg / font / radius / padding / margin / shadow / gap)+ `Mui*` クラス種別**をバッジに表示(`designStyle.ts`)。デザイナーが「この要素の見た目」を掴める
+- **トークン準拠検出=野良値(M3)**: spacing 値が **4/8px グリッド外**なら警告表示(`tokenLint.ts`)。MUI テーマ取得に依存せず production で動く、デザイナー向けの主価値
+- 制約: production では自作コンポーネント名・ソース位置・正確なレンダー時間は原理的に取得不可(dev ビルドでのみ全機能)
+
 ## ロードマップ
 
 Phase 2〜5(ビジュアルツリー / デザインリント / レポート・Skills / BYOK AI)の要件定義と実装計画は [`docs/ROADMAP.md`](./docs/ROADMAP.md) に集約。現行アーキテクチャの再利用点・新規モジュール・受け入れ条件・見積・リスク先出し(テーマ取得 / iframe の PoC 推奨)まで含む。

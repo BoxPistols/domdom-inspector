@@ -1,4 +1,5 @@
 import { buildEditorUrl } from './editor';
+import { lintSpacing } from './tokenLint';
 import type { TreeNode } from './tree';
 import { DEFAULT_STRINGS, type Classification, type InspectInfo, type Settings, type UiStrings } from './types';
 
@@ -91,6 +92,7 @@ export class Overlay {
       .badge .meta { opacity: 0.8; display: block; }
       .badge .file { opacity: 0.95; display: block; margin-top: 2px; }
       .badge .design { opacity: 0.85; display: block; margin-top: 3px; color: #a5d8ff; }
+      .badge .warn { display: block; margin-top: 2px; color: #ffd43b; }
       .toast {
         display: none;
         left: 50%;
@@ -307,6 +309,16 @@ export class Overlay {
       designEl.className = 'design';
       designEl.textContent = info.design.map((p) => `${p.label}:${p.value}`).join(' · ');
       this.badge.append(designEl);
+
+      // 野良値検出 (4px グリッド外の余白/角丸)。テーマ非依存で production でも動く。
+      const findings = lintSpacing(info.design);
+      if (findings.length) {
+        const warn = document.createElement('span');
+        warn.className = 'warn';
+        warn.textContent =
+          '⚠ ' + findings.map((f) => `${f.label} off-grid(${f.offGrid.join('/')}px)`).join(' · ');
+        this.badge.append(warn);
+      }
     }
 
     // 複数行で高さが可変になるため、実測してから上下配置を決める
