@@ -88,3 +88,7 @@ src/
 - production ビルドではセーフモード(名前推定のみ、ジャンプ不可)
 - RSC(Server Components)はクライアント側 Fiber が無いため対象外
 - iframe(Storybook)・Portal 対応、ビジュアルツリーは Phase 2
+
+## ロードマップ
+
+Phase 2〜5(ビジュアルツリー / デザインリント / レポート・Skills / BYOK AI)の要件定義と実装計画は [`docs/ROADMAP.md`](./docs/ROADMAP.md) に集約。現行アーキテクチャの再利用点・新規モジュール・受け入れ条件・見積・リスク先出し(テーマ取得 / iframe の PoC 推奨)まで含む。
