@@ -8,6 +8,10 @@
   "cmdToggleTree": { "message": "Toggle component tree mode" },
 
   "popupToggleInspect": { "message": "Toggle inspect mode on this tab" },
+  "btnEnableSite": { "message": "Enable on current site…" },
+  "hintEnableSite": {
+    "message": "For deployed/production sites (not just localhost). Grants access to this origin; reload once after enabling."
+  },
   "popupToggleInspectHint": { "message": "Shortcut: {key} / Exit: Esc" },
   "popupToggleRender": { "message": "Toggle render visualization mode" },
   "popupToggleRenderHint": { "message": "Shortcut: {key} / Record: {rec} / Exit: Esc" },

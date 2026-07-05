@@ -108,6 +108,48 @@ async function sendToActiveTab(type: string) {
 $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
 $('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-render'));
 
+// 任意オリジン (デプロイ済み App) をユーザー明示許可で有効化 (M1)。
+// optional host permission を要求 → 許可オリジンへ MAIN world/document_start の
+// フックを動的登録 → タブをリロード (次ロードから document_start で効く)。
+async function enableCurrentSite() {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.url || tab.id == null) return;
+  let origin: string;
+  try {
+    origin = new URL(tab.url).origin;
+  } catch {
+    return;
+  }
+  if (!/^https?:$/.test(new URL(tab.url).protocol)) return; // chrome:// 等は対象外
+  const pattern = `${origin}/*`;
+  const granted = await browser.permissions.request({ origins: [pattern] });
+  if (!granted) return;
+  const key = origin.replace(/[^a-z0-9]/gi, '_');
+  try {
+    await browser.scripting.registerContentScripts([
+      {
+        id: `dyn_bridge_${key}`,
+        matches: [pattern],
+        js: ['content-scripts/bridge.js'],
+        runAt: 'document_start',
+      },
+      {
+        id: `dyn_inspector_${key}`,
+        matches: [pattern],
+        js: ['content-scripts/inspector.js'],
+        world: 'MAIN',
+        runAt: 'document_start',
+      },
+    ]);
+  } catch {
+    // 既に登録済みのオリジンは無視
+  }
+  await browser.tabs.reload(tab.id);
+  window.close();
+}
+
+$('enableSite').addEventListener('click', () => void enableCurrentSite());
+
 // モード切替 (Alt+Shift+I / Alt+Shift+R) の再割当は Chrome 純正ページに委ねる
 // (拡張からショートカットを直接書き換える API は存在しないため)
 $('configureShortcuts').addEventListener('click', () => {
