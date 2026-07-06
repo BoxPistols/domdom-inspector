@@ -68,6 +68,6 @@ popup/ ── 設定 UI (browser.* 可)
 
 ## 保留バックログ(次回以降 1つずつ)
 
-- フレームワーク非依存デザイン検査(Fiber 無しでも design バッジ=非 React サイト対応)
+- ~~フレームワーク非依存デザイン検査~~ ✅ 完了(inspectElement が Fiber 無し要素で isReact:false の design-only 情報を返す)
 - 全サイト一度だけ許可モード / アプリ内セキュリティ開示
 - Phase 3 デザインリント(MUI テーマ取得)/ Phase 4 レポート / Phase 5 BYOK AI

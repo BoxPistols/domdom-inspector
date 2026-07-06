@@ -35,6 +35,8 @@ export interface InspectInfo {
   ownerChain: OwnerEntry[];
   /** dev ビルドの Fiber から解決できたか (false = セーフモード) */
   devMode: boolean;
+  /** React 要素か (false = 非 React の素の DOM。design のみ表示) */
+  isReact: boolean;
   /** computed style 由来のデザインプロパティ (production/デザイナー向け、常に取得可) */
   design: DesignProp[];
 }

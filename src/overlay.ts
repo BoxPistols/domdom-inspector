@@ -296,11 +296,14 @@ export class Overlay {
         this.badge.append(meta);
       }
     }
-    // file:line は常に独立行で必ず表示する (最重要のジャンプ先を省略しない)
-    const fileEl = document.createElement('span');
-    fileEl.className = 'file';
-    fileEl.textContent = file;
-    this.badge.append(fileEl);
+    // React 要素は file:line (最重要のジャンプ先) を必ず独立行で表示。
+    // 非 React (素の DOM) はソースが存在しないので file 行は出さず design を主情報にする。
+    if (info.isReact) {
+      const fileEl = document.createElement('span');
+      fileEl.className = 'file';
+      fileEl.textContent = file;
+      this.badge.append(fileEl);
+    }
 
     // デザイン情報 (computed style): compact 以外は常に表示 (デザイナーの主価値なので既定で出す)。
     // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。

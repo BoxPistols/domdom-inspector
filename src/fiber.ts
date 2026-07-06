@@ -204,13 +204,33 @@ function safeModeInfo(element: Element): InspectInfo {
     jumpTarget: null,
     ownerChain: [],
     devMode: false,
+    isReact: true,
+  };
+}
+
+/**
+ * 非 React の素の DOM 要素向け (フレームワーク非依存デザイン検査)。
+ * React Fiber が無い要素・非 React サイトでも、computed style ベースのデザイン情報を返す。
+ * デザイナーが「あらゆるデプロイ済みサイト」の見た目を検査できるようにする。
+ */
+function domOnlyInfo(element: Element): InspectInfo {
+  return {
+    name: element.tagName.toLowerCase(),
+    internalName: null,
+    design: extractDesignStyle(element),
+    classification: 'third-party',
+    props: {},
+    jumpTarget: null,
+    ownerChain: [],
+    devMode: false,
+    isReact: false,
   };
 }
 
 /** ホバー要素 1 つ分の InspectInfo を組み立てるエントリポイント */
 export function inspectElement(element: Element, muiSkip: boolean): InspectInfo | null {
   const hostFiber = getFiberFromElement(element);
-  if (!hostFiber) return null;
+  if (!hostFiber) return domOnlyInfo(element);
 
   const componentFiber = getNearestComponentFiber(hostFiber);
   if (!componentFiber) return safeModeInfo(element);
@@ -249,6 +269,7 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     jumpTarget: resolveJumpTarget(chain, muiSkip),
     ownerChain,
     devMode: true,
+    isReact: true,
     design: extractDesignStyle(element),
   };
 }

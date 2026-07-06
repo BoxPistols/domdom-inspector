@@ -167,8 +167,15 @@ describe('inspectElement', () => {
     expect(info?.devMode).toBe(true);
   });
 
-  it('React fiber が無ければ null', () => {
-    const orphan = document.createElement('div');
-    expect(inspectElement(orphan, true)).toBeNull();
+  it('React fiber が無い素の DOM は design-only 情報を返す (非 React サイト対応)', () => {
+    const orphan = document.createElement('section');
+    document.body.appendChild(orphan);
+    const info = inspectElement(orphan, true);
+    expect(info).not.toBeNull();
+    expect(info?.isReact).toBe(false);
+    expect(info?.name).toBe('section');
+    expect(info?.jumpTarget).toBeNull();
+    expect(info?.ownerChain).toEqual([]);
+    expect(Array.isArray(info?.design)).toBe(true); // computed style は取得される
   });
 });
