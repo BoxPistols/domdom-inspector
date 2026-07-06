@@ -20,6 +20,21 @@
   "labelMuiSkip": { "message": "Skip MUI internals and jump to your own code" },
   "labelOpenEditor": { "message": "Open editor on click" },
   "labelBadgeDetail": { "message": "Badge detail level (compact / normal / detailed)" },
+  "tipMuiSkip": {
+    "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
+  },
+  "tipOpenEditor": {
+    "message": "Click an element to open its source line in your editor. Dev build only — production builds have no source location, so this has no effect there."
+  },
+  "tipBadgeDetail": {
+    "message": "How much the hover badge shows. compact = name + location; normal = + props & design (color/spacing); detailed = all props. Design info always shows on production."
+  },
+  "tipRecordKey": {
+    "message": "In render-visualization mode, this key starts/stops recording re-renders (default R). It only works while render mode is ON."
+  },
+  "tipPathMappings": {
+    "message": "If clicking doesn't open the file, map the dev-server path to your local absolute path (e.g. /src=/Users/you/app/src), one per line."
+  },
   "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
   "hintTarget": { "message": "Only localhost / 127.0.0.1 dev servers. Settings save automatically." },
   "helpSummary": { "message": "How to use" },

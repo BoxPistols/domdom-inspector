@@ -20,6 +20,21 @@
   "labelMuiSkip": { "message": "MUI 内部をスキップして自作コードへジャンプ" },
   "labelOpenEditor": { "message": "クリックでエディタを開く" },
   "labelBadgeDetail": { "message": "バッジの情報量 (compact / normal / detailed)" },
+  "tipMuiSkip": {
+    "message": "ON: クリックで MUI ライブラリ内部ではなく、あなたが書いた JSX の該当行(例: <Card> を書いた行)へジャンプ。OFF: MUI の内部ファイルへジャンプ。"
+  },
+  "tipOpenEditor": {
+    "message": "要素クリックでソース位置をエディタで開く。dev ビルド専用 — production ではソース位置が取れないため効果なし(見た目の検査に使う)。"
+  },
+  "tipBadgeDetail": {
+    "message": "ホバー時のバッジ表示量。compact=名前+場所 / normal=+props・デザイン(色/余白) / detailed=全props。デザイン情報は production では常に表示。"
+  },
+  "tipRecordKey": {
+    "message": "レンダー可視化モード中に、このキーで再描画の記録を開始/停止(既定 R)。レンダーモードが ON の時だけ有効。"
+  },
+  "tipPathMappings": {
+    "message": "クリックしてもファイルが開かない時、dev サーバのパスをローカルの絶対パスに変換(例: /src=/Users/you/app/src)。1 行 1 件。"
+  },
   "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
   "hintTarget": { "message": "対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。" },
   "helpSummary": { "message": "使い方ヘルプ" },

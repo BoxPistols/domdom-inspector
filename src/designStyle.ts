@@ -29,6 +29,16 @@ function shorten(v: string): string {
   return v.length > 48 ? `${v.slice(0, 48)}…` : v;
 }
 
+/** rgb()/rgba(不透明) を #rrggbb に整形 (デザイナーに読みやすく)。半透明・非対応はそのまま */
+export function toHex(v: string): string {
+  const m = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
+  if (!m) return v;
+  const alpha = m[4] === undefined ? 1 : parseFloat(m[4]);
+  if (alpha < 1) return v; // 半透明は情報を落とさずそのまま
+  const hex = [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('');
+  return `#${hex}`;
+}
+
 /**
  * getter (prop → 値) から主要デザインプロパティを抽出する純関数。
  * 既定値・ゼロ余白・none は除外してノイズを減らす。テスト容易性のため getter を受ける。
@@ -39,7 +49,9 @@ export function pickDesignStyle(get: (prop: string) => string): DesignProp[] {
     const value = (get(prop) || '').trim();
     if (!value) continue;
     if (skip && skip(value)) continue;
-    out.push({ label, value: shorten(value) });
+    // 色系は hex に整形してデザイナーに読みやすく
+    const formatted = label === 'color' || label === 'bg' ? toHex(value) : value;
+    out.push({ label, value: shorten(formatted) });
   }
   return out;
 }

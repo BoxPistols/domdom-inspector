@@ -11,6 +11,12 @@ function applyI18n() {
     const msg = key && browser.i18n.getMessage(key as MsgKey);
     if (msg) el.textContent = msg;
   }
+  // data-i18n-title → title 属性 (ツールチップ)
+  for (const el of document.querySelectorAll<HTMLElement>('[data-i18n-title]')) {
+    const key = el.dataset.i18nTitle;
+    const msg = key && browser.i18n.getMessage(key as MsgKey);
+    if (msg) el.title = msg;
+  }
   const ja = browser.i18n.getUILanguage().toLowerCase().startsWith('ja');
   for (const el of document.querySelectorAll<HTMLElement>('[data-help]')) {
     el.hidden = el.dataset.help !== (ja ? 'ja' : 'en');
@@ -153,6 +159,7 @@ async function enableCurrentSite() {
     return;
   }
   const key = origin.replace(/[^a-z0-9]/gi, '_');
+  // 次回以降のロード用に永続登録 (document_start でフック確立)
   try {
     await browser.scripting.registerContentScripts([
       {
@@ -172,9 +179,24 @@ async function enableCurrentSite() {
   } catch {
     // 既に登録済みのオリジンは無視 (再有効化)
   }
-  status.textContent = `${origin} を有効化しました。リロードします…`;
-  await browser.tabs.reload(tabId);
-  window.close();
+  // 現在のタブには即注入 = リロード不要でその場で有効化 (一発 ON)。
+  // production では document_start 前でなくても __reactFiber$ + computed style を
+  // 読めるので動作する (再初期化はガードで防止)。
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ['/content-scripts/bridge.js'],
+    });
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ['/content-scripts/inspector.js'],
+      world: 'MAIN',
+    });
+  } catch (e) {
+    status.textContent = `注入エラー: ${String(e)} — ページをリロードしてお試しください`;
+    return;
+  }
+  status.textContent = `${origin} を有効化しました。インスペクトを ON にできます。`;
 }
 
 $('enableSite').addEventListener('click', () => void enableCurrentSite());

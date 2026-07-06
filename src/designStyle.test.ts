@@ -45,9 +45,14 @@ describe('pickDesignStyle', () => {
     expect(shadow?.value.startsWith('rgba(0, 0, 0, 0.2)')).toBe(true);
   });
 
-  it('空値のプロパティはスキップする', () => {
-    const props = pickDesignStyle(getter({ color: 'rgb(1,2,3)' }));
-    expect(props).toHaveLength(1);
-    expect(props[0]).toEqual({ label: 'color', value: 'rgb(1,2,3)' });
+  it('色は hex に整形する (rgb→#rrggbb)', () => {
+    const props = pickDesignStyle(getter({ color: 'rgb(1, 2, 3)', 'background-color': 'rgb(255, 0, 16)' }));
+    expect(props.find((p) => p.label === 'color')?.value).toBe('#010203');
+    expect(props.find((p) => p.label === 'bg')?.value).toBe('#ff0010');
+  });
+
+  it('半透明 rgba は色を落とさずそのまま残す', () => {
+    const props = pickDesignStyle(getter({ color: 'rgba(0, 0, 0, 0.5)' }));
+    expect(props[0].value).toBe('rgba(0, 0, 0, 0.5)');
   });
 });

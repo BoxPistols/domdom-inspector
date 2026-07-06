@@ -302,9 +302,9 @@ export class Overlay {
     fileEl.textContent = file;
     this.badge.append(fileEl);
 
-    // デザイン情報 (computed style): production=セーフモード or detailed 時に表示。
+    // デザイン情報 (computed style): compact 以外は常に表示 (デザイナーの主価値なので既定で出す)。
     // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。
-    if ((detail === 'detailed' || !info.devMode) && info.design.length) {
+    if ((detail !== 'compact' || !info.devMode) && info.design.length) {
       const designEl = document.createElement('span');
       designEl.className = 'design';
       designEl.textContent = info.design.map((p) => `${p.label}:${p.value}`).join(' · ');

@@ -39,17 +39,25 @@
       button:hover { background: #1976d2; }
       button.secondary { background: #455a64; }
       button.secondary:hover { background: #37474f; }
-      .hint { margin-top: 8px; color: #666; font-size: 11px; line-height: 1.5; }
-      input:disabled { background: #f2f2f2; color: #999; }
+      .hint { margin-top: 8px; color: #5a5a5a; font-size: 11px; line-height: 1.5; }
+      input:disabled, button:disabled { background: #f2f2f2; color: #999; cursor: not-allowed; }
+      button:disabled:hover { background: #f2f2f2; }
+      /* 設定の意味を補足する ⓘ ツールチップアイコン */
+      .q {
+        display: inline-block; margin-left: 4px; cursor: help;
+        color: #1976d2; font-size: 12px; vertical-align: middle;
+      }
       details { margin-top: 12px; }
-      summary { cursor: pointer; font-weight: 600; font-size: 12px; color: #1976d2; }
-      .help { margin-top: 6px; font-size: 11px; line-height: 1.6; color: #444; }
-      .help p { margin: 6px 0; }
-      .help table { width: 100%; border-collapse: collapse; margin: 6px 0; }
-      .help td { padding: 3px 6px 3px 0; vertical-align: top; }
-      .help td:first-child { white-space: nowrap; font-weight: 600; }
-      .help code { background: #f2f2f2; padding: 1px 4px; border-radius: 4px; }
-      .legend { font-weight: 600; }
+      summary { cursor: pointer; font-weight: 700; font-size: 12px; color: #1565c0; }
+      /* ヘルプの視認性向上: 濃いテキスト + 行間 + 区切り */
+      .help { margin-top: 8px; font-size: 11.5px; line-height: 1.7; color: #222; }
+      .help p { margin: 8px 0; }
+      .help b { color: #000; }
+      .help table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+      .help td { padding: 4px 8px 4px 0; vertical-align: top; border-top: 1px solid #eee; }
+      .help td:first-child { white-space: nowrap; font-weight: 700; color: #000; }
+      .help code { background: #eef1f4; padding: 1px 4px; border-radius: 4px; color: #1a1a1f; }
+      .legend { font-weight: 700; }
     </style>
   </head>
   <body>
@@ -76,7 +84,7 @@
       Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys.
     </div>
 
-    <label for="recordKey" data-i18n="labelRecordKey">Record key (in render mode)</label>
+    <label for="recordKey" data-i18n="labelRecordKey">Record key (in render mode)</label><span class="q" data-i18n-title="tipRecordKey">ⓘ</span>
     <input type="text" id="recordKey" maxlength="1" style="width: 60px" />
 
     <label for="editor" data-i18n="labelEditor">Editor</label>
@@ -98,14 +106,16 @@
     <label class="check">
       <input type="checkbox" id="muiSkip" />
       <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
+      <span class="q" data-i18n-title="tipMuiSkip">ⓘ</span>
     </label>
 
     <label class="check">
       <input type="checkbox" id="openEditorOnClick" />
       <span data-i18n="labelOpenEditor">Open editor on click</span>
+      <span class="q" data-i18n-title="tipOpenEditor">ⓘ</span>
     </label>
 
-    <label for="badgeDetail" data-i18n="labelBadgeDetail">Badge detail level</label>
+    <label for="badgeDetail" data-i18n="labelBadgeDetail">Badge detail level</label><span class="q" data-i18n-title="tipBadgeDetail">ⓘ</span>
     <select id="badgeDetail">
       <option value="compact">compact</option>
       <option value="normal">normal</option>
@@ -114,7 +124,7 @@
 
     <label for="pathMappings" data-i18n="labelPathMappings">
       Path mappings (one per line: from=to)
-    </label>
+    </label><span class="q" data-i18n-title="tipPathMappings">ⓘ</span>
     <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
 
     <div class="hint" data-i18n="hintTarget">
