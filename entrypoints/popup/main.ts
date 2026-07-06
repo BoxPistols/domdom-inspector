@@ -1,6 +1,7 @@
 import { DEFAULT_SETTINGS, type PathMapping, type Settings } from '../../src/types';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const msg = (key: Parameters<typeof browser.i18n.getMessage>[0]) => browser.i18n.getMessage(key) || '';
 
 // data-i18n を持つ要素の textContent を _locales から流し込み、
 // ヘルプは UI 言語に合わせて日本語/英語のどちらかだけ表示する。
@@ -151,11 +152,11 @@ async function enableCurrentSite() {
   try {
     granted = await browser.permissions.request({ origins: [pattern] });
   } catch (e) {
-    status.textContent = `許可要求エラー: ${String(e)}`;
+    status.textContent = `${msg('permError')} ${String(e)}`;
     return;
   }
   if (!granted) {
-    status.textContent = '許可されませんでした。';
+    status.textContent = msg('permDenied');
     return;
   }
   const key = origin.replace(/[^a-z0-9]/gi, '_');
@@ -201,6 +202,79 @@ async function enableCurrentSite() {
 
 $('enableSite').addEventListener('click', () => void enableCurrentSite());
 void detectSite();
+
+// 全サイト一度だけ許可モード (toggle: 許可 ⇔ 解除)。デザイナーが都度許可なしで
+// どのデプロイ済みサイトでも使えるようにする。安全性の根拠は SECURITY.md。
+const ALL_ORIGINS = { origins: ['*://*/*'] };
+let allSitesGranted = false;
+
+async function refreshAllSites() {
+  try {
+    allSitesGranted = await browser.permissions.contains(ALL_ORIGINS);
+  } catch {
+    allSitesGranted = false;
+  }
+  $('enableAll').textContent = allSitesGranted ? msg('btnAllSitesOff') : msg('btnAllSitesOn');
+}
+
+async function toggleAllSites() {
+  const status = $('siteStatus');
+  if (allSitesGranted) {
+    // 解除 (gesture 不要)
+    await browser.scripting
+      .unregisterContentScripts({ ids: ['all_bridge', 'all_inspector'] })
+      .catch(() => {});
+    await browser.permissions.remove(ALL_ORIGINS).catch(() => {});
+    status.textContent = msg('allSitesRevoked');
+    await refreshAllSites();
+    return;
+  }
+  // 未許可 → gesture 内で即 request (前に await を挟まない)
+  let ok = false;
+  try {
+    ok = await browser.permissions.request(ALL_ORIGINS);
+  } catch (e) {
+    status.textContent = `${msg('permError')} ${String(e)}`;
+    return;
+  }
+  if (!ok) {
+    status.textContent = msg('permDenied');
+    return;
+  }
+  try {
+    await browser.scripting.registerContentScripts([
+      { id: 'all_bridge', matches: ['*://*/*'], js: ['content-scripts/bridge.js'], runAt: 'document_start' },
+      {
+        id: 'all_inspector',
+        matches: ['*://*/*'],
+        js: ['content-scripts/inspector.js'],
+        world: 'MAIN',
+        runAt: 'document_start',
+      },
+    ]);
+  } catch {
+    // 既に登録済みは無視
+  }
+  // 現タブへ即注入 (リロード不要)
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id != null && tab.url && /^https?:$/.test(new URL(tab.url).protocol)) {
+    try {
+      await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['/content-scripts/bridge.js'] });
+      await browser.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['/content-scripts/inspector.js'],
+        world: 'MAIN',
+      });
+    } catch {
+      // 注入不可 (chrome:// 等) は無視
+    }
+  }
+  status.textContent = msg('allSitesEnabled');
+  await refreshAllSites();
+}
+
+$('enableAll').addEventListener('click', () => void toggleAllSites());
+void refreshAllSites();
 
 // モード切替 (Alt+Shift+I / Alt+Shift+R) の再割当は Chrome 純正ページに委ねる
 // (拡張からショートカットを直接書き換える API は存在しないため)

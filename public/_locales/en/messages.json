@@ -12,6 +12,15 @@
   "hintEnableSite": {
     "message": "For deployed/production sites (not just localhost). Grants access to this origin; reload once after enabling."
   },
+  "btnAllSitesOn": { "message": "Enable on all sites (once)" },
+  "btnAllSitesOff": { "message": "Revoke all-sites access" },
+  "hintAllSites": {
+    "message": "Grant once and it works on every site with no per-site prompts. Revoke here anytime. See SECURITY.md."
+  },
+  "allSitesEnabled": { "message": "Enabled on all sites." },
+  "allSitesRevoked": { "message": "All-sites access revoked." },
+  "permDenied": { "message": "Permission was not granted." },
+  "permError": { "message": "Permission request error:" },
   "popupToggleInspectHint": { "message": "Shortcut: {key} / Exit: Esc" },
   "popupToggleRender": { "message": "Toggle render visualization mode" },
   "popupToggleRenderHint": { "message": "Shortcut: {key} / Record: {rec} / Exit: Esc" },

@@ -10,6 +10,11 @@ export default defineContentScript({
   matches: DEV_MATCHES,
   runAt: 'document_start',
   main() {
+    // 静的登録 + 動的登録 + executeScript の二重実行を防ぐガード
+    const w = window as unknown as { __MUI_BRIDGE_LOADED__?: boolean };
+    if (w.__MUI_BRIDGE_LOADED__) return;
+    w.__MUI_BRIDGE_LOADED__ = true;
+
     const pushSettings = async () => {
       const stored = await browser.storage.local.get('settings');
       window.postMessage(

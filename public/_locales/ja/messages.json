@@ -12,6 +12,15 @@
   "hintEnableSite": {
     "message": "デプロイ済み/本番サイト用(localhost 以外)。このオリジンへのアクセスを許可し、有効化後に1度リロード。"
   },
+  "btnAllSitesOn": { "message": "全サイトで許可(一度だけ)" },
+  "btnAllSitesOff": { "message": "全サイト許可を解除" },
+  "hintAllSites": {
+    "message": "一度許可すれば以降どのサイトでも都度許可なしで動きます。反映されなければ1度リロード。解除も同ボタンで。安全性の根拠は SECURITY.md。"
+  },
+  "allSitesEnabled": { "message": "全サイトで有効化しました。" },
+  "allSitesRevoked": { "message": "全サイト許可を解除しました。" },
+  "permDenied": { "message": "許可されませんでした。" },
+  "permError": { "message": "許可要求エラー:" },
   "popupToggleInspectHint": { "message": "ショートカット: {key} / 解除: Esc" },
   "popupToggleRender": { "message": "レンダー可視化モード切替" },
   "popupToggleRenderHint": { "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc" },
