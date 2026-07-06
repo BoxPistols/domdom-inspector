@@ -109,21 +109,49 @@ $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect
 $('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-render'));
 
 // 任意オリジン (デプロイ済み App) をユーザー明示許可で有効化 (M1)。
-// optional host permission を要求 → 許可オリジンへ MAIN world/document_start の
-// フックを動的登録 → タブをリロード (次ロードから document_start で効く)。
-async function enableCurrentSite() {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url || tab.id == null) return;
-  let origin: string;
+// 重要: permissions.request はユーザー操作直後 (await を挟まず) に呼ぶ必要があるため、
+// origin/tabId はポップアップ表示時に先読みしておく。
+let siteOrigin: string | null = null;
+let siteTabId: number | null = null;
+
+async function detectSite() {
+  const status = $('siteStatus');
+  const btn = $<HTMLButtonElement>('enableSite');
   try {
-    origin = new URL(tab.url).origin;
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    siteTabId = tab?.id ?? null;
+    const url = tab?.url ? new URL(tab.url) : null;
+    siteOrigin = url && /^https?:$/.test(url.protocol) ? url.origin : null;
   } catch {
+    siteOrigin = null;
+  }
+  if (!siteOrigin || siteTabId == null) {
+    btn.disabled = true;
+    status.textContent = 'このページ (http/https 以外、または URL 不明) では有効化できません。';
+  } else {
+    btn.disabled = false;
+    status.textContent = `対象: ${siteOrigin}`;
+  }
+}
+
+async function enableCurrentSite() {
+  const status = $('siteStatus');
+  if (!siteOrigin || siteTabId == null) return;
+  const origin = siteOrigin;
+  const tabId = siteTabId;
+  const pattern = `${origin}/*`;
+  // await を挟まず即 request (ユーザー操作コンテキストを保つ)
+  let granted = false;
+  try {
+    granted = await browser.permissions.request({ origins: [pattern] });
+  } catch (e) {
+    status.textContent = `許可要求エラー: ${String(e)}`;
     return;
   }
-  if (!/^https?:$/.test(new URL(tab.url).protocol)) return; // chrome:// 等は対象外
-  const pattern = `${origin}/*`;
-  const granted = await browser.permissions.request({ origins: [pattern] });
-  if (!granted) return;
+  if (!granted) {
+    status.textContent = '許可されませんでした。';
+    return;
+  }
   const key = origin.replace(/[^a-z0-9]/gi, '_');
   try {
     await browser.scripting.registerContentScripts([
@@ -142,13 +170,15 @@ async function enableCurrentSite() {
       },
     ]);
   } catch {
-    // 既に登録済みのオリジンは無視
+    // 既に登録済みのオリジンは無視 (再有効化)
   }
-  await browser.tabs.reload(tab.id);
+  status.textContent = `${origin} を有効化しました。リロードします…`;
+  await browser.tabs.reload(tabId);
   window.close();
 }
 
 $('enableSite').addEventListener('click', () => void enableCurrentSite());
+void detectSite();
 
 // モード切替 (Alt+Shift+I / Alt+Shift+R) の再割当は Chrome 純正ページに委ねる
 // (拡張からショートカットを直接書き換える API は存在しないため)
