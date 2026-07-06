@@ -1,0 +1,73 @@
+# CLAUDE.md — MUI Design Inspector 開発ガイド
+
+全セッションの冒頭に読み込まれる。**新しい機能・保守を始める前に必ずここを読むこと。**
+
+## プロダクト概要
+
+React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeScript, MV3)。
+- **コア(React 汎用)**: ホバー識別 / ツリー / エディタジャンプ / レンダーデバッグ。
+  スタイル手法(Tailwind/CSS/styled)非依存。React Fiber を読む。
+- **MUI 固有**: 分類の「青=MUI」判別 + 将来のデザイントークン計測。
+- **デザイナー向け production 対応**: デプロイ済み App でも computed-style デザイン検査
+  (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
+- ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
+
+現状: Phase 1-2 + production両対応 M1/M2/M3 完成。詳細 `docs/ROADMAP.md`。
+
+## アーキテクチャ(2 world 構成 — 最重要)
+
+```
+background.ts (SW) ── commands/tab メッセージ中継
+  │ tabs.sendMessage
+bridge.content.ts (ISOLATED) ── browser.* 可。storage/i18n を解決
+  │ window.postMessage (同一 window 内のみ)
+inspector.content.ts (MAIN, document_start) ── ページ JS と同環境。browser.* 不可
+  ├ hook.ts / fiber.ts / tree.ts / inspector.ts / renderDebug.ts / treeView.ts / overlay.ts
+popup/ ── 設定 UI (browser.* 可)
+```
+**鉄則: MAIN world は `browser.*` を使えない。** 設定・i18n は bridge が解決して postMessage で
+共有 `strings` オブジェクトを in-place 更新。
+
+## 地雷(踏むと時間を溶かす)
+
+1. **i18n は 3 箇所同期**: 文字列追加/変更は `src/types.ts` の `DEFAULT_STRINGS` +
+   `public/_locales/{en,ja}/messages.json` を**同時に**。欠けると bridge が壊れる。`src/i18n.test.ts` が機械検知。
+2. **locale/manifest を変えたら `pnpm wxt prepare`**(i18n 型と manifest 型を再生成)。
+3. **新モード = 4点配線 + Esc**: wxt.config commands / background COMMANDS / bridge onMessage /
+   inspector.content handler(+ new + Esc 中央ハンドラ)。規約 `enable/disable/toggle/onEscape/applySettings`、DI `(hookState, overlay, strings)`。
+4. **Fiber 内部は React バージョン依存**。`type Fiber = any` は fiber/renderTracker/tree 内のみ許容。
+   **production は `_debug*` 剥離** → `devMode=false` でセーフモード縮退。
+5. **dev/production 二面性**: dev=全機能 / production=ソースジャンプ・自作名・レンダー時間 不可、
+   computed-style デザイン検査(M2)+野良値(M3)のみ。両方壊さない。
+6. **任意オリジン**: popup「有効化」で permissions.request + registerContentScripts(永続) +
+   executeScript(即時)。executeScript の files は先頭スラッシュ必須。
+
+## 規約
+
+- **`any`/`@ts-ignore` 禁止**(例外: Fiber 内部のみ)。**`console.log` 非 commit**。
+- **ユーザー可視文字列は必ず i18n**。テスト可能なロジックは純関数化(getter/mock で注入可能に)。
+- コメント日本語、仕様 FR-xx/NFR-xx。命名 PascalCase/use-/UPPER_SNAKE_CASE。
+
+## テスト戦略(①機械 / ③目視 の分離)
+
+- **①機械(自動)**: 純ロジックは vitest+happy-dom。mock 手本は fiber/tree/renderTracker.test.ts。
+  DOM 依存は `// @vitest-environment happy-dom`。数値は既知正解値で校正。
+- **③目視(人間)**: 見た目/60fps/操作感/双方向連動/実権限フロー。勝手に PASS にしない。
+- **コミット前ゲート**: `pnpm test && pnpm typecheck && pnpm build` 全 green(locale を触ったら先に `pnpm wxt prepare`)。
+
+## ワークフロー(fable-emu)
+
+非自明な変更は `/plan`(scout→planner→計画ファイル→承認→EXECUTE→`/verify` 独立検証)。
+1手が重い設計は `/bestof`。機械証拠(test/typecheck/build)を根拠にコミット。
+メモリはネイティブ project memory 一本(repo に memory/ を作らない)。
+
+## セキュリティ / リリース
+
+- セキュリティ: `SECURITY.md`(要点: 読むが送らない。送信/リモートコード/ページ内容保存なし)。
+- 配布: `PUBLISHING.md`(A=ローカル zip / B=Chrome Web Store の2通り)。`pnpm zip` → 更新は version を上げる。
+
+## 保留バックログ(次回以降 1つずつ)
+
+- フレームワーク非依存デザイン検査(Fiber 無しでも design バッジ=非 React サイト対応)
+- 全サイト一度だけ許可モード / アプリ内セキュリティ開示
+- Phase 3 デザインリント(MUI テーマ取得)/ Phase 4 レポート / Phase 5 BYOK AI

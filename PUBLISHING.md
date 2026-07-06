@@ -1,12 +1,57 @@
-# Chrome Web Store 公開手順マニュアル — MUI Design Inspector
+# 配布マニュアル — MUI Design Inspector
 
-このプロジェクトを Chrome Web Store に **限定公開 (Unlisted)** で公開する手順書。
-コマンド・値はこのリポジトリの実測に基づく。所要: 初回 60〜90 分 + 審査待ち 1〜数日。
+配布は 2 通り。用途で選ぶ。
 
-- 配信形態: **Unlisted**(検索非掲載・リンク共有のみ)
-- 対応言語: 英語 (既定) / 日本語(`_locales`)
-- 掲載文の下書き: [`STORE_LISTING.md`](./STORE_LISTING.md)
-- プライバシーポリシー本文: [`PRIVACY.md`](./PRIVACY.md)
+| | A: ローカル zip 配布 | B: Chrome Web Store |
+|---|---|---|
+| 対象 | 社内・チーム・限定メンバー | 一般/広く共有 |
+| 審査 | なし(即配布) | あり(数時間〜数日) |
+| 準備 | `pnpm zip` のみ | 下記ブロッカーあり |
+| 更新 | zip 再配布(各自再読込) | 再アップロード + 審査 |
+| 現状 | **✅ 今すぐ可能** | **⚠ 未完(§B 参照)** |
+
+セキュリティ説明が要る配布先には [`SECURITY.md`](./SECURITY.md) を添付する(監査エビデンス付き)。
+
+---
+
+## A. ローカル zip 配布(社内・限定メンバー)
+
+審査不要。今すぐできる。
+
+```sh
+pnpm install
+pnpm test && pnpm typecheck   # 全 green を確認
+pnpm zip                      # → .output/mui-inspector-<version>-chrome.zip
+```
+
+**メンバーへの案内(そのまま送れる):**
+1. 配布された zip を任意の場所に**解凍**する
+2. Chrome で `chrome://extensions` を開く
+3. 右上「**デベロッパー モード**」を ON
+4. 「**パッケージ化されていない拡張機能を読み込む**」→ 解凍したフォルダを選択
+5. localhost の React アプリで `Alt+Shift+I`。デプロイ済みサイトはポップアップの
+   「**現在のサイトで有効化**」→ 許可 → 使用可能
+
+> 注: Chrome は zip を直接読み込めない(要解凍)。`.crx` 署名配布は鍵管理が要るため、
+> 社内なら「解凍 + パッケージ化されていない拡張機能を読み込む」が最も簡単。
+> 更新時は新しい zip を配り、各自カードの 🔄 で再読み込み(または再読み込み)。
+
+**IT/セキュリティ審査を求められたら**: `SECURITY.md` を提示。「送信・保存・外部コード実行
+なし」を grep で再現証明できる。
+
+---
+
+## B. Chrome Web Store 公開(Unlisted)
+
+**限定公開 (Unlisted)** 想定。所要: 初回 60〜90 分 + 審査待ち。
+掲載文 [`STORE_LISTING.md`](./STORE_LISTING.md) / プライバシー本文 [`PRIVACY.md`](./PRIVACY.md)。
+
+**未完のブロッカー(submit 前に必須):**
+1. プライバシーポリシーを**公開 URL でホスト**(Gist/Pages)
+2. **スクリーンショット** 1280×800 を 1〜5 枚
+3. デベロッパー登録($5)+ submit(手動操作)
+4. **審査リスク: `*://*/*` 権限**の正当化 → 申請の権限説明に `SECURITY.md` の要旨を貼る
+5. 実機 QA(M1/M2/M3・一発ON の③目視)
 
 ---
 

@@ -102,6 +102,16 @@ localhost を立てないデザイナーが、デプロイ済み(=production ビ
 - **トークン準拠検出=野良値(M3)**: spacing 値が **4/8px グリッド外**なら警告表示(`tokenLint.ts`)。MUI テーマ取得に依存せず production で動く、デザイナー向けの主価値
 - 制約: production では自作コンポーネント名・ソース位置・正確なレンダー時間は原理的に取得不可(dev ビルドでのみ全機能)
 
+## ドキュメント
+
+| 目的 | ファイル |
+|------|---------|
+| 開発ガイド(アーキテクチャ/規約/地雷/テスト戦略/ワークフロー) | [`CLAUDE.md`](./CLAUDE.md) |
+| セキュリティ(監査エビデンス/脅威モデル/権限正当化) | [`SECURITY.md`](./SECURITY.md) |
+| 配布(A: ローカル zip / B: Chrome Web Store) | [`PUBLISHING.md`](./PUBLISHING.md) |
+| 掲載文・プライバシー | [`STORE_LISTING.md`](./STORE_LISTING.md) / [`PRIVACY.md`](./PRIVACY.md) |
+| フェーズ計画 | [`docs/ROADMAP.md`](./docs/ROADMAP.md) |
+
 ## ロードマップ
 
 Phase 2〜5(ビジュアルツリー / デザインリント / レポート・Skills / BYOK AI)の要件定義と実装計画は [`docs/ROADMAP.md`](./docs/ROADMAP.md) に集約。現行アーキテクチャの再利用点・新規モジュール・受け入れ条件・見積・リスク先出し(テーマ取得 / iframe の PoC 推奨)まで含む。
