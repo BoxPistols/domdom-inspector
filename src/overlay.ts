@@ -119,7 +119,13 @@ export class Overlay {
     this.ensureMounted();
     const rect = element.getBoundingClientRect();
     const color = this.colorFor(info.classification);
+    this.positionBox(rect, color);
+    this.buildBadge(info, color);
+    this.positionBadge(rect);
+  }
 
+  /** ハイライト枠を対象要素の矩形・分類色に合わせる */
+  private positionBox(rect: DOMRect, color: string) {
     Object.assign(this.box.style, {
       display: 'block',
       left: `${rect.left}px`,
@@ -129,7 +135,10 @@ export class Overlay {
       borderColor: color,
       background: `${color}1a`,
     });
+  }
 
+  /** バッジの中身 (名前 / メタ / file:line / デザインチップ / 野良値警告) を再構築する */
+  private buildBadge(info: InspectInfo, color: string) {
     // 情報量 (compact/normal/detailed) に応じて props の表示件数を決める。
     // detailed=全件、normal=先頭4件、compact=無し。
     const detail = this.settings.badgeDetail ?? 'normal';
@@ -197,8 +206,10 @@ export class Overlay {
         this.badge.append(warn);
       }
     }
+  }
 
-    // 複数行で高さが可変になるため、実測してから上下配置を決める
+  /** 複数行で高さが可変になるため、実測してからバッジの上下配置を決める */
+  private positionBadge(rect: DOMRect) {
     this.badge.style.display = 'block';
     this.badge.style.left = `${Math.max(4, rect.left)}px`;
     this.badge.style.top = '0px';
