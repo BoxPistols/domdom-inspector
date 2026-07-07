@@ -1,5 +1,6 @@
 import type { HookState } from './hook';
 import type { Overlay } from './overlay';
+import { normalizeRecordKey } from './recordKey';
 import { RenderTracker } from './renderTracker';
 import { DEFAULT_STRINGS, type UiStrings } from './types';
 
@@ -28,8 +29,8 @@ export class RenderDebugger {
   ) {}
 
   applySettings(recordKey: string) {
-    // 単一キーのみ受け付ける (空・複数文字は既定へフォールバック)
-    this.recordKey = recordKey && recordKey.length === 1 ? recordKey.toLowerCase() : 'r';
+    // 単一キーのみ受け付ける (空・複数文字は既定 'r' へフォールバック)
+    this.recordKey = normalizeRecordKey(recordKey, 'r');
   }
 
   toggle() {

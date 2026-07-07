@@ -1,25 +1,12 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl } from './editor';
+import { designLabel, heatColor, visibleProps } from './overlayFormat';
 import { lintSpacing } from './tokenLint';
 import type { TreeNode } from './tree';
 import { DEFAULT_STRINGS, type Classification, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /** lintSpacing に渡すグリッド幅 (px)。警告文の {grid} 表示と必ず一致させる */
 const SPACING_GRID = 4;
-
-// DesignProp.label は内部 id (tokenLint の判定キー) のまま変えず、表示層でデザイナー向け名に解決する
-const DESIGN_LABEL_KEYS: Record<string, keyof UiStrings | undefined> = {
-  color: 'dsColor',
-  bg: 'dsBg',
-  font: 'dsFont',
-  weight: 'dsWeight',
-  lh: 'dsLineHeight',
-  padding: 'dsPadding',
-  margin: 'dsMargin',
-  radius: 'dsRadius',
-  shadow: 'dsShadow',
-  gap: 'dsGap',
-};
 
 /**
  * 対象ページと干渉しない Shadow DOM 隔離オーバーレイ (v3.0 §7)。
@@ -29,14 +16,6 @@ interface Flash {
   rect: { left: number; top: number; width: number; height: number };
   born: number;
   heat: number;
-}
-
-/** 再描画ヒートマップの色: 回数が多いほど青→緑→黄→赤 */
-function heatColor(heat: number): string {
-  if (heat <= 1) return '96,165,250'; // 青
-  if (heat <= 3) return '52,211,153'; // 緑
-  if (heat <= 7) return '251,191,36'; // 黄
-  return '248,113,113'; // 赤
 }
 
 export class Overlay {
@@ -315,12 +294,6 @@ export class Overlay {
     this.inspectPillEl?.classList.remove('on');
   }
 
-  /** DesignProp.label (内部 id) → デザイナー向け表示名。未知 id はそのまま */
-  private designLabel(label: string): string {
-    const key = DESIGN_LABEL_KEYS[label];
-    return key ? this.strings[key] : label;
-  }
-
   private colorFor(classification: Classification): string {
     const { colors } = this.settings;
     return classification === 'mui'
@@ -350,7 +323,7 @@ export class Overlay {
     // detailed=全件、normal=先頭4件、compact=無し。
     const detail = this.settings.badgeDetail ?? 'normal';
     const entries = Object.entries(info.props);
-    const propsShown = detail === 'compact' ? [] : detail === 'detailed' ? entries : entries.slice(0, 4);
+    const propsShown = visibleProps(entries, detail);
     const propsText = propsShown.map(([k, v]) => `${k}=${v}`).join(' ');
     const file = info.jumpTarget
       ? `${info.jumpTarget.fileName.split('/').pop()}:${info.jumpTarget.lineNumber}`
@@ -392,7 +365,7 @@ export class Overlay {
         chip.className = 'chip';
         const lb = document.createElement('span');
         lb.className = 'lb';
-        lb.textContent = this.designLabel(p.label);
+        lb.textContent = designLabel(p.label, this.strings);
         chip.append(lb);
         // 色値は hex 文字列だけでは読めないため実色スウォッチを前置 (半透明もそのまま描画)
         if (isColorValue(p.value)) {
@@ -418,7 +391,7 @@ export class Overlay {
           findings
             .map((f) =>
               this.strings.offGridWarn
-                .replace('{label}', this.designLabel(f.label))
+                .replace('{label}', designLabel(f.label, this.strings))
                 .replace('{values}', f.offGrid.join('/'))
                 .replace('{grid}', String(SPACING_GRID)),
             )

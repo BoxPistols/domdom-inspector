@@ -1,4 +1,6 @@
-import { DEFAULT_SETTINGS, type PathMapping, type Settings } from '../../src/types';
+import { parseMappings } from '../../src/mappings';
+import { normalizeRecordKey } from '../../src/recordKey';
+import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const msg = (key: Parameters<typeof browser.i18n.getMessage>[0]) => browser.i18n.getMessage(key) || '';
@@ -55,17 +57,6 @@ async function applyShortcutHints() {
     .replace('{rec}', rec);
 }
 
-function parseMappings(text: string): PathMapping[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.includes('='))
-    .map((line) => {
-      const index = line.indexOf('=');
-      return { from: line.slice(0, index), to: line.slice(index + 1) };
-    });
-}
-
 // 「開発者向け」折りたたみの開閉状態を保持 (エンジニアは開きっぱなしにできる)
 const devSectionEl = $<HTMLElement>('devSection') as HTMLDetailsElement;
 devSectionEl.addEventListener('toggle', () => {
@@ -97,8 +88,8 @@ async function save() {
     openEditorOnClick: openEditorEl.checked,
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
     pathMappings: parseMappings(mappingsEl.value),
-    // 単一キーのみ (空・複数は既定 'r')
-    recordKey: recordKeyEl.value.length === 1 ? recordKeyEl.value.toLowerCase() : DEFAULT_SETTINGS.recordKey,
+    // 単一キーのみ (空・複数は既定へフォールバック)
+    recordKey: normalizeRecordKey(recordKeyEl.value, DEFAULT_SETTINGS.recordKey),
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
