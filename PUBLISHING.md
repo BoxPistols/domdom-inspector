@@ -61,7 +61,7 @@ pnpm zip                      # → .output/mui-inspector-<version>-chrome.zip
 
 ```sh
 pnpm install
-pnpm test        # 46 tests
+pnpm test        # 76 tests
 pnpm typecheck   # tsc --noEmit
 pnpm build       # .output/chrome-mv3
 ```
@@ -69,7 +69,7 @@ pnpm build       # .output/chrome-mv3
 - [ ] test / typecheck / build が通る
 - [ ] `public/icon/{16,32,48,96,128}.png` が存在する
 - [ ] `public/_locales/{en,ja}/messages.json` が存在する
-- [ ] 本番 manifest の permissions が `storage` のみ(`.output/chrome-mv3/manifest.json` で確認)
+- [ ] 本番 manifest の permissions が `storage`/`activeTab`/`scripting` + `optional_host_permissions: *://*/*`(`.output/chrome-mv3/manifest.json` で確認。正当化は SECURITY.md)
 - [ ] `package.json` の `version` が公開したい版になっている(初回は `0.1.0`)
 
 > バージョンは `package.json` の `version` が manifest に反映される。**更新のたびに必ず上げる**
@@ -143,9 +143,12 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 - **単一目的の説明 (Single purpose)**:
   「ローカル開発中の React + MUI の UI について、コンポーネントの識別・ソースへの誘導・
   再描画/パフォーマンスの可視化を行う開発者向け検査ツール。」
-- **権限の正当化 (Permission justification)**:
+- **権限の正当化 (Permission justification)** — SECURITY.md の 4 権限表を転記:
   - `storage`: ユーザー設定(エディタ・パスマッピング等)のローカル保存
-  - ホスト権限 `localhost` / `127.0.0.1`: ローカル開発サーバへのインスペクタ注入のみ
+  - `activeTab`: ポップアップから現タブ origin の取得
+  - `scripting`: ユーザーが有効化したオリジンへのインスペクタ動的注入
+  - `optional_host_permissions` (`*://*/*`): デプロイ済みサイト検査用。既定未付与、ユーザーが
+    「有効化」した時のみ要求(localhost は静的コンテンツスクリプトで対応)
 - **リモートコード**: 「使用しない」を選択(動的コード取得なし)
 - **データ利用 (Data usage)**:
   - 収集するユーザーデータ: **なし**
@@ -185,7 +188,9 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 
 ## 7. スクリーンショットの撮り方(補助)
 
-拡張は localhost 開発ビルドでのみ動くため、実アプリで撮る。
+拡張は localhost 開発ビルドでフル機能(ソースジャンプ・レンダー計測を含む)が揃うため、
+スクショは dev の実アプリで撮るのが手軽(デプロイ済みサイトでもデザイン検査は動くが、
+コード位置は取れず名前推定のセーフモードになる)。
 
 1. 撮影対象の React + MUI アプリを dev で起動(例 `http://localhost:5173`)
 2. `pnpm build` 済みの `.output/chrome-mv3` を `chrome://extensions`(デベロッパーモード)で読み込む

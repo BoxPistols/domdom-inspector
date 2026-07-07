@@ -70,7 +70,7 @@ popup/ ── 設定 UI (browser.* 可)
 
 - ~~フレームワーク非依存デザイン検査~~ ✅ 完了(inspectElement が Fiber 無し要素で isReact:false の design-only 情報を返す)
 - ~~全サイト一度だけ許可モード~~ ✅ 完了(popup の toggle。permissions.request/remove + registerContentScripts *://*/* + executeScript 即時。bridge/inspector に二重注入ガード)
-- アプリ内セキュリティ開示(有効化ボタン付近に権限説明 + SECURITY.md 要旨)
+- ~~アプリ内セキュリティ開示~~ ✅ 完了(全サイト許可ボタン直下に `hintAllSites`「ページを読むだけ。外部送信・ページ内容保存・リモートコード実行なし」を配置。commit 6f095ea)
 - iframe 内対応 (FR-13): all_frames + match_origin_as_fallback。ただし sandbox(opaque origin)の
   blob/srcdoc frame は content script 注入不可のため対象外(UI ビルダー系プレビューは非対応)
 - Phase 3 デザインリント(MUI テーマ取得)/ Phase 4 レポート / Phase 5 BYOK AI

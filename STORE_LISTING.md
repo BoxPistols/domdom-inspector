@@ -37,7 +37,9 @@ RENDER / PERFORMANCE DEBUG (Alt+Shift+R)
 
 PRIVACY
 - No telemetry, no servers, no tracking. Settings stay in local storage.
-- Runs only on localhost / 127.0.0.1 dev servers.
+- Localhost dev servers work out of the box. Any other site is inspected only after
+  you explicitly enable it ("Enable on current site"), and even then the extension
+  only reads the page — it never sends, stores, or runs remote code.
 
 Requires a React development build. On production builds it falls back to a
 name-only safe mode.
@@ -45,11 +47,15 @@ name-only safe mode.
 
 **Permission justification (for review):**
 - `storage`: persist user settings (editor choice, path mappings) locally.
-- Host access `localhost` / `127.0.0.1`: inject the inspector into local dev servers only.
+- `activeTab`: read the current tab's origin from the popup when you open it.
+- `scripting`: inject the inspector into origins you have enabled.
+- `optional_host_permissions` (`*://*/*`): not granted by default; requested only when
+  you click "Enable on current site" / "Enable on all sites" so deployed apps can be
+  inspected. localhost is covered by a static content script.
 - No remote code; no data leaves the device.
 
-**Single purpose:** Inspect and debug the design/rendering of React + MUI UIs during
-local development.
+**Single purpose:** Inspect and debug the design/rendering of React + MUI UIs — on
+localhost during development, or on any deployed site you explicitly enable.
 
 **Data usage disclosure (CWS form):**
 - Does the item collect user data? **No.**
@@ -88,7 +94,8 @@ MUI Design Inspector は React + MUI アプリ向けのゼロ設定な開発者�
 
 プライバシー
 - テレメトリ・サーバー・トラッキングなし。設定はローカル保存のみ。
-- localhost / 127.0.0.1 の開発サーバでのみ動作。
+- localhost の開発サーバはそのまま動作。その他のサイトは「現在のサイトで有効化」した時のみ
+  検査対象になり、その場合もページを読むだけで送信・保存・リモートコード実行は行いません。
 
 React の development ビルドが必要です。production ビルドでは名前推定のみの
 セーフモードになります。
@@ -108,5 +115,5 @@ React の development ビルドが必要です。production ビルドでは名�
 
 - [x] `default_locale: en` + `_locales/en`, `_locales/ja`
 - [x] アイコン 16/32/48/96/128
-- [x] 本番 permissions は `storage` のみ(host は localhost)
+- [x] permissions は `storage`/`activeTab`/`scripting`(host は localhost 静的 + `optional_host_permissions: *://*/*` はユーザー明示許可時のみ)。正当化は SECURITY.md
 - [ ] デベロッパー登録($5)・スクショ・プライバシーポリシー URL
