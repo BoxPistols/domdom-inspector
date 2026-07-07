@@ -40,11 +40,15 @@ async function applyShortcutHints() {
   const t = (k: MsgKey) => browser.i18n.getMessage(k) || '';
   const cmds = await browser.commands.getAll();
   const shortcutOf = (name: string) =>
-    cmds.find((c) => c.name === name)?.shortcut || '(unset)';
+    cmds.find((c) => c.name === name)?.shortcut || t('shortcutUnset');
   const rec = (recordKeyEl.value || 'r').toUpperCase();
   $('hintInspect').textContent = t('popupToggleInspectHint').replace(
     '{key}',
     shortcutOf('toggle-inspect'),
+  );
+  $('hintTree').textContent = t('popupToggleTreeHint').replace(
+    '{key}',
+    shortcutOf('toggle-tree'),
   );
   $('hintRender').textContent = t('popupToggleRenderHint')
     .replace('{key}', shortcutOf('toggle-render'))
@@ -62,9 +66,17 @@ function parseMappings(text: string): PathMapping[] {
     });
 }
 
+// 「開発者向け」折りたたみの開閉状態を保持 (エンジニアは開きっぱなしにできる)
+const devSectionEl = $<HTMLElement>('devSection') as HTMLDetailsElement;
+devSectionEl.addEventListener('toggle', () => {
+  void browser.storage.local.set({ popupDevOpen: devSectionEl.open });
+});
+
 async function load() {
   const stored = await browser.storage.local.get('settings');
   const settings: Settings = { ...DEFAULT_SETTINGS, ...(stored.settings ?? {}) };
+  const { popupDevOpen } = await browser.storage.local.get('popupDevOpen');
+  devSectionEl.open = popupDevOpen === true;
   editorEl.value = settings.editor;
   templateEl.value = settings.customUrlTemplate;
   muiSkipEl.checked = settings.muiSkip;
@@ -113,6 +125,7 @@ async function sendToActiveTab(type: string) {
 }
 
 $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
+$('toggleTree').addEventListener('click', () => void sendToActiveTab('toggle-tree'));
 $('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-render'));
 
 // 任意オリジン (デプロイ済み App) をユーザー明示許可で有効化 (M1)。
@@ -134,10 +147,10 @@ async function detectSite() {
   }
   if (!siteOrigin || siteTabId == null) {
     btn.disabled = true;
-    status.textContent = 'このページ (http/https 以外、または URL 不明) では有効化できません。';
+    status.textContent = msg('siteUnavailable');
   } else {
     btn.disabled = false;
-    status.textContent = `対象: ${siteOrigin}`;
+    status.textContent = msg('siteTarget').replace('{origin}', siteOrigin);
   }
 }
 
@@ -151,8 +164,9 @@ async function enableCurrentSite() {
   let granted = false;
   try {
     granted = await browser.permissions.request({ origins: [pattern] });
-  } catch (e) {
-    status.textContent = `${msg('permError')} ${String(e)}`;
+  } catch {
+    // request の例外はほぼ gesture 失効 — 生例外ではなく対処可能な定型案内を出す
+    status.textContent = msg('permError');
     return;
   }
   if (!granted) {
@@ -193,11 +207,14 @@ async function enableCurrentSite() {
       files: ['/content-scripts/inspector.js'],
       world: 'MAIN',
     });
-  } catch (e) {
-    status.textContent = `注入エラー: ${String(e)} — ページをリロードしてお試しください`;
+  } catch {
+    status.textContent = msg('injectError');
     return;
   }
-  status.textContent = `${origin} を有効化しました。インスペクトを ON にできます。`;
+  // 有効化直後にインスペクトを冪等 ON (inspect-on は既に ON なら何もしない)。
+  // ページ側のトーストが即時フィードバックになり「押しても何も起きない」を防ぐ。
+  browser.tabs.sendMessage(tabId, { type: 'inspect-on' }).catch(() => {});
+  window.close();
 }
 
 $('enableSite').addEventListener('click', () => void enableCurrentSite());
@@ -233,8 +250,9 @@ async function toggleAllSites() {
   let ok = false;
   try {
     ok = await browser.permissions.request(ALL_ORIGINS);
-  } catch (e) {
-    status.textContent = `${msg('permError')} ${String(e)}`;
+  } catch {
+    // request の例外はほぼ gesture 失効 — 生例外ではなく対処可能な定型案内を出す
+    status.textContent = msg('permError');
     return;
   }
   if (!ok) {
@@ -265,8 +283,12 @@ async function toggleAllSites() {
         files: ['/content-scripts/inspector.js'],
         world: 'MAIN',
       });
+      // 現タブで即使えるので、インスペクトを冪等 ON にして閉じる (enableCurrentSite と同じ導線)
+      browser.tabs.sendMessage(tab.id, { type: 'inspect-on' }).catch(() => {});
+      window.close();
+      return;
     } catch {
-      // 注入不可 (chrome:// 等) は無視
+      // 注入不可 (chrome:// 等) は無視してステータス表示にフォールバック
     }
   }
   status.textContent = msg('allSitesEnabled');

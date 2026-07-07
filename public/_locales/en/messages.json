@@ -7,20 +7,35 @@
   "cmdToggleRender": { "message": "Toggle render visualization mode" },
   "cmdToggleTree": { "message": "Toggle component tree mode" },
 
+  "sectionSite": { "message": "Use on this site" },
+  "sectionModes": { "message": "Modes" },
+  "sectionDisplay": { "message": "Display" },
+  "sectionDev": { "message": "For developers (editor link, advanced)" },
   "popupToggleInspect": { "message": "Toggle inspect mode on this tab" },
+  "popupToggleTree": { "message": "Toggle component tree on this tab" },
+  "popupToggleTreeHint": { "message": "Shortcut: {key} / Exit: Esc" },
+  "optBadgeCompact": { "message": "Compact (name & location)" },
+  "optBadgeNormal": { "message": "Standard (+ colors & spacing)" },
+  "optBadgeDetailed": { "message": "Detailed (everything)" },
   "btnEnableSite": { "message": "Enable on current site…" },
   "hintEnableSite": {
-    "message": "For deployed/production sites (not just localhost). Grants access to this origin; reload once after enabling."
+    "message": "For deployed/production sites (not just localhost). Grants access to this site and starts inspecting right away — no reload needed."
   },
   "btnAllSitesOn": { "message": "Enable on all sites (once)" },
   "btnAllSitesOff": { "message": "Revoke all-sites access" },
   "hintAllSites": {
-    "message": "Grant once and it works on every site with no per-site prompts. Revoke here anytime. See SECURITY.md."
+    "message": "Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button. This extension only reads the page — it never sends data, stores page content, or runs remote code."
   },
   "allSitesEnabled": { "message": "Enabled on all sites." },
   "allSitesRevoked": { "message": "All-sites access revoked." },
   "permDenied": { "message": "Permission was not granted." },
-  "permError": { "message": "Permission request error:" },
+  "permError": {
+    "message": "The permission request didn't go through — close this popup, open it again, and press the button once more."
+  },
+  "siteUnavailable": { "message": "This page (non-http/https or unknown URL) can't be enabled." },
+  "siteTarget": { "message": "Target: {origin}" },
+  "injectError": { "message": "Couldn't start on this page — reload the page and try again." },
+  "shortcutUnset": { "message": "(not set)" },
   "popupToggleInspectHint": { "message": "Shortcut: {key} / Exit: Esc" },
   "popupToggleRender": { "message": "Toggle render visualization mode" },
   "popupToggleRenderHint": { "message": "Shortcut: {key} / Record: {rec} / Exit: Esc" },
@@ -28,7 +43,7 @@
   "labelCustomUrl": { "message": "Custom URL template" },
   "labelMuiSkip": { "message": "Skip MUI internals and jump to your own code" },
   "labelOpenEditor": { "message": "Open editor on click" },
-  "labelBadgeDetail": { "message": "Badge detail level (compact / normal / detailed)" },
+  "labelBadgeDetail": { "message": "Badge detail level" },
   "tipMuiSkip": {
     "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
   },
@@ -36,7 +51,7 @@
     "message": "Click an element to open its source line in your editor. Dev build only — production builds have no source location, so this has no effect there."
   },
   "tipBadgeDetail": {
-    "message": "How much the hover badge shows. compact = name + location; normal = + props & design (color/spacing); detailed = all props. Design info always shows on production."
+    "message": "How much the hover badge shows. Compact = name + location; Standard = + design info (color/spacing); Detailed = everything. Design info always shows on production sites."
   },
   "tipRecordKey": {
     "message": "In render-visualization mode, this key starts/stops recording re-renders (default R). It only works while render mode is ON."
@@ -45,7 +60,9 @@
     "message": "If clicking doesn't open the file, map the dev-server path to your local absolute path (e.g. /src=/Users/you/app/src), one per line."
   },
   "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
-  "hintTarget": { "message": "Only localhost / 127.0.0.1 dev servers. Settings save automatically." },
+  "hintTarget": {
+    "message": "Localhost works out of the box; enable any other site in “Use on this site” above. Settings save automatically."
+  },
   "helpSummary": { "message": "How to use" },
   "btnConfigureShortcuts": { "message": "Change toggle shortcuts…" },
   "hintConfigureShortcuts": {
@@ -54,7 +71,7 @@
   "labelRecordKey": { "message": "Record key (in render mode)" },
 
   "inspectOn": {
-    "message": "Inspect ON — Click: editor / Alt+Click: owner tree / ↑↓: parent/child / Esc: exit"
+    "message": "Inspect ON — hover to inspect, Esc to exit. Click: editor / Alt+Click: rendered-by tree / ↑↓: parent/child"
   },
   "inspectOnSafe": {
     "message": "Inspect ON — no dev build detected, safe mode (names only / Esc to exit)"
@@ -66,7 +83,7 @@
   },
   "jumpProd": { "message": "Source jump is unavailable on production builds" },
   "editorLinkOff": {
-    "message": "Editor link is off (toggle it in the popup). Alt+Click still opens the owner tree."
+    "message": "Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree."
   },
   "sourceUnavailable": { "message": "source unavailable" },
   "prodSafeMode": { "message": "production build (safe mode)" },
@@ -81,6 +98,9 @@
   "ctrlTitle": { "message": "Render viz" },
   "ctrlRecord": { "message": "Record" },
   "ctrlStop": { "message": "Stop" },
+  "ctrlRecording": { "message": "REC" },
+  "inspectPill": { "message": "Inspecting — Esc to exit" },
+  "inspectPillClose": { "message": "Exit inspect mode" },
   "treeOn": {
     "message": "Component tree ON — hover a row to highlight, hover the page to locate it. Esc to close"
   },
@@ -90,12 +110,24 @@
   "recordStart": {
     "message": "Recording — interact to trigger re-renders, press R to stop and see the ranking"
   },
-  "statsTitle": { "message": "Re-render ranking ({n} commits)" },
+  "statsTitle": { "message": "Re-render ranking ({n} screen updates)" },
   "statsColsSupported": {
     "message": "Columns: component / re-renders / cumulative self time (ms)"
   },
   "statsColsUnsupported": {
     "message": "Profiler timer unavailable here; time shows 0 (needs a dev build)"
   },
-  "statsEmpty": { "message": "No re-renders were recorded" }
+  "statsEmpty": { "message": "No re-renders were recorded" },
+
+  "dsColor": { "message": "text color" },
+  "dsBg": { "message": "background" },
+  "dsFont": { "message": "font size" },
+  "dsWeight": { "message": "weight" },
+  "dsLineHeight": { "message": "line height" },
+  "dsPadding": { "message": "padding" },
+  "dsMargin": { "message": "margin" },
+  "dsRadius": { "message": "radius" },
+  "dsShadow": { "message": "shadow" },
+  "dsGap": { "message": "gap" },
+  "offGridWarn": { "message": "{label} {values}px (not on the {grid}px grid)" }
 }

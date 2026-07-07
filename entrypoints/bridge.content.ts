@@ -46,6 +46,10 @@ export default defineContentScript({
       if (message?.type === 'toggle-inspect') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
       }
+      // 冪等 ON (popup のサイト有効化直後に使う。既に ON でも OFF に倒れない)
+      if (message?.type === 'inspect-on') {
+        window.postMessage({ source: BRIDGE_SOURCE, type: 'inspect-on' }, '*');
+      }
       if (message?.type === 'toggle-render') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle-render' }, '*');
       }

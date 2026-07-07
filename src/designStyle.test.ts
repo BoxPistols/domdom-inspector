@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickDesignStyle } from './designStyle';
+import { isColorValue, pickDesignStyle } from './designStyle';
 
 const getter = (map: Record<string, string>) => (prop: string) => map[prop] ?? '';
 
@@ -54,5 +54,23 @@ describe('pickDesignStyle', () => {
   it('半透明 rgba は色を落とさずそのまま残す', () => {
     const props = pickDesignStyle(getter({ color: 'rgba(0, 0, 0, 0.5)' }));
     expect(props[0].value).toBe('rgba(0, 0, 0, 0.5)');
+  });
+});
+
+describe('isColorValue', () => {
+  it('#hex / rgb() / rgba() をスウォッチ対象と判定する', () => {
+    expect(isColorValue('#1976d2')).toBe(true);
+    expect(isColorValue('#fff')).toBe(true);
+    expect(isColorValue('rgb(25, 118, 210)')).toBe(true);
+    expect(isColorValue('rgba(0, 0, 0, 0.5)')).toBe(true);
+  });
+
+  it('キーワード・数値・px・shadow 複合値は対象外と判定する', () => {
+    expect(isColorValue('normal')).toBe(false);
+    expect(isColorValue('400')).toBe(false);
+    expect(isColorValue('14px')).toBe(false);
+    expect(isColorValue('8px 16px')).toBe(false);
+    // box-shadow の複合値 (色 + オフセット) はスウォッチにしない
+    expect(isColorValue('rgba(0, 0, 0, 0.2) 0px 2px 8px 0px')).toBe(false);
   });
 });

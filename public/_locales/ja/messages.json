@@ -4,83 +4,103 @@
     "message": "あらゆる React アプリを検査: ホバーで識別・ソースへジャンプ・再描画を可視化。MUI 判別対応、任意のスタイルで動作。"
   },
   "cmdToggleInspect": { "message": "インスペクトモードの切替" },
-  "cmdToggleRender": { "message": "レンダー可視化モードの切替" },
+  "cmdToggleRender": { "message": "再描画の可視化モードの切替" },
   "cmdToggleTree": { "message": "コンポーネントツリーモードの切替" },
 
+  "sectionSite": { "message": "このサイトで使う" },
+  "sectionModes": { "message": "モード" },
+  "sectionDisplay": { "message": "表示設定" },
+  "sectionDev": { "message": "開発者向け(エディタ連携など)" },
   "popupToggleInspect": { "message": "このタブでインスペクトモード切替" },
+  "popupToggleTree": { "message": "このタブでコンポーネントツリー切替" },
+  "popupToggleTreeHint": { "message": "ショートカット: {key} / 解除: Esc" },
+  "optBadgeCompact": { "message": "少なめ(名前と場所)" },
+  "optBadgeNormal": { "message": "標準(+色・余白)" },
+  "optBadgeDetailed": { "message": "詳細(すべての情報)" },
   "btnEnableSite": { "message": "現在のサイトで有効化…" },
   "hintEnableSite": {
-    "message": "デプロイ済み/本番サイト用(localhost 以外)。このオリジンへのアクセスを許可し、有効化後に1度リロード。"
+    "message": "デプロイ済み/本番サイト用(localhost 以外)。このサイトへのアクセスを許可し、その場でインスペクトが始まります(リロード不要)。"
   },
   "btnAllSitesOn": { "message": "全サイトで許可(一度だけ)" },
   "btnAllSitesOff": { "message": "全サイト許可を解除" },
   "hintAllSites": {
-    "message": "一度許可すれば以降どのサイトでも都度許可なしで動きます。反映されなければ1度リロード。解除も同ボタンで。安全性の根拠は SECURITY.md。"
+    "message": "一度許可すれば以降どのサイトでも都度許可なしで使えます。解除も同じボタンから。この拡張はページを読み取るだけで、データの外部送信・ページ内容の保存・リモートコードの実行は行いません。"
   },
   "allSitesEnabled": { "message": "全サイトで有効化しました。" },
   "allSitesRevoked": { "message": "全サイト許可を解除しました。" },
   "permDenied": { "message": "許可されませんでした。" },
-  "permError": { "message": "許可要求エラー:" },
+  "permError": {
+    "message": "許可リクエストを実行できませんでした — ポップアップを開き直して、もう一度ボタンを押してください。"
+  },
+  "siteUnavailable": { "message": "このページ(http/https 以外、または URL 不明)では有効化できません。" },
+  "siteTarget": { "message": "対象: {origin}" },
+  "injectError": { "message": "このページで開始できませんでした — ページをリロードしてもう一度お試しください。" },
+  "shortcutUnset": { "message": "(未設定)" },
   "popupToggleInspectHint": { "message": "ショートカット: {key} / 解除: Esc" },
-  "popupToggleRender": { "message": "レンダー可視化モード切替" },
+  "popupToggleRender": { "message": "再描画の可視化モード切替" },
   "popupToggleRenderHint": { "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc" },
   "labelEditor": { "message": "エディタ" },
   "labelCustomUrl": { "message": "カスタム URL テンプレート" },
   "labelMuiSkip": { "message": "MUI 内部をスキップして自作コードへジャンプ" },
   "labelOpenEditor": { "message": "クリックでエディタを開く" },
-  "labelBadgeDetail": { "message": "バッジの情報量 (compact / normal / detailed)" },
+  "labelBadgeDetail": { "message": "バッジの情報量" },
   "tipMuiSkip": {
     "message": "ON: クリックで MUI ライブラリ内部ではなく、あなたが書いた JSX の該当行(例: <Card> を書いた行)へジャンプ。OFF: MUI の内部ファイルへジャンプ。"
   },
   "tipOpenEditor": {
-    "message": "要素クリックでソース位置をエディタで開く。dev ビルド専用 — production ではソース位置が取れないため効果なし(見た目の検査に使う)。"
+    "message": "要素クリックでソース位置をエディタで開く。開発ビルド専用 — 本番サイト(公開ビルド)ではコード位置が取れないため効果なし(見た目の検査に使う)。"
   },
   "tipBadgeDetail": {
-    "message": "ホバー時のバッジ表示量。compact=名前+場所 / normal=+props・デザイン(色/余白) / detailed=全props。デザイン情報は production では常に表示。"
+    "message": "ホバー時のバッジ表示量。少なめ=名前+場所 / 標準=+デザイン情報(色/余白) / 詳細=すべて。デザイン情報は本番サイトでは常に表示。"
   },
   "tipRecordKey": {
-    "message": "レンダー可視化モード中に、このキーで再描画の記録を開始/停止(既定 R)。レンダーモードが ON の時だけ有効。"
+    "message": "再描画の可視化モード中に、このキーで記録を開始/停止(既定 R)。可視化モードが ON の時だけ有効。"
   },
   "tipPathMappings": {
     "message": "クリックしてもファイルが開かない時、dev サーバのパスをローカルの絶対パスに変換(例: /src=/Users/you/app/src)。1 行 1 件。"
   },
   "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
-  "hintTarget": { "message": "対象: localhost / 127.0.0.1 の開発サーバのみ。設定は自動保存されます。" },
+  "hintTarget": {
+    "message": "localhost はそのまま使えます。他のサイトは上の「このサイトで使う」で有効化。設定は自動保存されます。"
+  },
   "helpSummary": { "message": "使い方ヘルプ" },
   "btnConfigureShortcuts": { "message": "切替ショートカットを変更…" },
   "hintConfigureShortcuts": {
     "message": "chrome://extensions/shortcuts を開き、Alt+Shift+I / Alt+Shift+R を任意のキーに再割当できます。"
   },
-  "labelRecordKey": { "message": "記録キー (レンダーモード中)" },
+  "labelRecordKey": { "message": "記録キー(再描画の可視化モード中)" },
 
   "inspectOn": {
-    "message": "Inspect ON — クリック: エディタ / Alt+クリック: owner ツリー / ↑↓: 親子移動 / Esc: 解除"
+    "message": "インスペクト ON — ホバーで検査、Esc で終了。クリック: エディタ / Alt+クリック: 描画元ツリー / ↑↓: 親子移動"
   },
   "inspectOnSafe": {
-    "message": "Inspect ON — dev ビルド未検出のためセーフモード (名前のみ表示 / Esc で解除)"
+    "message": "インスペクト ON — 開発ビルド未検出のため簡易表示(名前のみ / Esc で終了)"
   },
-  "inspectOff": { "message": "Inspect OFF" },
+  "inspectOff": { "message": "インスペクト OFF" },
   "noOuterComponent": { "message": "これ以上外側のコンポーネントはありません" },
   "jumpUnresolved": {
-    "message": "ソース位置を解決できませんでした (React 19 では babel plugin なしの場合があります)"
+    "message": "コードの位置を特定できませんでした(React 19 ではビルド設定により位置情報が出ないことがあります)"
   },
-  "jumpProd": { "message": "production ビルドのためソースジャンプは利用できません" },
+  "jumpProd": { "message": "本番サイト(公開ビルド)のため、コードへのジャンプは使えません" },
   "editorLinkOff": {
-    "message": "エディタ連携は OFF です (ポップアップで切替)。Alt+クリックは owner ツリーを開きます。"
+    "message": "エディタ連携は OFF です(ポップアップで切替)。Alt+クリックは描画元ツリーを開きます。"
   },
   "sourceUnavailable": { "message": "ソース不明" },
-  "prodSafeMode": { "message": "production ビルド (セーフモード)" },
+  "prodSafeMode": { "message": "本番サイト(公開ビルド)" },
   "ownerPanelTitle": { "message": "描画元 (クリックでエディタへ)" },
   "renderOn": {
-    "message": "レンダー可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF"
+    "message": "再描画の可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF"
   },
   "renderOnNoDev": {
-    "message": "レンダー可視化 ON — dev ビルド未検出のため時間計測は不可 (明滅のみ)"
+    "message": "再描画の可視化 ON — 開発ビルド未検出のため時間計測は不可 (明滅のみ)"
   },
-  "renderOff": { "message": "レンダー可視化 OFF" },
-  "ctrlTitle": { "message": "レンダー可視化" },
+  "renderOff": { "message": "再描画の可視化 OFF" },
+  "ctrlTitle": { "message": "再描画の可視化" },
   "ctrlRecord": { "message": "記録" },
   "ctrlStop": { "message": "停止" },
+  "ctrlRecording": { "message": "記録中" },
+  "inspectPill": { "message": "インスペクト中 — Esc で終了" },
+  "inspectPillClose": { "message": "インスペクトを終了" },
   "treeOn": {
     "message": "コンポーネントツリー ON — 行 hover でハイライト / ページ hover で該当行へ / Esc で解除"
   },
@@ -90,10 +110,22 @@
   "recordStart": {
     "message": "記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示"
   },
-  "statsTitle": { "message": "再描画ランキング ({n} commits)" },
-  "statsColsSupported": { "message": "列: コンポーネント / 再描画回数 / 累積 self 時間(ms)" },
+  "statsTitle": { "message": "再描画ランキング(画面更新 {n} 回)" },
+  "statsColsSupported": { "message": "列: コンポーネント / 再描画回数 / 累積処理時間(ms)" },
   "statsColsUnsupported": {
-    "message": "このページでは Profiler タイマが取得できず時間は 0 表示 (dev ビルドが必要)"
+    "message": "このページでは処理時間を計測できないため 0 表示になります(開発ビルドが必要)"
   },
-  "statsEmpty": { "message": "再描画は記録されませんでした" }
+  "statsEmpty": { "message": "再描画は記録されませんでした" },
+
+  "dsColor": { "message": "文字色" },
+  "dsBg": { "message": "背景色" },
+  "dsFont": { "message": "文字サイズ" },
+  "dsWeight": { "message": "太さ" },
+  "dsLineHeight": { "message": "行間" },
+  "dsPadding": { "message": "内余白" },
+  "dsMargin": { "message": "外余白" },
+  "dsRadius": { "message": "角丸" },
+  "dsShadow": { "message": "影" },
+  "dsGap": { "message": "間隔" },
+  "offGridWarn": { "message": "{label} {values}px({grid}px の倍数外)" }
 }

@@ -29,6 +29,12 @@ function shorten(v: string): string {
   return v.length > 48 ? `${v.slice(0, 48)}…` : v;
 }
 
+/** スウォッチ描画できる色値か (#hex / rgb() / rgba())。キーワード・数値・px・shadow 複合値は対象外 */
+export function isColorValue(v: string): boolean {
+  const t = v.trim();
+  return /^#[0-9a-f]{3,8}$/i.test(t) || /^rgba?\([^)]*\)$/i.test(t);
+}
+
 /** rgb()/rgba(不透明) を #rrggbb に整形 (デザイナーに読みやすく)。半透明・非対応はそのまま */
 export function toHex(v: string): string {
   const m = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);

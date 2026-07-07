@@ -34,6 +34,11 @@ export class Inspector {
     this.enabled ? this.disable() : this.enable();
   }
 
+  /** 冪等な ON。popup の「サイト有効化 → 自動 ON」導線から呼ばれる (既に ON なら何もしない) */
+  enableOnly() {
+    if (!this.enabled) this.enable();
+  }
+
   private enable() {
     this.enabled = true;
     window.addEventListener('pointermove', this.onPointerMove, true);
@@ -47,6 +52,9 @@ export class Inspector {
       this.hookState.devMode ? this.strings.inspectOn : this.strings.inspectOnSafe,
       4000,
     );
+    this.overlay.showModePill(this.strings.inspectPill, this.strings.inspectPillClose, () =>
+      this.disable(),
+    );
   }
 
   private disable() {
@@ -58,6 +66,7 @@ export class Inspector {
     window.removeEventListener('keydown', this.onKeyDown, true);
     window.removeEventListener('scroll', this.onScroll, true);
     this.overlay.hideAll();
+    this.overlay.hideModePill();
     this.currentElement = null;
     this.currentInfo = null;
     this.navStack = [];

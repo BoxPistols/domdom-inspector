@@ -1,7 +1,25 @@
+import { isColorValue } from './designStyle';
 import { buildEditorUrl } from './editor';
 import { lintSpacing } from './tokenLint';
 import type { TreeNode } from './tree';
 import { DEFAULT_STRINGS, type Classification, type InspectInfo, type Settings, type UiStrings } from './types';
+
+/** lintSpacing に渡すグリッド幅 (px)。警告文の {grid} 表示と必ず一致させる */
+const SPACING_GRID = 4;
+
+// DesignProp.label は内部 id (tokenLint の判定キー) のまま変えず、表示層でデザイナー向け名に解決する
+const DESIGN_LABEL_KEYS: Record<string, keyof UiStrings | undefined> = {
+  color: 'dsColor',
+  bg: 'dsBg',
+  font: 'dsFont',
+  weight: 'dsWeight',
+  lh: 'dsLineHeight',
+  padding: 'dsPadding',
+  margin: 'dsMargin',
+  radius: 'dsRadius',
+  shadow: 'dsShadow',
+  gap: 'dsGap',
+};
 
 /**
  * 対象ページと干渉しない Shadow DOM 隔離オーバーレイ (v3.0 §7)。
@@ -29,6 +47,7 @@ export class Overlay {
   private statsPanel!: HTMLDivElement;
   private renderControl!: HTMLDivElement;
   private treePanel!: HTMLDivElement;
+  private inspectPillEl!: HTMLDivElement;
   /** ツリー行の nodeId → DOM 行 (scrollTreeTo 用) */
   private treeRows = new Map<number, HTMLElement>();
   private canvas!: HTMLCanvasElement;
@@ -88,11 +107,23 @@ export class Overlay {
         white-space: normal;
         overflow-wrap: anywhere;
       }
+      /* ダークページで背景と同化しないための輪郭線 */
+      .badge, .toast, .panel, .stats, .rctl, .tree { border: 1px solid rgba(255,255,255,0.18); }
       .badge .name { font-weight: 700; display: block; }
       .badge .meta { opacity: 0.8; display: block; }
       .badge .file { opacity: 0.95; display: block; margin-top: 2px; }
-      .badge .design { opacity: 0.85; display: block; margin-top: 3px; color: #a5d8ff; }
-      .badge .warn { display: block; margin-top: 2px; color: #ffd43b; }
+      /* デザイン情報は 1 プロパティ = 1 チップで折返し表示 (1 行連結より読める) */
+      .badge .design { display: flex; flex-wrap: wrap; gap: 3px 6px; margin-top: 4px; color: #a5d8ff; }
+      .badge .chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.08);
+      }
+      .badge .chip .lb { opacity: 0.65; }
+      .badge .chip .sw {
+        width: 10px; height: 10px; border-radius: 3px; flex: none;
+        border: 1px solid rgba(255,255,255,0.6);
+      }
+      .badge .warn { display: block; margin-top: 3px; color: #ffd43b; }
       .toast {
         display: none;
         left: 50%;
@@ -186,6 +217,21 @@ export class Overlay {
       }
       .rctl.rec button { background: #6b7280; }
       .rctl button:hover { filter: brightness(1.1); }
+      .inspect-pill {
+        position: fixed; z-index: 2147483647; display: none;
+        pointer-events: auto; right: 12px; bottom: 12px;
+        align-items: center; gap: 8px; padding: 7px 12px;
+        border-radius: 999px; background: rgba(20,20,24,0.94); color: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.18);
+      }
+      .inspect-pill.on { display: inline-flex; }
+      .inspect-pill .lbl { opacity: 0.85; }
+      .inspect-pill button {
+        all: unset; cursor: pointer; font-size: 14px; opacity: 0.6; padding: 0 2px;
+        line-height: 1;
+      }
+      .inspect-pill button:hover { opacity: 1; }
       .tree {
         position: fixed; z-index: 2147483647; display: none;
         pointer-events: auto; top: 12px; left: 12px;
@@ -231,6 +277,8 @@ export class Overlay {
     this.renderControl.className = 'rctl';
     this.treePanel = document.createElement('div');
     this.treePanel.className = 'tree';
+    this.inspectPillEl = document.createElement('div');
+    this.inspectPillEl.className = 'inspect-pill';
     root.append(
       this.canvas,
       this.box,
@@ -239,9 +287,38 @@ export class Overlay {
       this.statsPanel,
       this.renderControl,
       this.treePanel,
+      this.inspectPillEl,
       this.toastEl,
     );
     document.documentElement.appendChild(this.host);
+  }
+
+  /** インスペクトモード中の常設ピル。マウスだけで終了できる導線 (ST-5) */
+  showModePill(label: string, closeLabel: string, onClose: () => void) {
+    this.ensureMounted();
+    while (this.inspectPillEl.firstChild) this.inspectPillEl.removeChild(this.inspectPillEl.firstChild);
+    const lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    lbl.textContent = label;
+    const btn = document.createElement('button');
+    btn.textContent = '✕';
+    btn.title = closeLabel;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onClose();
+    });
+    this.inspectPillEl.append(lbl, btn);
+    this.inspectPillEl.classList.add('on');
+  }
+
+  hideModePill() {
+    this.inspectPillEl?.classList.remove('on');
+  }
+
+  /** DesignProp.label (内部 id) → デザイナー向け表示名。未知 id はそのまま */
+  private designLabel(label: string): string {
+    const key = DESIGN_LABEL_KEYS[label];
+    return key ? this.strings[key] : label;
   }
 
   private colorFor(classification: Classification): string {
@@ -308,18 +385,44 @@ export class Overlay {
     // デザイン情報 (computed style): compact 以外は常に表示 (デザイナーの主価値なので既定で出す)。
     // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。
     if ((detail !== 'compact' || !info.devMode) && info.design.length) {
-      const designEl = document.createElement('span');
+      const designEl = document.createElement('div');
       designEl.className = 'design';
-      designEl.textContent = info.design.map((p) => `${p.label}:${p.value}`).join(' · ');
+      for (const p of info.design) {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        const lb = document.createElement('span');
+        lb.className = 'lb';
+        lb.textContent = this.designLabel(p.label);
+        chip.append(lb);
+        // 色値は hex 文字列だけでは読めないため実色スウォッチを前置 (半透明もそのまま描画)
+        if (isColorValue(p.value)) {
+          const sw = document.createElement('span');
+          sw.className = 'sw';
+          sw.style.background = p.value;
+          chip.append(sw);
+        }
+        const val = document.createElement('span');
+        val.textContent = p.value;
+        chip.append(val);
+        designEl.append(chip);
+      }
       this.badge.append(designEl);
 
-      // 野良値検出 (4px グリッド外の余白/角丸)。テーマ非依存で production でも動く。
-      const findings = lintSpacing(info.design);
+      // 野良値検出 (グリッド外の余白/角丸)。テーマ非依存で production でも動く。
+      const findings = lintSpacing(info.design, SPACING_GRID);
       if (findings.length) {
         const warn = document.createElement('span');
         warn.className = 'warn';
         warn.textContent =
-          '⚠ ' + findings.map((f) => `${f.label} off-grid(${f.offGrid.join('/')}px)`).join(' · ');
+          '⚠ ' +
+          findings
+            .map((f) =>
+              this.strings.offGridWarn
+                .replace('{label}', this.designLabel(f.label))
+                .replace('{values}', f.offGrid.join('/'))
+                .replace('{grid}', String(SPACING_GRID)),
+            )
+            .join(' · ');
         this.badge.append(warn);
       }
     }
@@ -532,7 +635,7 @@ export class Overlay {
     const dot = document.createElement('span');
     dot.className = 'd';
     const label = document.createElement('span');
-    label.textContent = opts.recording ? 'REC' : opts.title;
+    label.textContent = opts.recording ? this.strings.ctrlRecording : opts.title;
     status.append(dot, label);
     const btn = document.createElement('button');
     btn.textContent = opts.toggleLabel;

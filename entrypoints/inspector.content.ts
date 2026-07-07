@@ -55,6 +55,7 @@ export default defineContentScript({
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
       if (data.type === 'toggle') inspector.toggle();
+      if (data.type === 'inspect-on') inspector.enableOnly();
       if (data.type === 'toggle-render') renderDebugger.toggle();
       if (data.type === 'toggle-tree') treeView.toggle();
     });

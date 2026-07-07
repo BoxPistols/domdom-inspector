@@ -55,7 +55,7 @@ export interface Settings {
   muiSkip: boolean;
   /**
    * クリックでエディタを開くか。false ならクリックしてもエディタ連携せず、
-   * ハイライト/ホバー確認だけ行う (Alt+クリックの owner ツリーは維持)。
+   * ハイライト/ホバー確認だけ行う (Alt+クリックの描画元ツリーは維持)。
    */
   openEditorOnClick: boolean;
   /**
@@ -117,6 +117,10 @@ export interface UiStrings {
   ctrlTitle: string;
   ctrlRecord: string;
   ctrlStop: string;
+  ctrlRecording: string;
+  /** インスペクトモード中の常設ピル (マウスだけで終了できる導線) */
+  inspectPill: string;
+  inspectPillClose: string;
   treeOn: string;
   treeOnSafe: string;
   treeOff: string;
@@ -125,16 +129,29 @@ export interface UiStrings {
   statsColsSupported: string;
   statsColsUnsupported: string;
   statsEmpty: string;
+  /** デザインチップの表示名 (DesignProp.label は内部 id のまま、表示層でここに解決) */
+  dsColor: string;
+  dsBg: string;
+  dsFont: string;
+  dsWeight: string;
+  dsLineHeight: string;
+  dsPadding: string;
+  dsMargin: string;
+  dsRadius: string;
+  dsShadow: string;
+  dsGap: string;
+  /** 野良値警告。{label}=表示名 / {values}=グリッド外 px 値 / {grid}=グリッド幅 px */
+  offGridWarn: string;
 }
 
 export const DEFAULT_STRINGS: UiStrings = {
-  inspectOn: 'Inspect ON — Click: editor / Alt+Click: owner tree / ↑↓: parent/child / Esc: exit',
+  inspectOn: 'Inspect ON — hover to inspect, Esc to exit. Click: editor / Alt+Click: rendered-by tree / ↑↓: parent/child',
   inspectOnSafe: 'Inspect ON — no dev build detected, safe mode (names only / Esc to exit)',
   inspectOff: 'Inspect OFF',
   noOuterComponent: 'No further outer component',
   jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',
   jumpProd: 'Source jump is unavailable on production builds',
-  editorLinkOff: 'Editor link is off (toggle it in the popup). Alt+Click still opens the owner tree.',
+  editorLinkOff: 'Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree.',
   sourceUnavailable: 'source unavailable',
   prodSafeMode: 'production build (safe mode)',
   ownerPanelTitle: 'Rendered by (click to open editor)',
@@ -146,14 +163,28 @@ export const DEFAULT_STRINGS: UiStrings = {
   ctrlTitle: 'Render viz',
   ctrlRecord: 'Record',
   ctrlStop: 'Stop',
+  ctrlRecording: 'REC',
+  inspectPill: 'Inspecting — Esc to exit',
+  inspectPillClose: 'Exit inspect mode',
   treeOn: 'Component tree ON — hover a row to highlight, hover the page to locate it. Esc to close',
   treeOnSafe: 'Component tree ON — no dev build detected, names are estimated',
   treeOff: 'Component tree OFF',
   treeTitle: 'Component tree',
-  statsTitle: 'Re-render ranking ({n} commits)',
+  statsTitle: 'Re-render ranking ({n} screen updates)',
   statsColsSupported: 'Columns: component / re-renders / cumulative self time (ms)',
   statsColsUnsupported: 'Profiler timer unavailable here; time shows 0 (needs a dev build)',
   statsEmpty: 'No re-renders were recorded',
+  dsColor: 'text color',
+  dsBg: 'background',
+  dsFont: 'font size',
+  dsWeight: 'weight',
+  dsLineHeight: 'line height',
+  dsPadding: 'padding',
+  dsMargin: 'margin',
+  dsRadius: 'radius',
+  dsShadow: 'shadow',
+  dsGap: 'gap',
+  offGridWarn: '{label} {values}px (not on the {grid}px grid)',
 };
 
 /** page (MAIN world) と bridge (ISOLATED) 間の postMessage 識別子 */

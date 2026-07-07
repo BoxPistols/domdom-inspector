@@ -13,6 +13,16 @@
         color: #1a1a1f;
       }
       h1 { font-size: 14px; margin: 0 0 12px; }
+      /* デザイナー動線 (サイトで使う → モード → 表示設定) を 4 群に区切る */
+      .section { margin-top: 14px; padding-top: 10px; border-top: 1px solid #e4e7ec; }
+      .section h2 {
+        margin: 0 0 2px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #667085;
+      }
       label { display: block; margin: 10px 0 4px; font-weight: 600; }
       select, input[type="text"], textarea {
         width: 100%;
@@ -27,7 +37,7 @@
       .check { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-weight: 600; }
       button {
         width: 100%;
-        margin-top: 14px;
+        margin-top: 10px;
         padding: 8px;
         border: none;
         border-radius: 6px;
@@ -63,80 +73,101 @@
   <body>
     <h1 data-i18n="extName">MUI Design Inspector</h1>
 
-    <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
-    <div class="hint" id="hintInspect">Shortcut: Alt+Shift+I / Exit: Esc</div>
+    <!-- ① このサイトで使う: デザイナーの主導線 (有効化 → 自動でインスペクト ON) -->
+    <section class="section">
+      <h2 data-i18n="sectionSite">Use on this site</h2>
+      <button id="enableSite" data-i18n="btnEnableSite">Enable on current site…</button>
+      <div class="hint" data-i18n="hintEnableSite">
+        For deployed/production sites (not just localhost). Grants access to this site and starts inspecting right away — no reload needed.
+      </div>
+      <button id="enableAll" class="secondary" data-i18n="btnAllSitesOn">Enable on all sites (once)</button>
+      <div class="hint" data-i18n="hintAllSites">
+        Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button.
+        This extension only reads the page — it never sends data, stores page content, or runs remote code.
+      </div>
+      <div class="hint" id="siteStatus"></div>
+    </section>
 
-    <button id="enableSite" class="secondary" data-i18n="btnEnableSite">Enable on current site…</button>
-    <div class="hint" data-i18n="hintEnableSite">
-      For deployed/production sites (not just localhost). Grants access to this origin; reload once after enabling.
-    </div>
+    <!-- ② モード切替 -->
+    <section class="section">
+      <h2 data-i18n="sectionModes">Modes</h2>
+      <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
+      <div class="hint" id="hintInspect">Shortcut: Alt+Shift+I / Exit: Esc</div>
 
-    <button id="enableAll" class="secondary" data-i18n="btnAllSitesOn">Enable on all sites (once)</button>
-    <div class="hint" data-i18n="hintAllSites">
-      Grant once and it works on every site with no per-site prompts. Revoke here anytime. See SECURITY.md.
-    </div>
-    <div class="hint" id="siteStatus"></div>
+      <button id="toggleTree" class="secondary" data-i18n="popupToggleTree">
+        Toggle component tree on this tab
+      </button>
+      <div class="hint" id="hintTree">Shortcut: Alt+Shift+T / Exit: Esc</div>
 
-    <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
-      Toggle render visualization mode
-    </button>
-    <div class="hint" id="hintRender">Shortcut: Alt+Shift+R / Record: R / Exit: Esc</div>
+      <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
+        Toggle render visualization mode
+      </button>
+      <div class="hint" id="hintRender">Shortcut: Alt+Shift+R / Record: R / Exit: Esc</div>
+    </section>
 
-    <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
-      Change toggle shortcuts…
-    </button>
-    <div class="hint" data-i18n="hintConfigureShortcuts">
-      Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys.
-    </div>
+    <!-- ③ 表示設定 (デザイナーにも関係する設定だけをここに出す) -->
+    <section class="section">
+      <h2 data-i18n="sectionDisplay">Display</h2>
+      <label for="badgeDetail" data-i18n="labelBadgeDetail">Badge detail level</label><span class="q" data-i18n-title="tipBadgeDetail">ⓘ</span>
+      <select id="badgeDetail">
+        <option value="compact" data-i18n="optBadgeCompact">Compact (name &amp; location)</option>
+        <option value="normal" data-i18n="optBadgeNormal">Standard (+ colors &amp; spacing)</option>
+        <option value="detailed" data-i18n="optBadgeDetailed">Detailed (everything)</option>
+      </select>
+      <div class="hint" data-i18n="hintTarget">
+        Localhost works out of the box; enable any other site in “Use on this site” above. Settings save automatically.
+      </div>
+    </section>
 
-    <label for="recordKey" data-i18n="labelRecordKey">Record key (in render mode)</label><span class="q" data-i18n-title="tipRecordKey">ⓘ</span>
-    <input type="text" id="recordKey" maxlength="1" style="width: 60px" />
+    <!-- ④ 開発者向け: エディタ連携などエンジニア専用設定 (既定で閉じ、開閉状態は保存) -->
+    <details class="section" id="devSection">
+      <summary data-i18n="sectionDev">For developers (editor link, advanced)</summary>
 
-    <label for="editor" data-i18n="labelEditor">Editor</label>
-    <select id="editor">
-      <option value="vscode">VS Code</option>
-      <option value="cursor">Cursor</option>
-      <option value="antigravity">Antigravity</option>
-      <option value="webstorm">WebStorm</option>
-      <option value="custom">Custom URL</option>
-    </select>
+      <label for="editor" data-i18n="labelEditor">Editor</label>
+      <select id="editor">
+        <option value="vscode">VS Code</option>
+        <option value="cursor">Cursor</option>
+        <option value="antigravity">Antigravity</option>
+        <option value="webstorm">WebStorm</option>
+        <option value="custom">Custom URL</option>
+      </select>
 
-    <label for="customUrlTemplate" data-i18n="labelCustomUrl">Custom URL template</label>
-    <input
-      type="text"
-      id="customUrlTemplate"
-      placeholder="vscode://file{file}:{line}:{column}"
-    />
+      <label for="customUrlTemplate" data-i18n="labelCustomUrl">Custom URL template</label>
+      <input
+        type="text"
+        id="customUrlTemplate"
+        placeholder="vscode://file{file}:{line}:{column}"
+      />
 
-    <label class="check">
-      <input type="checkbox" id="muiSkip" />
-      <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
-      <span class="q" data-i18n-title="tipMuiSkip">ⓘ</span>
-    </label>
+      <label class="check">
+        <input type="checkbox" id="muiSkip" />
+        <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
+        <span class="q" data-i18n-title="tipMuiSkip">ⓘ</span>
+      </label>
 
-    <label class="check">
-      <input type="checkbox" id="openEditorOnClick" />
-      <span data-i18n="labelOpenEditor">Open editor on click</span>
-      <span class="q" data-i18n-title="tipOpenEditor">ⓘ</span>
-    </label>
+      <label class="check">
+        <input type="checkbox" id="openEditorOnClick" />
+        <span data-i18n="labelOpenEditor">Open editor on click</span>
+        <span class="q" data-i18n-title="tipOpenEditor">ⓘ</span>
+      </label>
 
-    <label for="badgeDetail" data-i18n="labelBadgeDetail">Badge detail level</label><span class="q" data-i18n-title="tipBadgeDetail">ⓘ</span>
-    <select id="badgeDetail">
-      <option value="compact">compact</option>
-      <option value="normal">normal</option>
-      <option value="detailed">detailed</option>
-    </select>
+      <label for="pathMappings" data-i18n="labelPathMappings">
+        Path mappings (one per line: from=to)
+      </label><span class="q" data-i18n-title="tipPathMappings">ⓘ</span>
+      <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
 
-    <label for="pathMappings" data-i18n="labelPathMappings">
-      Path mappings (one per line: from=to)
-    </label><span class="q" data-i18n-title="tipPathMappings">ⓘ</span>
-    <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
+      <label for="recordKey" data-i18n="labelRecordKey">Record key (in render mode)</label><span class="q" data-i18n-title="tipRecordKey">ⓘ</span>
+      <input type="text" id="recordKey" maxlength="1" style="width: 60px" />
 
-    <div class="hint" data-i18n="hintTarget">
-      Only localhost / 127.0.0.1 dev servers. Settings save automatically.
-    </div>
+      <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
+        Change toggle shortcuts…
+      </button>
+      <div class="hint" data-i18n="hintConfigureShortcuts">
+        Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys.
+      </div>
+    </details>
 
-    <details>
+    <details class="section">
       <summary data-i18n="helpSummary">How to use</summary>
 
       <!--
@@ -146,8 +177,9 @@
         ラベル類は data-i18n + _locales に統一 (単純文字列は共通経路)。
       -->
       <div class="help" data-help="en">
-        <p><b>Setup</b>: open a React app (dev build) on localhost, then turn inspect mode ON
-        with the button above or Alt+Shift+I.</p>
+        <p><b>Setup</b>: on a deployed site, click "Enable on current site…" once — inspecting
+        starts right away, no reload needed. On localhost dev servers it works out of the box:
+        turn inspect mode ON with the button above or Alt+Shift+I.</p>
         <p><b>Hover</b>: an outline and badge appear. Outline color is
         <span class="legend" style="color:#1976d2">blue = MUI</span> /
         <span class="legend" style="color:#2e7d32">green = your code</span> /
@@ -155,7 +187,7 @@
         The badge shows "component name (internal name · props · file:line)".</p>
         <table>
           <tr><td>Click</td><td>open the source line in your editor</td></tr>
-          <tr><td>Alt+Click</td><td>show the owner tree (who rendered it); click a row to jump</td></tr>
+          <tr><td>Alt+Click</td><td>show the rendered-by tree (who rendered it); click a row to jump</td></tr>
           <tr><td>↑ / ↓</td><td>move selection to parent / child component</td></tr>
           <tr><td>Esc</td><td>close panel / exit mode</td></tr>
         </table>
@@ -175,8 +207,9 @@
       </div>
 
       <div class="help" data-help="ja" hidden>
-        <p><b>準備</b>: localhost で動く React アプリ (dev ビルド) を開き、上のボタンか
-        Alt+Shift+I でインスペクトモードを ON にします。</p>
+        <p><b>準備</b>: デプロイ済みサイトなら「現在のサイトで有効化…」を一度押すだけで、
+        リロード不要でそのままインスペクトが始まります。localhost の開発サーバでは最初から
+        使えます (上のボタンか Alt+Shift+I で ON)。</p>
         <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
         <span class="legend" style="color:#1976d2">青 = MUI</span> /
         <span class="legend" style="color:#2e7d32">緑 = 自作</span> /
@@ -184,7 +217,7 @@
         バッジは「コンポーネント名 (内部名 · props · ファイル:行)」です。</p>
         <table>
           <tr><td>クリック</td><td>エディタでソースの該当行を開く</td></tr>
-          <tr><td>Alt+クリック</td><td>owner ツリー (誰が描画したか) を表示。行クリックでジャンプ</td></tr>
+          <tr><td>Alt+クリック</td><td>描画元ツリー (誰が描画したか) を表示。行クリックでジャンプ</td></tr>
           <tr><td>↑ / ↓</td><td>親コンポーネント ⇔ 子へ選択を移動 (Card の中身から Card 本体へ等)</td></tr>
           <tr><td>Esc</td><td>パネルを閉じる / モード解除</td></tr>
         </table>
@@ -195,14 +228,14 @@
         (例: <code>/src=/Users/you/project/src</code>)。</p>
         <p><b>Antigravity</b>: <code>antigravity-ide://</code> スキームで起動します。
         開かない場合は「カスタム URL」で調整してください。</p>
-        <p>production ビルドのページでは名前推定のみのセーフモードになります。</p>
-        <p><b>レンダー可視化</b> (Alt+Shift+R): 再描画が起きた要素が明滅します。色は
+        <p>本番サイト (公開ビルド) では名前推定のみの簡易表示になります。</p>
+        <p><b>再描画の可視化</b> (Alt+Shift+R): 再描画が起きた要素が明滅します。色は
         再描画回数のヒートマップ (<span class="legend" style="color:#3b82f6">青=少</span> →
         <span class="legend" style="color:#22c55e">緑</span> →
         <span class="legend" style="color:#eab308">黄</span> →
         <span class="legend" style="color:#ef4444">赤=多</span>)。
         <b>R</b> で記録を開始し、操作して再描画を発生させてから <b>R</b> で停止すると、
-        コンポーネント別の再描画回数・自己時間ランキングが出ます (dev ビルドで時間計測可)。</p>
+        コンポーネント別の再描画回数・処理時間ランキングが出ます (開発ビルドで時間計測可)。</p>
       </div>
     </details>
 

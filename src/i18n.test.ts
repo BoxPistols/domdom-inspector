@@ -24,4 +24,26 @@ describe('i18n locale coverage', () => {
     const ja = Object.keys(loadLocale('ja')).sort();
     expect(ja).toEqual(en);
   });
+
+  // 文言の一括置換で {n} / {key} / {origin} 等の置換アンカーを壊すと実行時に
+  // 生プレースホルダが表示される。集合一致を機械強制して置換破壊を検知する。
+  it('プレースホルダの集合が DEFAULT_STRINGS / en / ja で一致する', () => {
+    const placeholders = (s: string) => (s.match(/\{[a-zA-Z]+\}/g) ?? []).sort();
+    const messageOf = (msgs: Record<string, unknown>, key: string) =>
+      (msgs[key] as { message: string }).message;
+    const en = loadLocale('en');
+    const ja = loadLocale('ja');
+    for (const key of Object.keys(en)) {
+      expect({ key, ph: placeholders(messageOf(ja, key)) }).toEqual({
+        key,
+        ph: placeholders(messageOf(en, key)),
+      });
+    }
+    for (const key of stringKeys as (keyof typeof DEFAULT_STRINGS)[]) {
+      expect({ key, ph: placeholders(messageOf(en, key)) }).toEqual({
+        key,
+        ph: placeholders(DEFAULT_STRINGS[key]),
+      });
+    }
+  });
 });
