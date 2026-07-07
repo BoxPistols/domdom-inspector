@@ -1,5 +1,6 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl } from './editor';
+import { el } from './overlayDom';
 import { designLabel, heatColor, visibleProps } from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
 import { lintSpacing } from './tokenLint';
@@ -61,25 +62,16 @@ export class Overlay {
     style.textContent = OVERLAY_CSS;
     root.appendChild(style);
 
-    this.box = document.createElement('div');
-    this.box.className = 'box';
-    this.badge = document.createElement('div');
-    this.badge.className = 'badge';
-    this.panel = document.createElement('div');
-    this.panel.className = 'panel';
-    this.toastEl = document.createElement('div');
-    this.toastEl.className = 'toast';
-    this.canvas = document.createElement('canvas');
-    this.canvas.className = 'render-canvas';
+    this.box = el('div', 'box');
+    this.badge = el('div', 'badge');
+    this.panel = el('div', 'panel');
+    this.toastEl = el('div', 'toast');
+    this.canvas = el('canvas', 'render-canvas');
     this.ctx = this.canvas.getContext('2d');
-    this.statsPanel = document.createElement('div');
-    this.statsPanel.className = 'stats';
-    this.renderControl = document.createElement('div');
-    this.renderControl.className = 'rctl';
-    this.treePanel = document.createElement('div');
-    this.treePanel.className = 'tree';
-    this.inspectPillEl = document.createElement('div');
-    this.inspectPillEl.className = 'inspect-pill';
+    this.statsPanel = el('div', 'stats');
+    this.renderControl = el('div', 'rctl');
+    this.treePanel = el('div', 'tree');
+    this.inspectPillEl = el('div', 'inspect-pill');
     root.append(
       this.canvas,
       this.box,
@@ -98,11 +90,8 @@ export class Overlay {
   showModePill(label: string, closeLabel: string, onClose: () => void) {
     this.ensureMounted();
     while (this.inspectPillEl.firstChild) this.inspectPillEl.removeChild(this.inspectPillEl.firstChild);
-    const lbl = document.createElement('span');
-    lbl.className = 'lbl';
-    lbl.textContent = label;
-    const btn = document.createElement('button');
-    btn.textContent = '✕';
+    const lbl = el('span', 'lbl', label);
+    const btn = el('button', undefined, '✕');
     btn.title = closeLabel;
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -154,50 +143,38 @@ export class Overlay {
         : this.strings.prodSafeMode;
 
     this.badge.replaceChildren();
-    const name = document.createElement('span');
-    name.className = 'name';
+    const name = el('span', 'name', `<${info.name}>`);
     name.style.color = color;
-    name.textContent = `<${info.name}>`;
     this.badge.append(name);
     if (detail !== 'compact') {
       const metaBits = [info.internalName, propsText].filter(Boolean).join(' · ');
       if (metaBits) {
-        const meta = document.createElement('span');
-        meta.className = 'meta';
-        meta.textContent = metaBits;
+        const meta = el('span', 'meta', metaBits);
         this.badge.append(meta);
       }
     }
     // React 要素は file:line (最重要のジャンプ先) を必ず独立行で表示。
     // 非 React (素の DOM) はソースが存在しないので file 行は出さず design を主情報にする。
     if (info.isReact) {
-      const fileEl = document.createElement('span');
-      fileEl.className = 'file';
-      fileEl.textContent = file;
+      const fileEl = el('span', 'file', file);
       this.badge.append(fileEl);
     }
 
     // デザイン情報 (computed style): compact 以外は常に表示 (デザイナーの主価値なので既定で出す)。
     // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。
     if ((detail !== 'compact' || !info.devMode) && info.design.length) {
-      const designEl = document.createElement('div');
-      designEl.className = 'design';
+      const designEl = el('div', 'design');
       for (const p of info.design) {
-        const chip = document.createElement('span');
-        chip.className = 'chip';
-        const lb = document.createElement('span');
-        lb.className = 'lb';
-        lb.textContent = designLabel(p.label, this.strings);
+        const chip = el('span', 'chip');
+        const lb = el('span', 'lb', designLabel(p.label, this.strings));
         chip.append(lb);
         // 色値は hex 文字列だけでは読めないため実色スウォッチを前置 (半透明もそのまま描画)
         if (isColorValue(p.value)) {
-          const sw = document.createElement('span');
-          sw.className = 'sw';
+          const sw = el('span', 'sw');
           sw.style.background = p.value;
           chip.append(sw);
         }
-        const val = document.createElement('span');
-        val.textContent = p.value;
+        const val = el('span', undefined, p.value);
         chip.append(val);
         designEl.append(chip);
       }
@@ -206,8 +183,7 @@ export class Overlay {
       // 野良値検出 (グリッド外の余白/角丸)。テーマ非依存で production でも動く。
       const findings = lintSpacing(info.design, SPACING_GRID);
       if (findings.length) {
-        const warn = document.createElement('span');
-        warn.className = 'warn';
+        const warn = el('span', 'warn');
         warn.textContent =
           '⚠ ' +
           findings
@@ -241,21 +217,15 @@ export class Overlay {
   showChainPanel(info: InspectInfo, x: number, y: number) {
     this.ensureMounted();
     this.panel.replaceChildren();
-    const title = document.createElement('div');
-    title.className = 'title';
-    title.textContent = this.strings.ownerPanelTitle;
+    const title = el('div', 'title', this.strings.ownerPanelTitle);
     this.panel.appendChild(title);
 
     for (const entry of info.ownerChain) {
-      const row = document.createElement('div');
-      row.className = 'row';
-      const dot = document.createElement('span');
-      dot.className = 'dot';
+      const row = el('div', 'row');
+      const dot = el('span', 'dot');
       dot.style.background = this.colorFor(entry.classification);
-      const name = document.createElement('span');
-      name.textContent = entry.name;
-      const file = document.createElement('span');
-      file.className = 'file';
+      const name = el('span', undefined, entry.name);
+      const file = el('span', 'file');
       if (entry.source) {
         file.textContent = `${entry.source.fileName.split('/').pop()}:${entry.source.lineNumber}`;
         row.classList.add('jumpable');
@@ -365,12 +335,9 @@ export class Overlay {
     this.ensureMounted();
     this.statsPanel.replaceChildren();
 
-    const head = document.createElement('div');
-    head.className = 'head';
-    const title = document.createElement('span');
-    title.textContent = this.strings.statsTitle.replace('{n}', String(snapshot.commits));
-    const close = document.createElement('button');
-    close.textContent = '×';
+    const head = el('div', 'head');
+    const title = el('span', undefined, this.strings.statsTitle.replace('{n}', String(snapshot.commits)));
+    const close = el('button', undefined, '×');
     close.addEventListener('click', () => {
       this.hideRenderStats();
       onClose();
@@ -378,31 +345,22 @@ export class Overlay {
     head.append(title, close);
     this.statsPanel.appendChild(head);
 
-    const sub = document.createElement('div');
-    sub.className = 'sub';
-    sub.textContent = supported
-      ? this.strings.statsColsSupported
-      : this.strings.statsColsUnsupported;
+    const sub = el(
+      'div',
+      'sub',
+      supported ? this.strings.statsColsSupported : this.strings.statsColsUnsupported,
+    );
     this.statsPanel.appendChild(sub);
 
     if (snapshot.stats.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'r';
-      empty.textContent = this.strings.statsEmpty;
+      const empty = el('div', 'r', this.strings.statsEmpty);
       this.statsPanel.appendChild(empty);
     }
     for (const s of snapshot.stats.slice(0, 100)) {
-      const row = document.createElement('div');
-      row.className = 'r';
-      const nm = document.createElement('span');
-      nm.className = 'nm';
-      nm.textContent = s.name;
-      const ct = document.createElement('span');
-      ct.className = 'ct';
-      ct.textContent = String(s.count);
-      const ms = document.createElement('span');
-      ms.className = 'ms';
-      ms.textContent = s.selfMs > 0 ? s.selfMs.toFixed(1) : '—';
+      const row = el('div', 'r');
+      const nm = el('span', 'nm', s.name);
+      const ct = el('span', 'ct', String(s.count));
+      const ms = el('span', 'ms', s.selfMs > 0 ? s.selfMs.toFixed(1) : '—');
       row.append(nm, ct, ms);
       this.statsPanel.appendChild(row);
     }
@@ -425,15 +383,11 @@ export class Overlay {
   }) {
     this.ensureMounted();
     this.renderControl.replaceChildren();
-    const status = document.createElement('span');
-    status.className = 'st';
-    const dot = document.createElement('span');
-    dot.className = 'd';
-    const label = document.createElement('span');
-    label.textContent = opts.recording ? this.strings.ctrlRecording : opts.title;
+    const status = el('span', 'st');
+    const dot = el('span', 'd');
+    const label = el('span', undefined, opts.recording ? this.strings.ctrlRecording : opts.title);
     status.append(dot, label);
-    const btn = document.createElement('button');
-    btn.textContent = opts.toggleLabel;
+    const btn = el('button', undefined, opts.toggleLabel);
     btn.addEventListener('click', opts.onToggle);
     this.renderControl.append(status, btn);
     this.renderControl.classList.toggle('rec', opts.recording);
@@ -456,12 +410,9 @@ export class Overlay {
     this.treePanel.replaceChildren();
     this.treeRows.clear();
 
-    const head = document.createElement('div');
-    head.className = 'head';
-    const title = document.createElement('span');
-    title.textContent = `${opts.title} (${nodes.length})`;
-    const close = document.createElement('button');
-    close.textContent = '×';
+    const head = el('div', 'head');
+    const title = el('span', undefined, `${opts.title} (${nodes.length})`);
+    const close = el('button', undefined, '×');
     close.addEventListener('click', () => {
       this.hideTree();
       opts.onClose();
@@ -470,22 +421,16 @@ export class Overlay {
     this.treePanel.appendChild(head);
 
     if (nodes.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'empty';
-      empty.textContent = this.strings.statsEmpty;
+      const empty = el('div', 'empty', this.strings.statsEmpty);
       this.treePanel.appendChild(empty);
     }
 
     for (const node of nodes) {
-      const row = document.createElement('div');
-      row.className = 'trow';
+      const row = el('div', 'trow');
       row.style.paddingLeft = `${8 + node.depth * 13}px`;
-      const dot = document.createElement('span');
-      dot.className = 'dot';
+      const dot = el('span', 'dot');
       dot.style.background = this.colorFor(node.classification);
-      const nm = document.createElement('span');
-      nm.className = 'nm';
-      nm.textContent = node.name;
+      const nm = el('span', 'nm', node.name);
       row.append(dot, nm);
       row.addEventListener('mouseenter', () => opts.onHoverNode(node));
       row.addEventListener('click', () => opts.onClickNode(node));
