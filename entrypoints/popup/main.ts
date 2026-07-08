@@ -124,19 +124,55 @@ $('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-r
 // origin/tabId はポップアップ表示時に先読みしておく。
 let siteOrigin: string | null = null;
 let siteTabId: number | null = null;
+// blob: top-level タブ (新規タブで開いたプレビュー等) は registerContentScripts 不可。
+// executeScript のみで注入する専用パスを使う。
+let isBlobTab = false;
+
+// blob:https://example.com/uuid 形式を含む URL が executeScript 可能か判定
+function canInjectUrl(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr);
+    if (/^https?:$/.test(url.protocol)) return true;
+    if (url.protocol === 'blob:') return /^https?:$/.test(new URL(url.pathname).protocol);
+  } catch { /* ignore */ }
+  return false;
+}
 
 async function detectSite() {
   const status = $('siteStatus');
   const btn = $<HTMLButtonElement>('enableSite');
+  isBlobTab = false;
   try {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     siteTabId = tab?.id ?? null;
     const url = tab?.url ? new URL(tab.url) : null;
-    siteOrigin = url && /^https?:$/.test(url.protocol) ? url.origin : null;
+    if (url?.protocol === 'blob:') {
+      // blob:https://origin/uuid → pathname が親 URL
+      try {
+        const parentUrl = new URL(url.pathname);
+        if (/^https?:$/.test(parentUrl.protocol)) {
+          isBlobTab = true;
+          siteOrigin = parentUrl.origin;
+        } else {
+          siteOrigin = null;
+        }
+      } catch {
+        siteOrigin = null;
+      }
+    } else {
+      siteOrigin = url && /^https?:$/.test(url.protocol) ? url.origin : null;
+    }
   } catch {
     siteOrigin = null;
   }
-  if (!siteOrigin || siteTabId == null) {
+
+  if (isBlobTab && siteOrigin != null && siteTabId != null) {
+    // blob タブは allSitesGranted がないと executeScript できない
+    btn.disabled = !allSitesGranted;
+    status.textContent = allSitesGranted
+      ? msg('siteTarget').replace('{origin}', `blob: (${siteOrigin})`)
+      : msg('siteUnavailable');
+  } else if (!siteOrigin || siteTabId == null) {
     btn.disabled = true;
     status.textContent = msg('siteUnavailable');
   } else {
@@ -148,8 +184,31 @@ async function detectSite() {
 async function enableCurrentSite() {
   const status = $('siteStatus');
   if (!siteOrigin || siteTabId == null) return;
-  const origin = siteOrigin;
   const tabId = siteTabId;
+
+  if (isBlobTab) {
+    // blob: top-level タブ: Chrome は blob: scheme を content script match に登録不可。
+    // allSitesGranted 前提で executeScript のみで即時注入する (永続登録なし = タブ固有)。
+    try {
+      await browser.scripting.executeScript({
+        target: { tabId },
+        files: ['/content-scripts/bridge.js'],
+      });
+      await browser.scripting.executeScript({
+        target: { tabId },
+        files: ['/content-scripts/inspector.js'],
+        world: 'MAIN',
+      });
+    } catch {
+      status.textContent = msg('injectError');
+      return;
+    }
+    browser.tabs.sendMessage(tabId, { type: 'inspect-on' }).catch(() => {});
+    window.close();
+    return;
+  }
+
+  const origin = siteOrigin;
   const pattern = `${origin}/*`;
   // await を挟まず即 request (ユーザー操作コンテキストを保つ)
   let granted = false;
@@ -213,7 +272,7 @@ async function enableCurrentSite() {
 }
 
 $('enableSite').addEventListener('click', () => void enableCurrentSite());
-void detectSite();
+// blob タブのボタン有効化は allSitesGranted に依存するため refreshAllSites 後に呼ぶ
 
 // 全サイト一度だけ許可モード (toggle: 許可 ⇔ 解除)。デザイナーが都度許可なしで
 // どのデプロイ済みサイトでも使えるようにする。安全性の根拠は SECURITY.md。
@@ -277,9 +336,9 @@ async function toggleAllSites() {
   } catch {
     // 既に登録済みは無視
   }
-  // 現タブへ即注入 (リロード不要)
+  // 現タブへ即注入 (リロード不要)。blob: top-level タブも canInjectUrl で拾う
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id != null && tab.url && /^https?:$/.test(new URL(tab.url).protocol)) {
+  if (tab?.id != null && tab.url && canInjectUrl(tab.url)) {
     try {
       await browser.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['/content-scripts/bridge.js'] });
       await browser.scripting.executeScript({
@@ -300,7 +359,7 @@ async function toggleAllSites() {
 }
 
 $('enableAll').addEventListener('click', () => void toggleAllSites());
-void refreshAllSites();
+void refreshAllSites().then(() => detectSite());
 
 // モード切替 (Alt+Shift+I / Alt+Shift+R) の再割当は Chrome 純正ページに委ねる
 // (拡張からショートカットを直接書き換える API は存在しないため)
