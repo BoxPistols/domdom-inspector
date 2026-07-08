@@ -14,6 +14,11 @@ export default defineContentScript({
   matches: DEV_MATCHES,
   runAt: 'document_start',
   world: 'MAIN',
+  // FR-13 PoC: プレビュー等の子フレーム (srcdoc/blob/data 含む) にも注入する。
+  // matchOriginAsFallback は生成元 origin でマッチ判定するため、非 opaque な
+  // blob/srcdoc iframe を拾える (sandbox の opaque origin は対象外)。
+  allFrames: true,
+  matchOriginAsFallback: true,
   main() {
     // executeScript による即時注入と、登録済みスクリプトの二重実行を防ぐガード
     const w = window as unknown as { __MUI_INSPECTOR_LOADED__?: boolean };

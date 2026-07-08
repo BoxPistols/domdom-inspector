@@ -9,6 +9,9 @@ import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, type UiStrings } from
 export default defineContentScript({
   matches: DEV_MATCHES,
   runAt: 'document_start',
+  // FR-13 PoC: 子フレーム (srcdoc/blob/data) にも bridge を注入 (inspector と対で必要)
+  allFrames: true,
+  matchOriginAsFallback: true,
   main() {
     // 静的登録 + 動的登録 + executeScript の二重実行を防ぐガード
     const w = window as unknown as { __MUI_BRIDGE_LOADED__?: boolean };
