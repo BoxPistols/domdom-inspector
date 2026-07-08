@@ -173,6 +173,8 @@ async function enableCurrentSite() {
         matches: [pattern],
         js: ['content-scripts/bridge.js'],
         runAt: 'document_start',
+        allFrames: true,
+        matchOriginAsFallback: true,
       },
       {
         id: `dyn_inspector_${key}`,
@@ -180,6 +182,8 @@ async function enableCurrentSite() {
         js: ['content-scripts/inspector.js'],
         world: 'MAIN',
         runAt: 'document_start',
+        allFrames: true,
+        matchOriginAsFallback: true,
       },
     ]);
   } catch {
@@ -190,11 +194,11 @@ async function enableCurrentSite() {
   // 読めるので動作する (再初期化はガードで防止)。
   try {
     await browser.scripting.executeScript({
-      target: { tabId },
+      target: { tabId, allFrames: true },
       files: ['/content-scripts/bridge.js'],
     });
     await browser.scripting.executeScript({
-      target: { tabId },
+      target: { tabId, allFrames: true },
       files: ['/content-scripts/inspector.js'],
       world: 'MAIN',
     });
@@ -252,13 +256,22 @@ async function toggleAllSites() {
   }
   try {
     await browser.scripting.registerContentScripts([
-      { id: 'all_bridge', matches: ['*://*/*'], js: ['content-scripts/bridge.js'], runAt: 'document_start' },
+      {
+        id: 'all_bridge',
+        matches: ['*://*/*'],
+        js: ['content-scripts/bridge.js'],
+        runAt: 'document_start',
+        allFrames: true,
+        matchOriginAsFallback: true,
+      },
       {
         id: 'all_inspector',
         matches: ['*://*/*'],
         js: ['content-scripts/inspector.js'],
         world: 'MAIN',
         runAt: 'document_start',
+        allFrames: true,
+        matchOriginAsFallback: true,
       },
     ]);
   } catch {
@@ -268,9 +281,9 @@ async function toggleAllSites() {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (tab?.id != null && tab.url && /^https?:$/.test(new URL(tab.url).protocol)) {
     try {
-      await browser.scripting.executeScript({ target: { tabId: tab.id }, files: ['/content-scripts/bridge.js'] });
+      await browser.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['/content-scripts/bridge.js'] });
       await browser.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId: tab.id, allFrames: true },
         files: ['/content-scripts/inspector.js'],
         world: 'MAIN',
       });
