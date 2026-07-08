@@ -1,4 +1,4 @@
-import type { UiStrings } from './types';
+import type { Classification, Settings, UiStrings } from './types';
 
 /** 再描画ヒートマップの色: 回数が多いほど青→緑→黄→赤。RGB 成分文字列を返す */
 export function heatColor(heat: number): string {
@@ -6,6 +6,15 @@ export function heatColor(heat: number): string {
   if (heat <= 3) return '52,211,153'; // 緑
   if (heat <= 7) return '251,191,36'; // 黄
   return '248,113,113'; // 赤
+}
+
+/** 分類 (mui/custom/third-party) → 表示色。Settings.colors から解決。overlay と各ビルダーで共用 */
+export function colorFor(classification: Classification, colors: Settings['colors']): string {
+  return classification === 'mui'
+    ? colors.mui
+    : classification === 'custom'
+      ? colors.custom
+      : colors.thirdParty;
 }
 
 // DesignProp.label は内部 id (tokenLint の判定キー) のまま変えず、表示層でデザイナー向け名に解決する

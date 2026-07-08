@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_STRINGS } from './types';
-import { designLabel, heatColor, visibleProps } from './overlayFormat';
+import { colorFor, designLabel, heatColor, visibleProps } from './overlayFormat';
+
+describe('colorFor', () => {
+  const colors = { mui: '#2196f3', custom: '#4caf50', thirdParty: '#9e9e9e' };
+  it('mui は mui 色', () => expect(colorFor('mui', colors)).toBe('#2196f3'));
+  it('custom は custom 色', () => expect(colorFor('custom', colors)).toBe('#4caf50'));
+  it('third-party は thirdParty 色', () => expect(colorFor('third-party', colors)).toBe('#9e9e9e'));
+});
 
 describe('heatColor', () => {
   // 境界値: <=1 青 / <=3 緑 / <=7 黄 / else 赤

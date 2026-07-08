@@ -1,11 +1,11 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl } from './editor';
 import { el } from './overlayDom';
-import { designLabel, heatColor, visibleProps } from './overlayFormat';
+import { colorFor, designLabel, heatColor, visibleProps } from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
 import { lintSpacing } from './tokenLint';
 import type { TreeNode } from './tree';
-import { DEFAULT_STRINGS, type Classification, type InspectInfo, type Settings, type UiStrings } from './types';
+import { DEFAULT_STRINGS, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /** lintSpacing に渡すグリッド幅 (px)。警告文の {grid} 表示と必ず一致させる */
 const SPACING_GRID = 4;
@@ -105,20 +105,11 @@ export class Overlay {
     this.inspectPillEl?.classList.remove('on');
   }
 
-  private colorFor(classification: Classification): string {
-    const { colors } = this.settings;
-    return classification === 'mui'
-      ? colors.mui
-      : classification === 'custom'
-        ? colors.custom
-        : colors.thirdParty;
-  }
-
   /** ハイライト + バッジを対象要素に合わせて表示 (FR-02 / FR-03) */
   show(element: Element, info: InspectInfo) {
     this.ensureMounted();
     const rect = element.getBoundingClientRect();
-    const color = this.colorFor(info.classification);
+    const color = colorFor(info.classification, this.settings.colors);
     this.positionBox(rect, color);
     this.buildBadge(info, color);
     this.positionBadge(rect);
@@ -234,7 +225,7 @@ export class Overlay {
     for (const entry of info.ownerChain) {
       const row = el('div', 'row');
       const dot = el('span', 'dot');
-      dot.style.background = this.colorFor(entry.classification);
+      dot.style.background = colorFor(entry.classification, this.settings.colors);
       const name = el('span', undefined, entry.name);
       const file = el('span', 'file');
       if (entry.source) {
@@ -440,7 +431,7 @@ export class Overlay {
       const row = el('div', 'trow');
       row.style.paddingLeft = `${8 + node.depth * 13}px`;
       const dot = el('span', 'dot');
-      dot.style.background = this.colorFor(node.classification);
+      dot.style.background = colorFor(node.classification, this.settings.colors);
       const nm = el('span', 'nm', node.name);
       row.append(dot, nm);
       row.addEventListener('mouseenter', () => opts.onHoverNode(node));
