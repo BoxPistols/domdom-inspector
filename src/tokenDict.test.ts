@@ -43,7 +43,7 @@ describe('parseTokens (3 フォーマット自動判別)', () => {
       space: { '2': { $value: '8px', $type: 'dimension' } },
     });
     expect(dict.colors).toEqual([{ name: 'color/primary', r: 0x16, g: 0x68, b: 0xd4, a: 1 }]);
-    expect(dict.sizes).toEqual([{ name: 'space/2', px: 8 }]);
+    expect(dict.sizes).toEqual([{ name: 'space/2', px: 8, category: 'space' }]);
   });
 
   it('Tokens Studio (value/type)', () => {
@@ -54,7 +54,7 @@ describe('parseTokens (3 フォーマット自動判別)', () => {
       },
     });
     expect(dict.colors[0].name).toBe('global/brand');
-    expect(dict.sizes[0]).toEqual({ name: 'global/radius/md', px: 4 });
+    expect(dict.sizes[0]).toEqual({ name: 'global/radius/md', px: 4, category: 'radius' });
   });
 
   it('フラット辞書 (値から型推定)', () => {
@@ -63,7 +63,7 @@ describe('parseTokens (3 フォーマット自動判別)', () => {
     expect(dict.sizes.map((s) => `${s.name}=${s.px}`)).toEqual(['space/1=4', 'space/n=16']);
   });
 
-  it('複合トークン ($value がオブジェクト: typography/shadow) は子要素を走査する', () => {
+  it('複合トークン ($value がオブジェクト: typography/shadow) は子要素を走査し、非長さ子は捨てる', () => {
     const dict = parseTokens({
       typography: {
         body: {
@@ -75,13 +75,13 @@ describe('parseTokens (3 フォーマット自動判別)', () => {
         card: { $type: 'shadow', $value: { color: '#00000040', blur: '4px' } },
       },
     });
-    // パスに $value を挟まないクリーンな名前で登録される。fontFamily は色/サイズ
-    // いずれでもないのでスキップ
-    expect(dict.sizes.map((s) => `${s.name}=${s.px}`)).toEqual([
-      'typography/body/fontSize=16',
-      'typography/body/lineHeight=24',
-      'shadow/card/blur=4',
+    // パスに $value を挟まないクリーンな名前で子を走査する。ただしサイズとして登録するのは
+    // カテゴリが判別できる長さのみ: fontSize→font。lineHeight (比率/px 両用で照合すると
+    // padding 等を誤マッチさせる) と shadow の blur・fontFamily は登録しない (M3 の野良値検出保護)。
+    expect(dict.sizes).toEqual([
+      { name: 'typography/body/fontSize', px: 16, category: 'font' },
     ]);
+    // shadow の色は複合トークンからでも抽出される
     expect(dict.colors.map((c) => c.name)).toEqual(['shadow/card/color']);
   });
 
@@ -123,10 +123,57 @@ describe('matchColor', () => {
 });
 
 describe('matchSize', () => {
-  it('±0.25px は hit、±4px は nearest', () => {
-    expect(matchSize(DICT, 8)?.hit).toBe('space/2');
-    expect(matchSize(DICT, 10)).toEqual({ hit: null, nearest: 'space/2' });
-    expect(matchSize(DICT, 100)).toEqual({ hit: null, nearest: null });
+  it('±0.25px は hit、±4px は nearest (同カテゴリ内)', () => {
+    expect(matchSize(DICT, 8, 'space')?.hit).toBe('space/2');
+    expect(matchSize(DICT, 10, 'space')).toEqual({ hit: null, nearest: 'space/2' });
+    expect(matchSize(DICT, 100, 'space')).toEqual({ hit: null, nearest: null });
+  });
+  it('該当カテゴリのトークンが無ければ null (カテゴリ跨ぎで照合しない)', () => {
+    // DICT は space トークンのみ。radius/font カテゴリの候補は無い
+    expect(matchSize(DICT, 8, 'radius')).toBeNull();
+    expect(matchSize(DICT, 8, 'font')).toBeNull();
+  });
+});
+
+// カテゴリ横断の誤マッチ検証用: font と radius のトークンを混在させた辞書
+const MIXED = parseTokens({
+  space: { '2': { $value: '8px', $type: 'dimension' } },
+  fontSize: { sm: { $value: '14px', $type: 'fontSize' } },
+  radius: { md: { $value: '6px', $type: 'borderRadius' } },
+});
+
+describe('カテゴリ非区別バグの回帰防止', () => {
+  it('単位なし/非長さ値 (opacity/fontWeight/lineHeight/z-index) はサイズに混入しない', () => {
+    const dict = parseTokens({
+      'opacity/50': 0.5,
+      'font-weight/bold': 700,
+      'z/modal': 1000,
+      'line-height/tight': 1.25,
+    });
+    expect(dict.sizes).toEqual([]);
+  });
+
+  it('font-size トークンは padding (space) に一致しない', () => {
+    // padding:14px は fontSize/sm=14px と px は同じだが、カテゴリが違うので照合されない。
+    // 14 は space/2=8 からは遠い (>4px) ので沈黙 → null (グリッド警告は overlay 側で残る)
+    expect(annotateProp({ label: 'padding', value: '14px' }, MIXED)).toBeNull();
+    // font ラベルなら fontSize/sm に一致する
+    expect(annotateProp({ label: 'font', value: '14px' }, MIXED)).toEqual({
+      kind: 'hit',
+      names: ['fontSize/sm'],
+    });
+  });
+
+  it('radius ラベルは radius トークンにだけ一致 (6px は 4px グリッド外でも正)', () => {
+    expect(annotateProp({ label: 'radius', value: '6px' }, MIXED)).toEqual({
+      kind: 'hit',
+      names: ['radius/md'],
+    });
+    // gap は space カテゴリ
+    expect(annotateProp({ label: 'gap', value: '8px' }, MIXED)).toEqual({
+      kind: 'hit',
+      names: ['space/2'],
+    });
   });
 });
 
@@ -166,6 +213,30 @@ describe('annotateProp (チップ注釈)', () => {
     expect(annotateProp({ label: 'padding', value: '100px' }, DICT)).toBeNull();
     // 色はどれからも遠くても野良色として警告 (最近傍なし)
     expect(annotateProp({ label: 'color', value: '#00ff00' }, DICT)).toEqual({
+      kind: 'miss',
+      nearest: null,
+    });
+  });
+
+  it('サイズ: 近い外れ値の警告は px の並び順に依存しない', () => {
+    // 遠い値 (100px) が先にあっても、近い外れ値 (10px→space/2) の警告を握りつぶさない
+    const a = annotateProp({ label: 'padding', value: '100px 10px' }, DICT);
+    const b = annotateProp({ label: 'padding', value: '10px 100px' }, DICT);
+    expect(a).toEqual({ kind: 'miss', nearest: 'space/2' });
+    expect(b).toEqual(a);
+  });
+
+  it('サイズ: 一致値と遠い外れ値が混在したら hit を主張しない (グリッド警告を残す)', () => {
+    // 8px は space/2 に一致するが 100px は野良値。全体を hit と言うと 100px の
+    // グリッド警告まで抑制されてしまうため null にする
+    expect(annotateProp({ label: 'padding', value: '8px 100px' }, DICT)).toBeNull();
+    expect(annotateProp({ label: 'padding', value: '100px 8px' }, DICT)).toBeNull();
+  });
+
+  it('色: 半透明トークンと不透明ページ色はアルファ差で不一致になる', () => {
+    const dict = parseTokens({ overlay: { $value: '#00000080', $type: 'color' } });
+    // 同じ RGB でも alpha が 0.5 と 1 なら距離 128 で HIT(3)/NEAR(64) を超え不一致
+    expect(annotateProp({ label: 'bg', value: '#000000' }, dict)).toEqual({
       kind: 'miss',
       nearest: null,
     });

@@ -24,9 +24,18 @@ export interface TokenColor {
   a: number;
 }
 
+/**
+ * サイズトークンのカテゴリ。照合を「同カテゴリのトークンだけ」に絞るために持つ。
+ * これが無いと font-size トークンが padding に一致してしまう (カテゴリ非区別バグ)。
+ * 分類できない値 (lineHeight/fontWeight/opacity 等の非長さや、手がかりの無い裸の数値) は
+ * そもそもサイズトークンとして登録しない (M3 の野良値検出を偽陰性で損なわないため)。
+ */
+export type SizeCategory = 'space' | 'radius' | 'font';
+
 export interface TokenSize {
   name: string;
   px: number;
+  category: SizeCategory;
 }
 
 export interface TokenDict {
@@ -54,7 +63,7 @@ export function parseColor(value: string): { r: number; g: number; b: number; a:
     }
     return null;
   }
-  const m = t.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
+  const m = t.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)$/i);
   if (m) {
     return {
       r: Number(m[1]),
@@ -76,11 +85,30 @@ export function parseSizePx(value: unknown): number | null {
   return m[2] === 'rem' ? n * 16 : n;
 }
 
-// $type / type の値からサイズ系トークンとみなす種別 (Figma Variables/Tokens Studio の慣用)
-const SIZE_TYPES = new Set([
-  'dimension', 'spacing', 'sizing', 'size', 'space',
-  'borderradius', 'radius', 'fontsize', 'fontsizes', 'lineheight',
-]);
+/**
+ * トークンをサイズカテゴリに分類する。長さ (px 換算可能) かつ用途が判別できるものだけ
+ * カテゴリを返し、それ以外 (色・非長さ・手がかり無し) は null で「サイズとして登録しない」。
+ * - $type/type があればそれを一次シグナルにする (非長さ型は明示的に除外)
+ * - 型注釈が無ければ名前のセグメント (/._- 区切り) から推定する
+ */
+function classifySize(type: string, name: string): SizeCategory | null {
+  const t = type.toLowerCase();
+  if (t) {
+    if (t === 'borderradius' || t === 'radius') return 'radius';
+    if (t === 'fontsize' || t === 'fontsizes') return 'font';
+    if (t === 'dimension' || t === 'spacing' || t === 'space' || t === 'sizing' || t === 'size') {
+      return 'space';
+    }
+    // 型注釈があるが非長さ (lineheight/fontweight/opacity/duration/boxshadow 等) は対象外
+    return null;
+  }
+  const segs = name.toLowerCase().split(/[/._-]/);
+  const has = (re: RegExp) => segs.some((s) => re.test(s));
+  if (has(/^(border)?radius$|^corner$|^rounded?$/)) return 'radius';
+  if (has(/^font-?sizes?$|^fontsizes?$/)) return 'font';
+  if (has(/^(space|spacing|gap|inset|padding|margin|dimension|sizing|size)$/)) return 'space';
+  return null;
+}
 
 /**
  * トークン JSON (パース済みオブジェクト) を辞書に変換する。
@@ -121,26 +149,26 @@ export function parseTokens(input: unknown): TokenDict {
 
 function addLeaf(dict: TokenDict, name: string, rawValue: unknown, type: string) {
   if (!name) return;
-  if (type === 'color') {
+  const t = type.toLowerCase();
+  if (t === 'color') {
     const c = typeof rawValue === 'string' ? parseColor(rawValue) : null;
     if (c) dict.colors.push({ name, ...c });
     return;
   }
-  if (SIZE_TYPES.has(type)) {
-    const px = parseSizePx(rawValue);
-    if (px !== null) dict.sizes.push({ name, px });
-    return;
-  }
-  // 型注釈なし: 値から推定 (色 → サイズの順)
-  if (typeof rawValue === 'string') {
+  // 型注釈なしの文字列は色を先に試す (#hex/rgb() なら色トークン)
+  if (t === '' && typeof rawValue === 'string') {
     const c = parseColor(rawValue);
     if (c) {
       dict.colors.push({ name, ...c });
       return;
     }
   }
-  const px = parseSizePx(rawValue);
-  if (px !== null) dict.sizes.push({ name, px });
+  // カテゴリが判別できる長さトークンのみサイズとして登録 (非長さ・裸の数値は捨てる)
+  const category = classifySize(t, name);
+  if (category) {
+    const px = parseSizePx(rawValue);
+    if (px !== null) dict.sizes.push({ name, px, category });
+  }
 }
 
 /** RGB ユークリッド距離 (0..441)。アルファ差が大きい場合は不一致扱いに寄せる */
@@ -191,11 +219,12 @@ export interface SizeMatch {
   nearest: string | null;
 }
 
-export function matchSize(dict: TokenDict, px: number): SizeMatch | null {
-  if (!dict.sizes.length) return null;
+/** 指定カテゴリのトークンだけを候補に最近傍照合する (カテゴリ跨ぎの誤マッチを防ぐ) */
+export function matchSize(dict: TokenDict, px: number, category: SizeCategory): SizeMatch | null {
   let best: TokenSize | null = null;
   let bestD = Infinity;
   for (const t of dict.sizes) {
+    if (t.category !== category) continue;
     const d = Math.abs(px - t.px);
     if (d < bestD) {
       bestD = d;
@@ -207,8 +236,14 @@ export function matchSize(dict: TokenDict, px: number): SizeMatch | null {
   return { hit: null, nearest: bestD <= SIZE_NEAR ? best.name : null };
 }
 
-// サイズ照合の対象にする DesignProp.label (shadow/weight/lh は対象外)
-const SIZE_LABELS = new Set(['font', 'padding', 'margin', 'radius', 'gap']);
+// DesignProp.label → サイズカテゴリ (shadow/weight/lh は対象外なので不在)
+const LABEL_SIZE_CATEGORY: Record<string, SizeCategory | undefined> = {
+  padding: 'space',
+  margin: 'space',
+  gap: 'space',
+  radius: 'radius',
+  font: 'font',
+};
 const COLOR_LABELS = new Set(['color', 'bg']);
 
 /** バッジのデザインチップ 1 つ分のトークン注釈 */
@@ -220,11 +255,12 @@ export type ChipToken =
 /**
  * DesignProp 1 件をトークン辞書と突合する。
  * - 色: 値そのものを照合。不一致は常に警告 (色は必ずデザイン上の意思決定のため)
- * - サイズ系: 値中の全 px を照合し、全て一致なら hit (トークン名を重複排除で列挙)。
- *   外れた値は「トークンに近い (≤4px)」ときだけ miss として警告する —
- *   トークンから遠い値 (レイアウト都合の 100px 等) はデザイン逸脱と断定できず
- *   ノイズになるため沈黙する。0 は常に許容。
- * 辞書が空・対象外ラベル・px が取れない値は null (注釈なし)。
+ * - サイズ系: ラベルに対応するカテゴリのトークンだけを候補にし、値中の全 px を照合する。
+ *   近い外れ値 (≤4px) が 1 つでもあれば miss として警告 (打ち間違い/野良値の疑い)。
+ *   トークンから遠い値 (レイアウト都合の 100px 等) は判定保留とし、hit も出さない
+ *   (= グリッド警告を残す)。全 px が一致したときだけ hit (トークン名を重複排除で列挙)。
+ *   判定は px の並び順に依存しない。0 は常に許容。
+ * 辞書が空・対象外ラベル・該当カテゴリのトークンなし・px が取れない値は null (注釈なし)。
  */
 export function annotateProp(prop: DesignProp, dict: TokenDict): ChipToken {
   if (COLOR_LABELS.has(prop.label)) {
@@ -232,20 +268,27 @@ export function annotateProp(prop: DesignProp, dict: TokenDict): ChipToken {
     if (!m) return null;
     return m.hit ? { kind: 'hit', names: [m.hit] } : { kind: 'miss', nearest: m.nearest };
   }
-  if (!SIZE_LABELS.has(prop.label) || !dict.sizes.length) return null;
+  const category = LABEL_SIZE_CATEGORY[prop.label];
+  if (!category) return null;
   const pxs = [...prop.value.matchAll(/(-?\d+(?:\.\d+)?)px/g)]
     .map((m) => parseFloat(m[1]))
     .filter((px) => px !== 0);
   if (!pxs.length) return null;
   const names: string[] = [];
+  let hasFar = false;
   for (const px of pxs) {
-    const m = matchSize(dict, px);
-    if (!m) return null;
-    if (!m.hit) {
-      // 近い外れ値だけ「打ち間違い/野良値の疑い」として警告。遠い値は判定保留
-      return m.nearest ? { kind: 'miss', nearest: m.nearest } : null;
+    const m = matchSize(dict, px, category);
+    if (!m) return null; // 該当カテゴリのトークンが 1 つも無い → 照合できない
+    if (m.hit) {
+      if (!names.includes(m.hit)) names.push(m.hit);
+    } else if (m.nearest) {
+      // 近い外れ値は順序に関わらず即警告 (どの near-miss を報告しても等価)
+      return { kind: 'miss', nearest: m.nearest };
+    } else {
+      hasFar = true; // 遠い外れ値: 沈黙するが、hit とは言えないので記録
     }
-    if (!names.includes(m.hit)) names.push(m.hit);
   }
-  return { kind: 'hit', names };
+  // 遠い外れ値を含むなら hit を主張しない (グリッド警告を残すため)
+  if (hasFar) return null;
+  return names.length ? { kind: 'hit', names } : null;
 }

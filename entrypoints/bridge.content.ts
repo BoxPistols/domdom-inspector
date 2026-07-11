@@ -1,4 +1,5 @@
 import { DEV_MATCHES } from '../src/matches';
+import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, type UiStrings } from '../src/types';
 
 /**
@@ -34,11 +35,7 @@ export default defineContentScript({
     const pushTokens = async () => {
       const { tokenDict } = await browser.storage.local.get('tokenDict');
       window.postMessage(
-        {
-          source: BRIDGE_SOURCE,
-          type: 'tokens',
-          payload: tokenDict ?? { colors: [], sizes: [] },
-        },
+        { source: BRIDGE_SOURCE, type: 'tokens', payload: tokenDict ?? EMPTY_TOKEN_DICT },
         '*',
       );
     };

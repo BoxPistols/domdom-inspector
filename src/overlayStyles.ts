@@ -49,7 +49,7 @@ export const OVERLAY_CSS = `
         border: 1px solid rgba(255,255,255,0.6);
       }
       /* デザイントークン照合の注釈: 一致=緑でトークン名 / 野良値=黄で最近傍 */
-      .badge .chip .tk { font-size: 10px; padding-left: 2px; }
+      .badge .chip .tk { font-size: 11px; padding-left: 2px; }
       .badge .chip .tk.ok { color: #7ddb99; }
       .badge .chip .tk.ng { color: #ffd43b; }
       .badge .chip.stray { outline: 1px solid rgba(255,212,59,0.55); }

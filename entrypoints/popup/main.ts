@@ -100,8 +100,20 @@ async function saveTokens() {
   tokensClearEl.hidden = false;
 }
 
-tokensEl.addEventListener('change', () => void saveTokens());
+// change (blur/commit 時) に加え、input のデバウンス保存も行う。
+// トークンは「1 回の長文貼り付け」が主操作で、フォーカスを残したまま
+// ポップアップを閉じると change が発火せず保存漏れするため。
+let tokensSaveTimer: ReturnType<typeof setTimeout> | undefined;
+tokensEl.addEventListener('input', () => {
+  clearTimeout(tokensSaveTimer);
+  tokensSaveTimer = setTimeout(() => void saveTokens(), 400);
+});
+tokensEl.addEventListener('change', () => {
+  clearTimeout(tokensSaveTimer);
+  void saveTokens();
+});
 tokensClearEl.addEventListener('click', () => {
+  clearTimeout(tokensSaveTimer);
   tokensEl.value = '';
   void saveTokens();
 });
