@@ -93,9 +93,16 @@ export function parseTokens(input: unknown): TokenDict {
     if (depth > 12 || node === null || typeof node !== 'object') return;
     const obj = node as Record<string, unknown>;
     const rawValue = '$value' in obj ? obj.$value : 'value' in obj ? obj.value : undefined;
-    if (rawValue !== undefined && (typeof rawValue !== 'object' || rawValue === null)) {
-      const type = String(obj.$type ?? obj.type ?? '').toLowerCase();
-      addLeaf(dict, path.join('/'), rawValue, type);
+    if (rawValue !== undefined) {
+      if (typeof rawValue !== 'object' || rawValue === null) {
+        const type = String(obj.$type ?? obj.type ?? '').toLowerCase();
+        addLeaf(dict, path.join('/'), rawValue, type);
+        return;
+      }
+      // 複合トークン (shadow / typography 等): $value がオブジェクト。
+      // パスに $value/value を挟まず子要素を走査し、'typography/body/fontSize' の
+      // 形で登録する (子は型注釈を持たないため値から推定される)。
+      visit(rawValue, path, depth + 1);
       return;
     }
     for (const [key, child] of Object.entries(obj)) {
@@ -160,6 +167,8 @@ export function matchColor(dict: TokenDict, cssValue: string): ColorMatch | null
   if (!dict.colors.length) return null;
   const c = parseColor(cssValue);
   if (!c) return null;
+  // 完全透明は「色が無い」状態 (既定背景 or 意図的な透明化) なので照合・警告の対象外
+  if (c.a === 0) return null;
   let best: TokenColor | null = null;
   let bestD = Infinity;
   for (const t of dict.colors) {

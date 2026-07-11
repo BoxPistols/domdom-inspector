@@ -55,9 +55,11 @@ export default defineContentScript({
     pushStrings();
     void pushSettings();
     void pushTokens();
+    // 変更されたキーに対応する中継だけを行う (popupDevOpen 等の無関係な変更で
+    // settings の再取得・postMessage を走らせない)
     browser.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
-      void pushSettings();
+      if ('settings' in changes) void pushSettings();
       if ('tokenDict' in changes) void pushTokens();
     });
 

@@ -63,6 +63,28 @@ describe('parseTokens (3 フォーマット自動判別)', () => {
     expect(dict.sizes.map((s) => `${s.name}=${s.px}`)).toEqual(['space/1=4', 'space/n=16']);
   });
 
+  it('複合トークン ($value がオブジェクト: typography/shadow) は子要素を走査する', () => {
+    const dict = parseTokens({
+      typography: {
+        body: {
+          $type: 'typography',
+          $value: { fontSize: '16px', lineHeight: '24px', fontFamily: 'Inter' },
+        },
+      },
+      shadow: {
+        card: { $type: 'shadow', $value: { color: '#00000040', blur: '4px' } },
+      },
+    });
+    // パスに $value を挟まないクリーンな名前で登録される。fontFamily は色/サイズ
+    // いずれでもないのでスキップ
+    expect(dict.sizes.map((s) => `${s.name}=${s.px}`)).toEqual([
+      'typography/body/fontSize=16',
+      'typography/body/lineHeight=24',
+      'shadow/card/blur=4',
+    ]);
+    expect(dict.colors.map((c) => c.name)).toEqual(['shadow/card/color']);
+  });
+
   it('エイリアス参照や非対応値はスキップ (壊れない)', () => {
     const dict = parseTokens({
       alias: { $value: '{color.primary}', $type: 'color' },
@@ -93,6 +115,10 @@ describe('matchColor', () => {
   it('辞書が空 / 色でない値は null', () => {
     expect(matchColor(EMPTY_TOKEN_DICT, '#1668d4')).toBeNull();
     expect(matchColor(DICT, 'bold')).toBeNull();
+  });
+  it('完全透明 (a=0) は照合対象外 — 既定背景を野良色扱いしない', () => {
+    expect(matchColor(DICT, 'rgba(0, 0, 0, 0)')).toBeNull();
+    expect(matchColor(DICT, 'rgba(255, 0, 0, 0)')).toBeNull();
   });
 });
 
