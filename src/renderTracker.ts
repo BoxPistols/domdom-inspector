@@ -145,9 +145,12 @@ export class RenderTracker {
     const rootFiber = root?.current;
     if (!rootFiber) return result;
 
-    // 初回マウント (root に alternate がまだ無い) は全ツリーが新規。
-    // ページロード直後の全画面フラッシュはノイズなので flash は出さず、記録のみ行う。
-    const isInitialMount = !rootFiber.alternate;
+    // 初回マウントは全ツリーが新規なので、ページロード直後の全画面フラッシュは
+    // ノイズとして抑制し記録のみ行う。判定は「alternate が無い」だけでは不十分:
+    // React は初回コミットでも work-in-progress 複製で HostRoot に alternate を
+    // 作るため、実際には alternate.child === null (空だった元 root) を見る。
+    const alt = rootFiber.alternate;
+    const isInitialMount = !alt || alt.child == null;
     this.walk(rootFiber, result, isInitialMount);
     result.supported = this.sawDuration;
 

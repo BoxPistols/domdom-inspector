@@ -106,11 +106,12 @@ export const OVERLAY_CSS = `
         box-shadow: 0 4px 16px rgba(0,0,0,0.4);
       }
       .stats .head {
-        display: flex; justify-content: space-between; align-items: center; gap: 8px;
+        display: flex; justify-content: space-between; align-items: center; gap: 6px 8px;
+        flex-wrap: wrap;
         padding: 8px 12px; font-weight: 700; position: sticky; top: 0;
         background: rgba(20,20,24,0.98); z-index: 1;
       }
-      .stats .head .ttl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .stats .head .ttl { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
       .stats .head .acts { display: inline-flex; align-items: center; gap: 8px; flex: none; }
       .stats .head button {
         all: unset; cursor: pointer; opacity: 0.75; font-size: 12px; padding: 2px 6px;

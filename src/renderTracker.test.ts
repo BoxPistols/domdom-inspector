@@ -29,8 +29,12 @@ function fiber(partial: Partial<F> & Pick<F, 'tag'>): F {
   return { type: null, child: null, sibling: null, alternate: null, ...partial };
 }
 
-/** update コミット: HostRoot(tag=3) に alternate を持たせ、子が差し替わった状態を作る */
-function updateRoot(child: F, prevChild: F | null = null): { current: F } {
+/**
+ * update コミット: HostRoot(tag=3) に alternate を持たせ、子が差し替わった状態を作る。
+ * alternate.child は非 null (初回マウントではない) を既定にする —
+ * 実 React でも 2 回目以降のコミットは旧ツリーの子を alternate 側に持つ。
+ */
+function updateRoot(child: F, prevChild: F = fiber({ tag: 0 })): { current: F } {
   const altRoot = fiber({ tag: 3, child: prevChild });
   const rootFiber = fiber({ tag: 3, alternate: altRoot, child });
   return { current: rootFiber };
@@ -139,6 +143,21 @@ describe('RenderTracker (PerformedWork フラグ判定)', () => {
     expect(result.rendered).toBe(1); // App が mount として記録される
     expect(result.flashes).toHaveLength(0); // 全画面フラッシュのノイズは出さない
     expect(tracker.snapshot().stats[0].causes.mount).toBe(1);
+  });
+
+  it('実 React の初回コミット (alternate はあるが alternate.child が null) もフラッシュ抑制する', () => {
+    // React は初回コミットでも WIP 複製で HostRoot に alternate を作る。
+    // その alternate は「まだ子を持たない空の元 root」なので child === null で判別できる。
+    const el = mockElement();
+    const host = fiber({ tag: 5, type: 'div', stateNode: el, memoizedProps: {} });
+    const comp = fiber({ tag: 0, type: function App() {}, child: host, memoizedProps: {} });
+    const emptyOriginalRoot = fiber({ tag: 3, child: null });
+    const rootFiber = fiber({ tag: 3, alternate: emptyOriginalRoot, child: comp });
+
+    const tracker = new RenderTracker(() => 0);
+    const result = tracker.handleCommit({ current: rootFiber });
+    expect(result.rendered).toBe(1);
+    expect(result.flashes).toHaveLength(0);
   });
 
   it('ホストは props 参照が変わったときだけフラッシュし、heat が累積する', () => {

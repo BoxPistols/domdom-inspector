@@ -77,16 +77,17 @@ export function buildReport(input: ReportInput): string {
   lines.push('');
   if (vitals.metrics.length === 0) {
     lines.push('_No vitals observed (browser support or timing)._');
+    lines.push(`Long tasks: ${vitals.longTasks} (blocking ≈ ${fmtMs(vitals.blockingMs)})`);
   } else {
     lines.push('| Metric | Value | Rating |');
     lines.push('| --- | --- | --- |');
     for (const m of vitals.metrics) {
       lines.push(`| ${m.id} | ${formatVital(m.id, m.value)} | ${m.rating} |`);
     }
+    lines.push(
+      `| Long tasks | ${vitals.longTasks} | blocking ≈ ${fmtMs(vitals.blockingMs)} |`,
+    );
   }
-  lines.push(
-    `| Long tasks | ${vitals.longTasks} | blocking ≈ ${fmtMs(vitals.blockingMs)} |`,
-  );
   lines.push('');
 
   // 再レンダー統計 (why-did-render 内訳つき)
