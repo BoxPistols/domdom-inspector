@@ -45,6 +45,20 @@
 - popup: ダーク既定 / ライト両テーマ、designer 切替でレンダー計測・開発者設定が
   非表示になり engineer で復帰。ⓘ はラベル行内に表示。
 
+## 追記: Figma デザイントークン照合の検証 (同日)
+
+同じ E2E 環境で、popup に W3C Design Tokens JSON
+(`color/primary=#1668d4, color/ink, space/1=4px, space/2=8px, radius/md=6px`) を貼り付け:
+
+- popup ステータス: 「Loaded: 2 colors / 3 sizes」を実測。
+- トークン一致要素 (h1: color #1668d4 / padding 8px) のバッジ:
+  `color/primary`・`space/2` が緑のトークン名で注釈される。
+- 野良値要素 (color #2a76d8 / padding 10px / radius 6px) のバッジ:
+  `≠ token · near color/primary`・`≠ token · near space/2` の黄警告 +
+  radius は `radius/md` 一致。**radius のグリッド警告が抑制される**
+  (トークン一致が 4px グリッドより優先) ことも確認。
+- font size 16px のようにトークンから遠いサイズは警告しない (ノイズ抑制) ことを確認。
+
 ## 既知の制限
 
 - INP は 40ms 超のインタラクションが無いと観測されない (テスト環境では未観測)。

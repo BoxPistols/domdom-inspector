@@ -64,6 +64,7 @@ export default defineContentScript({
         treeView.applySettings(data.payload);
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
+      if (data.type === 'tokens' && data.payload) overlay.updateTokens(data.payload);
       if (data.type === 'toggle') inspector.toggle();
       if (data.type === 'inspect-on') inspector.enableOnly();
       if (data.type === 'toggle-render') renderDebugger.toggle();

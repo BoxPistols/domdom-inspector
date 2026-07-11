@@ -15,6 +15,16 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 >   (`src/report.ts`)。AI アシスタントに貼ってチューニング対話を始められる。
 > - popup: darkmode ファースト + WCAG AA コントラスト + 職域スイッチ(designer/engineer、
 >   `Settings.role`)でエンジニア専用 UI の表示を切替。
+>
+> **完了済み追記 — Figma デザイントークン照合(2026-07)** — Phase 3 FR-15 の
+> 「テーマ取得に依存しない先行版」:
+> - popup にトークン JSON 貼り付け(Figma Variables / W3C Design Tokens / Tokens Studio
+>   を自動判別、`src/tokenDict.ts`)。storage → bridge → MAIN world へ配信。
+> - ホバーバッジの色/余白/角丸チップに「一致トークン名(緑)/ 野良値 + 最近傍(黄)」を注釈。
+>   色は常に照合、サイズはトークンに近い外れ値(≤4px)のみ警告(遠い値はレイアウト都合と
+>   みなし沈黙)。トークン一致したラベルは 4px グリッド警告を抑制(トークンが正)。
+> - production サイトでも動作(computed style ベース)。MUI テーマ自動取得(FR-14)は
+>   この照合辞書を再利用して次段で載せる。
 
 - 見積は 1 人日 = 集中作業 6h 換算の粗見積(±50%)
 - 各項目に「再利用する既存モジュール」「新規モジュール」「受け入れ条件」を付す
