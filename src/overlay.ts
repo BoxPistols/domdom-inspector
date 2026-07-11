@@ -3,8 +3,10 @@ import { buildEditorUrl } from './editor';
 import { el } from './overlayDom';
 import { colorFor, designLabel, heatColor, visibleProps } from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
+import type { RenderSnapshot, RenderStat } from './renderTracker';
 import { lintSpacing } from './tokenLint';
 import type { TreeNode } from './tree';
+import { formatVital, type VitalsSnapshot } from './vitals';
 import { DEFAULT_STRINGS, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /** lintSpacing に渡すグリッド幅 (px)。警告文の {grid} 表示と必ず一致させる */
@@ -328,45 +330,167 @@ export class Overlay {
     }
   }
 
-  /** レンダー記録の統計パネル (再描画回数ランキング) */
+  /**
+   * レンダー記録の統計パネル (再描画ランキング + why-did-render + Page vitals)。
+   * 行にホバーすると原因内訳 (state/props/parent/mount) と直近変化の props/hook が見える。
+   * 「AI レポートをコピー」で Markdown 分析レポートをクリップボードへ。
+   */
   showRenderStats(
-    snapshot: { stats: { name: string; count: number; selfMs: number }[]; commits: number },
-    supported: boolean,
-    onClose: () => void,
+    snapshot: RenderSnapshot,
+    vitals: VitalsSnapshot,
+    opts: { onClose: () => void; buildReport: () => string },
   ) {
     this.ensureMounted();
     this.statsPanel.replaceChildren();
+    const titleText = this.strings.statsTitle.replace('{n}', String(snapshot.commits));
+    this.statsPanel.setAttribute('role', 'dialog');
+    this.statsPanel.setAttribute('aria-label', titleText);
 
     const head = el('div', 'head');
-    const title = el('span', undefined, this.strings.statsTitle.replace('{n}', String(snapshot.commits)));
-    const close = el('button', undefined, '×');
+    const title = el('span', 'ttl', titleText);
+    const acts = el('span', 'acts');
+    const copyBtn = el('button', 'act', this.strings.statsCopy);
+    copyBtn.addEventListener('click', () => {
+      void this.copyText(opts.buildReport()).then((ok) => {
+        this.toast(ok ? this.strings.statsCopied : this.strings.statsCopyFail, 4000);
+      });
+    });
+    const close = el('button', 'x', '×');
+    close.title = this.strings.panelClose;
+    close.setAttribute('aria-label', this.strings.panelClose);
     close.addEventListener('click', () => {
       this.hideRenderStats();
-      onClose();
+      opts.onClose();
     });
-    head.append(title, close);
+    acts.append(copyBtn, close);
+    head.append(title, acts);
     this.statsPanel.appendChild(head);
+
+    // Page vitals (Closed 環境の Lighthouse 代替。観測できた指標だけをチップ表示)
+    if (vitals.metrics.length || vitals.longTasks > 0) {
+      const vit = el('div', 'vit');
+      vit.append(el('span', 'vlb', this.strings.vitalsTitle));
+      for (const m of vitals.metrics) {
+        const cls =
+          m.rating === 'good' ? 'ok' : m.rating === 'needs-improvement' ? 'ni' : 'bad';
+        const chip = el('span', `vchip ${cls}`);
+        chip.title = m.rating;
+        chip.append(el('span', 'vd'), el('span', undefined, `${m.id} ${formatVital(m.id, m.value)}`));
+        vit.append(chip);
+      }
+      if (vitals.longTasks > 0) {
+        const chip = el('span', 'vchip');
+        chip.append(
+          el('span', undefined, `${this.strings.vitalsLongTasks} ${vitals.longTasks}`),
+        );
+        vit.append(chip);
+      }
+      this.statsPanel.appendChild(vit);
+    }
+
+    const totalRenders = snapshot.stats.reduce((a, s) => a + s.count, 0);
+    const summary = el(
+      'div',
+      'sum',
+      this.strings.statsSummary
+        .replace('{renders}', String(totalRenders))
+        .replace('{wasted}', String(snapshot.totalWasted))
+        .replace('{ms}', snapshot.timingSupported ? snapshot.totalSelfMs.toFixed(1) : '—'),
+    );
+    this.statsPanel.appendChild(summary);
 
     const sub = el(
       'div',
       'sub',
-      supported ? this.strings.statsColsSupported : this.strings.statsColsUnsupported,
+      snapshot.timingSupported
+        ? this.strings.statsColsSupported
+        : this.strings.statsColsUnsupported,
     );
     this.statsPanel.appendChild(sub);
 
     if (snapshot.stats.length === 0) {
-      const empty = el('div', 'r', this.strings.statsEmpty);
-      this.statsPanel.appendChild(empty);
+      this.statsPanel.appendChild(el('div', 'r', this.strings.statsEmpty));
+    } else {
+      const hd = el('div', 'r hd');
+      hd.append(
+        el('span', 'nm', this.strings.statsColComponent),
+        el('span', 'ct', this.strings.statsColRenders),
+        el('span', 'ws', this.strings.statsColWasted),
+        el('span', 'ms', this.strings.statsColMs),
+      );
+      this.statsPanel.appendChild(hd);
     }
     for (const s of snapshot.stats.slice(0, 100)) {
       const row = el('div', 'r');
+      row.title = this.causeTooltip(s);
       const nm = el('span', 'nm', s.name);
       const ct = el('span', 'ct', String(s.count));
+      const wasted = s.causes.parent;
+      const ws = el('span', 'ws' + (wasted > 0 ? ' warn' : ''), wasted > 0 ? String(wasted) : '·');
       const ms = el('span', 'ms', s.selfMs > 0 ? s.selfMs.toFixed(1) : '—');
-      row.append(nm, ct, ms);
+      row.append(nm, ct, ws, ms);
       this.statsPanel.appendChild(row);
     }
+
+    if (snapshot.totalWasted > 0) {
+      this.statsPanel.appendChild(el('div', 'foot', this.strings.statsWastedHint));
+    }
     this.statsPanel.style.display = 'block';
+  }
+
+  /** 行ツールチップ: 原因内訳 + 直近で変化した props / hooks */
+  private causeTooltip(s: RenderStat): string {
+    const lines: string[] = [];
+    const labels: [keyof RenderStat['causes'], string][] = [
+      ['state', this.strings.causeState],
+      ['props', this.strings.causeProps],
+      ['parent', this.strings.causeParent],
+      ['mount', this.strings.causeMount],
+      ['other', this.strings.causeOther],
+    ];
+    for (const [key, label] of labels) {
+      if (s.causes[key] > 0) lines.push(`${label}: ×${s.causes[key]}`);
+    }
+    if (s.lastChangedProps.length) {
+      lines.push(this.strings.changedPropsHint.replace('{list}', s.lastChangedProps.join(', ')));
+    }
+    if (s.lastChangedHooks.length) {
+      lines.push(
+        this.strings.changedHooksHint.replace(
+          '{list}',
+          s.lastChangedHooks.map((i) => `#${i}`).join(', '),
+        ),
+      );
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * クリップボードへコピー (AI レポート用)。navigator.clipboard が使えない
+   * ページ (permissions policy / 非フォーカス) は textarea + execCommand へフォールバック。
+   */
+  private async copyText(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // フォールバックへ
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
   }
 
   hideRenderStats() {
@@ -411,10 +535,14 @@ export class Overlay {
     this.ensureMounted();
     this.treePanel.replaceChildren();
     this.treeRows.clear();
+    this.treePanel.setAttribute('role', 'dialog');
+    this.treePanel.setAttribute('aria-label', opts.title);
 
     const head = el('div', 'head');
     const title = el('span', undefined, `${opts.title} (${nodes.length})`);
-    const close = el('button', undefined, '×');
+    const close = el('button', 'x', '×');
+    close.title = this.strings.panelClose;
+    close.setAttribute('aria-label', this.strings.panelClose);
     close.addEventListener('click', () => {
       this.hideTree();
       opts.onClose();

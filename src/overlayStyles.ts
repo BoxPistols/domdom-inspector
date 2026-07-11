@@ -106,23 +106,51 @@ export const OVERLAY_CSS = `
         box-shadow: 0 4px 16px rgba(0,0,0,0.4);
       }
       .stats .head {
-        display: flex; justify-content: space-between; align-items: center;
+        display: flex; justify-content: space-between; align-items: center; gap: 6px 8px;
+        flex-wrap: wrap;
         padding: 8px 12px; font-weight: 700; position: sticky; top: 0;
-        background: rgba(20,20,24,0.98);
+        background: rgba(20,20,24,0.98); z-index: 1;
       }
+      .stats .head .ttl { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+      .stats .head .acts { display: inline-flex; align-items: center; gap: 8px; flex: none; }
       .stats .head button {
-        all: unset; cursor: pointer; opacity: 0.6; font-size: 14px; padding: 0 4px;
+        all: unset; cursor: pointer; opacity: 0.75; font-size: 12px; padding: 2px 6px;
+        border-radius: 6px;
       }
+      .stats .head button.act {
+        background: rgba(96,165,250,0.18); color: #a5d8ff; font-weight: 700;
+        border: 1px solid rgba(96,165,250,0.45);
+      }
+      .stats .head button.x { font-size: 15px; padding: 0 5px; }
       .stats .head button:hover { opacity: 1; }
+      /* Page vitals チップ (good=緑 / needs-improvement=黄 / poor=赤) */
+      .stats .vit {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+        padding: 2px 12px 6px;
+      }
+      .stats .vit .vlb { opacity: 0.6; font-size: 11px; margin-right: 2px; }
+      .stats .vchip {
+        display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px;
+        border-radius: 999px; background: rgba(255,255,255,0.07); font-size: 11px;
+      }
+      .stats .vchip .vd { width: 7px; height: 7px; border-radius: 50%; background: #9ca3af; }
+      .stats .vchip.ok .vd { background: #34d399; }
+      .stats .vchip.ni .vd { background: #fbbf24; }
+      .stats .vchip.bad .vd { background: #f87171; }
+      .stats .sum { padding: 0 12px 2px; font-weight: 700; }
       .stats .sub { padding: 0 12px 8px; opacity: 0.6; font-size: 11px; }
       .stats .r {
-        display: grid; grid-template-columns: 1fr auto auto; gap: 8px;
+        display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px;
         padding: 4px 12px; align-items: baseline;
       }
       .stats .r:nth-child(even) { background: rgba(255,255,255,0.04); }
+      .stats .r.hd { opacity: 0.55; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
       .stats .r .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .stats .r .ct { font-weight: 700; text-align: right; }
-      .stats .r .ms { opacity: 0.6; text-align: right; }
+      .stats .r .ws { text-align: right; opacity: 0.55; min-width: 3ch; }
+      .stats .r .ws.warn { color: #fbbf24; opacity: 1; font-weight: 700; }
+      .stats .r .ms { opacity: 0.6; text-align: right; min-width: 5ch; }
+      .stats .foot { padding: 6px 12px 8px; font-size: 11px; color: #fbbf24; opacity: 0.9; }
       .rctl {
         position: fixed; z-index: 2147483647; display: none;
         pointer-events: auto; left: 12px; bottom: 12px;
@@ -182,4 +210,10 @@ export const OVERLAY_CSS = `
       .tree .trow .nm { overflow: hidden; text-overflow: ellipsis; }
       .tree .trow .tag { opacity: 0.4; font-size: 10px; }
       .tree .empty { padding: 8px 12px; opacity: 0.6; }
+      /* a11y: キーボード操作時のフォーカスリング (全ボタン共通) */
+      button:focus-visible {
+        outline: 2px solid #60a5fa;
+        outline-offset: 2px;
+        opacity: 1;
+      }
     `;

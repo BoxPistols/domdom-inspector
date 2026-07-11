@@ -4,74 +4,199 @@
     <meta charset="UTF-8" />
     <title>MUI Design Inspector</title>
     <style>
+      /*
+       * darkmode ファースト: 既定はダークテーマ、prefers-color-scheme: light のときだけ
+       * ライトへ切替。全色は WCAG AA (通常テキスト 4.5:1 以上) を満たすトークンで管理する。
+       */
+      :root {
+        color-scheme: dark light;
+        --bg: #0f1116;
+        --surface: #171a21;
+        --surface-2: #1e2230;
+        --border: #2a2f3d;
+        --text: #e8ebf1;
+        --muted: #a3abbb;
+        --accent-text: #8ec2ff;
+        --accent-bg: #8ec2ff;   /* 主ボタン: 明るい青地 + 濃色文字 (コントラスト > 7:1) */
+        --on-accent: #0b1220;
+        --focus: #8ec2ff;
+        /* 分類凡例 (ダーク地で AA を満たす明度) */
+        --lg-mui: #7cb8ff;
+        --lg-custom: #7ddb99;
+        --lg-third: #b3bac7;
+        --hc-blue: #7cb8ff;
+        --hc-green: #7ddb99;
+        --hc-yellow: #f2c14e;
+        --hc-red: #ff8f8f;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --surface: #f5f7fa;
+          --surface-2: #edf0f6;
+          --border: #d7dde7;
+          --text: #1a1f2b;
+          --muted: #525d75;
+          --accent-text: #12569f;
+          --accent-bg: #1668d4;  /* ライトでは濃青地 + 白文字 (4.6:1) */
+          --on-accent: #ffffff;
+          --focus: #1668d4;
+          --lg-mui: #12569f;
+          --lg-custom: #1d6f3c;
+          --lg-third: #4d5871;
+          --hc-blue: #12569f;
+          --hc-green: #1d6f3c;
+          --hc-yellow: #8a6100;
+          --hc-red: #b3261e;
+        }
+      }
+
+      * { box-sizing: border-box; }
       body {
-        width: 320px;
+        width: 340px;
         margin: 0;
         padding: 14px;
         font-family: system-ui, sans-serif;
         font-size: 13px;
-        color: #1a1a1f;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
       }
-      h1 { font-size: 14px; margin: 0 0 12px; }
-      /* デザイナー動線 (サイトで使う → モード → 表示設定) を 4 群に区切る */
-      .section { margin-top: 14px; padding-top: 10px; border-top: 1px solid #e4e7ec; }
-      .section h2 {
+      h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: 0.01em; }
+
+      /* 職域スイッチ (デザイナー / エンジニア)。radio を視覚的に隠しつつ操作可能に保つ */
+      .seg { border: 0; margin: 0 0 4px; padding: 0; }
+      .seg legend {
+        padding: 0; margin-bottom: 6px;
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted);
+      }
+      .seg-row {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+        padding: 3px; border-radius: 10px; background: var(--surface-2);
+      }
+      .seg-row label { position: relative; display: block; }
+      .seg-row input {
+        position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer;
+      }
+      .seg-row span {
+        display: block; text-align: center; padding: 6px 4px;
+        border-radius: 8px; font-weight: 700; color: var(--muted); cursor: pointer;
+      }
+      .seg-row input:checked + span {
+        background: var(--accent-bg); color: var(--on-accent);
+      }
+      .seg-row input:focus-visible + span {
+        outline: 2px solid var(--focus); outline-offset: 2px;
+      }
+
+      /* デザイナー動線 (サイトで使う → モード → 表示設定) を群で区切る */
+      .section { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+      .section h2, summary.h2 {
         margin: 0 0 2px;
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #667085;
+        color: var(--muted);
       }
+      /* デザイナー表示ではエンジニア専用 UI を隠す (機能は残る) */
+      body[data-role="designer"] .eng-only { display: none; }
+
       label { display: block; margin: 10px 0 4px; font-weight: 600; }
       select, input[type="text"], textarea {
         width: 100%;
-        box-sizing: border-box;
-        padding: 6px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
         font-family: inherit;
         font-size: 12px;
+        color: var(--text);
+        background: var(--surface);
       }
       textarea { height: 56px; font-family: ui-monospace, monospace; }
       .check { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-weight: 600; }
+      .check input { accent-color: var(--accent-bg); }
       button {
         width: 100%;
         margin-top: 10px;
         padding: 8px;
         border: none;
-        border-radius: 6px;
-        background: #2196f3;
-        color: #fff;
+        border-radius: 8px;
+        background: var(--accent-bg);
+        color: var(--on-accent);
+        font-family: inherit;
+        font-size: 13px;
         font-weight: 700;
         cursor: pointer;
       }
-      button:hover { background: #1976d2; }
-      button.secondary { background: #455a64; }
-      button.secondary:hover { background: #37474f; }
-      .hint { margin-top: 8px; color: #5a5a5a; font-size: 11px; line-height: 1.5; }
-      input:disabled, button:disabled { background: #f2f2f2; color: #999; cursor: not-allowed; }
-      button:disabled:hover { background: #f2f2f2; }
-      /* 設定の意味を補足する ⓘ ツールチップアイコン */
+      button:hover { filter: brightness(1.08); }
+      button.secondary {
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      button.secondary:hover { filter: none; background: var(--border); }
+      .hint { margin-top: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+      input:disabled, button:disabled {
+        background: var(--surface-2); color: var(--muted);
+        cursor: not-allowed; border: 1px solid var(--border); filter: none;
+      }
+      /* a11y: キーボードフォーカスを常に可視化 */
+      button:focus-visible, select:focus-visible, input:focus-visible,
+      textarea:focus-visible, summary:focus-visible {
+        outline: 2px solid var(--focus); outline-offset: 2px;
+      }
+      /* 設定の意味を補足する ⓘ (tabindex 0 でキーボードからも読める) */
       .q {
         display: inline-block; margin-left: 4px; cursor: help;
-        color: #1976d2; font-size: 12px; vertical-align: middle;
+        color: var(--accent-text); font-size: 12px; vertical-align: middle;
+        border-radius: 50%;
       }
+      .q:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
       details { margin-top: 12px; }
-      summary { cursor: pointer; font-weight: 700; font-size: 12px; color: #1565c0; }
-      /* ヘルプの視認性向上: 濃いテキスト + 行間 + 区切り */
-      .help { margin-top: 8px; font-size: 11.5px; line-height: 1.7; color: #222; }
+      summary { cursor: pointer; font-weight: 700; font-size: 12px; color: var(--accent-text); }
+      /* ヘルプの視認性: 本文はテーマトークンで両テーマ対応 */
+      .help { margin-top: 8px; font-size: 11.5px; line-height: 1.7; color: var(--text); }
       .help p { margin: 8px 0; }
-      .help b { color: #000; }
+      .help b { color: var(--text); }
       .help table { width: 100%; border-collapse: collapse; margin: 8px 0; }
-      .help td { padding: 4px 8px 4px 0; vertical-align: top; border-top: 1px solid #eee; }
-      .help td:first-child { white-space: nowrap; font-weight: 700; color: #000; }
-      .help code { background: #eef1f4; padding: 1px 4px; border-radius: 4px; color: #1a1a1f; }
+      .help td { padding: 4px 8px 4px 0; vertical-align: top; border-top: 1px solid var(--border); }
+      .help td:first-child { white-space: nowrap; font-weight: 700; }
+      .help code {
+        background: var(--surface-2); padding: 1px 4px; border-radius: 4px; color: var(--text);
+      }
       .legend { font-weight: 700; }
+      .lg-mui { color: var(--lg-mui); }
+      .lg-custom { color: var(--lg-custom); }
+      .lg-third { color: var(--lg-third); }
+      .hc-blue { color: var(--hc-blue); }
+      .hc-green { color: var(--hc-green); }
+      .hc-yellow { color: var(--hc-yellow); }
+      .hc-red { color: var(--hc-red); }
     </style>
   </head>
   <body>
     <h1 data-i18n="extName">MUI Design Inspector</h1>
+
+    <!-- 職域モード: メンタルモデルに合わせて popup の情報量を切替える -->
+    <fieldset class="seg">
+      <legend data-i18n="roleTitle">Optimize this popup for</legend>
+      <div class="seg-row">
+        <label>
+          <input type="radio" name="role" value="designer" />
+          <span data-i18n="roleDesigner">Designer</span>
+        </label>
+        <label>
+          <input type="radio" name="role" value="engineer" />
+          <span data-i18n="roleEngineer">Engineer</span>
+        </label>
+      </div>
+    </fieldset>
+    <div class="hint" data-i18n="roleHint">
+      Designer view focuses on visual inspection and hides engineering tools (render profiling,
+      editor link). Nothing is deleted — switch back anytime.
+    </div>
 
     <!-- ① このサイトで使う: デザイナーの主導線 (有効化 → 自動でインスペクト ON) -->
     <section class="section">
@@ -85,7 +210,7 @@
         Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button.
         This extension only reads the page — it never sends data, stores page content, or runs remote code.
       </div>
-      <div class="hint" id="siteStatus"></div>
+      <div class="hint" id="siteStatus" role="status" aria-live="polite"></div>
     </section>
 
     <!-- ② モード切替 -->
@@ -99,16 +224,18 @@
       </button>
       <div class="hint" id="hintTree">Shortcut: Alt+Shift+T / Exit: Esc</div>
 
-      <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
-        Toggle render visualization mode
-      </button>
-      <div class="hint" id="hintRender">Shortcut: Alt+Shift+R / Record: R / Exit: Esc</div>
+      <div class="eng-only">
+        <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
+          Toggle render visualization mode
+        </button>
+        <div class="hint" id="hintRender">Shortcut: Alt+Shift+R / Record: R / Exit: Esc</div>
+      </div>
     </section>
 
     <!-- ③ 表示設定 (デザイナーにも関係する設定だけをここに出す) -->
     <section class="section">
       <h2 data-i18n="sectionDisplay">Display</h2>
-      <label for="badgeDetail" data-i18n="labelBadgeDetail">Badge detail level</label><span class="q" data-i18n-title="tipBadgeDetail">ⓘ</span>
+      <label for="badgeDetail"><span data-i18n="labelBadgeDetail">Badge detail level</span><span class="q" tabindex="0" data-i18n-title="tipBadgeDetail">ⓘ</span></label>
       <select id="badgeDetail">
         <option value="compact" data-i18n="optBadgeCompact">Compact (name &amp; location)</option>
         <option value="normal" data-i18n="optBadgeNormal">Standard (+ colors &amp; spacing)</option>
@@ -120,7 +247,7 @@
     </section>
 
     <!-- ④ 開発者向け: エディタ連携などエンジニア専用設定 (既定で閉じ、開閉状態は保存) -->
-    <details class="section" id="devSection">
+    <details class="section eng-only" id="devSection">
       <summary data-i18n="sectionDev">For developers (editor link, advanced)</summary>
 
       <label for="editor" data-i18n="labelEditor">Editor</label>
@@ -142,21 +269,19 @@
       <label class="check">
         <input type="checkbox" id="muiSkip" />
         <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
-        <span class="q" data-i18n-title="tipMuiSkip">ⓘ</span>
+        <span class="q" tabindex="0" data-i18n-title="tipMuiSkip">ⓘ</span>
       </label>
 
       <label class="check">
         <input type="checkbox" id="openEditorOnClick" />
         <span data-i18n="labelOpenEditor">Open editor on click</span>
-        <span class="q" data-i18n-title="tipOpenEditor">ⓘ</span>
+        <span class="q" tabindex="0" data-i18n-title="tipOpenEditor">ⓘ</span>
       </label>
 
-      <label for="pathMappings" data-i18n="labelPathMappings">
-        Path mappings (one per line: from=to)
-      </label><span class="q" data-i18n-title="tipPathMappings">ⓘ</span>
+      <label for="pathMappings"><span data-i18n="labelPathMappings">Path mappings (one per line: from=to)</span><span class="q" tabindex="0" data-i18n-title="tipPathMappings">ⓘ</span></label>
       <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
 
-      <label for="recordKey" data-i18n="labelRecordKey">Record key (in render mode)</label><span class="q" data-i18n-title="tipRecordKey">ⓘ</span>
+      <label for="recordKey"><span data-i18n="labelRecordKey">Record key (in render mode)</span><span class="q" tabindex="0" data-i18n-title="tipRecordKey">ⓘ</span></label>
       <input type="text" id="recordKey" maxlength="1" style="width: 60px" />
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
@@ -175,15 +300,16 @@
         色凡例 span・表・code など内部マークアップが多く、messages.json (プレーン文字列 +
         getMessage) に載せると可読性・保守性が落ちるため意図的にこの方式を採る。
         ラベル類は data-i18n + _locales に統一 (単純文字列は共通経路)。
+        凡例色はテーマトークン (lg-*/hc-*) 経由でダーク/ライト両対応の AA コントラストにする。
       -->
       <div class="help" data-help="en">
         <p><b>Setup</b>: on a deployed site, click "Enable on current site…" once — inspecting
         starts right away, no reload needed. On localhost dev servers it works out of the box:
         turn inspect mode ON with the button above or Alt+Shift+I.</p>
         <p><b>Hover</b>: an outline and badge appear. Outline color is
-        <span class="legend" style="color:#1976d2">blue = MUI</span> /
-        <span class="legend" style="color:#2e7d32">green = your code</span> /
-        <span class="legend" style="color:#616161">gray = other libraries</span>.
+        <span class="legend lg-mui">blue = MUI</span> /
+        <span class="legend lg-custom">green = your code</span> /
+        <span class="legend lg-third">gray = other libraries</span>.
         The badge shows "component name (internal name · props · file:line)".</p>
         <table>
           <tr><td>Click</td><td>open the source line in your editor</td></tr>
@@ -197,13 +323,16 @@
         <p><b>Antigravity</b>: launches via the <code>antigravity-ide://</code> scheme.
         If it doesn't open, adjust with "Custom URL".</p>
         <p>On production builds it falls back to a name-only safe mode.</p>
-        <p><b>Render visualization</b> (Alt+Shift+R): re-rendered elements flash, colored as a
-        heatmap of re-render count (<span class="legend" style="color:#3b82f6">blue=few</span> →
-        <span class="legend" style="color:#22c55e">green</span> →
-        <span class="legend" style="color:#eab308">yellow</span> →
-        <span class="legend" style="color:#ef4444">red=many</span>).
-        Press <b>R</b> to record, interact to trigger re-renders, then <b>R</b> to stop and see a
-        per-component ranking of re-render count and self time (timing needs a dev build).</p>
+        <p><b>Render visualization</b> (Alt+Shift+R): elements that actually re-rendered flash,
+        colored as a heatmap of re-render count (<span class="legend hc-blue">blue=few</span> →
+        <span class="legend hc-green">green</span> →
+        <span class="legend hc-yellow">yellow</span> →
+        <span class="legend hc-red">red=many</span>).
+        Press <b>R</b> to record, interact, then <b>R</b> to stop: you get a per-component
+        ranking with <b>why</b> each one re-rendered (own state / props changed / dragged along
+        by a parent = wasted), page vitals (LCP/CLS/INP), and a "Copy AI report" button that
+        produces a Markdown report you can paste into an AI assistant to start a tuning
+        conversation. Timings need a dev build; counts and causes are exact even on production.</p>
       </div>
 
       <div class="help" data-help="ja" hidden>
@@ -211,9 +340,9 @@
         リロード不要でそのままインスペクトが始まります。localhost の開発サーバでは最初から
         使えます (上のボタンか Alt+Shift+I で ON)。</p>
         <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
-        <span class="legend" style="color:#1976d2">青 = MUI</span> /
-        <span class="legend" style="color:#2e7d32">緑 = 自作</span> /
-        <span class="legend" style="color:#616161">グレー = その他ライブラリ</span>。
+        <span class="legend lg-mui">青 = MUI</span> /
+        <span class="legend lg-custom">緑 = 自作</span> /
+        <span class="legend lg-third">グレー = その他ライブラリ</span>。
         バッジは「コンポーネント名 (内部名 · props · ファイル:行)」です。</p>
         <table>
           <tr><td>クリック</td><td>エディタでソースの該当行を開く</td></tr>
@@ -229,13 +358,16 @@
         <p><b>Antigravity</b>: <code>antigravity-ide://</code> スキームで起動します。
         開かない場合は「カスタム URL」で調整してください。</p>
         <p>本番サイト (公開ビルド) では名前推定のみの簡易表示になります。</p>
-        <p><b>再描画の可視化</b> (Alt+Shift+R): 再描画が起きた要素が明滅します。色は
-        再描画回数のヒートマップ (<span class="legend" style="color:#3b82f6">青=少</span> →
-        <span class="legend" style="color:#22c55e">緑</span> →
-        <span class="legend" style="color:#eab308">黄</span> →
-        <span class="legend" style="color:#ef4444">赤=多</span>)。
-        <b>R</b> で記録を開始し、操作して再描画を発生させてから <b>R</b> で停止すると、
-        コンポーネント別の再描画回数・処理時間ランキングが出ます (開発ビルドで時間計測可)。</p>
+        <p><b>再描画の可視化</b> (Alt+Shift+R): 実際に再描画された要素だけが明滅します。色は
+        再描画回数のヒートマップ (<span class="legend hc-blue">青=少</span> →
+        <span class="legend hc-green">緑</span> →
+        <span class="legend hc-yellow">黄</span> →
+        <span class="legend hc-red">赤=多</span>)。
+        <b>R</b> で記録 → 操作 → <b>R</b> で停止すると、コンポーネント別ランキングに
+        <b>再描画の原因</b> (自身の state / props 変化 / 親に巻き込まれた=無駄) が出ます。
+        ページ性能 (LCP/CLS/INP) も併記され、「AI レポートをコピー」で Markdown レポートを
+        AI アシスタントに貼ってチューニングの対話を始められます。時間計測は開発ビルドが必要
+        ですが、回数と原因は本番ビルドでも正確です。</p>
       </div>
     </details>
 

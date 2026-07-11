@@ -7,6 +7,13 @@
   "cmdToggleRender": { "message": "再描画の可視化モードの切替" },
   "cmdToggleTree": { "message": "コンポーネントツリーモードの切替" },
 
+  "roleTitle": { "message": "このポップアップの最適化対象" },
+  "roleDesigner": { "message": "デザイナー" },
+  "roleEngineer": { "message": "エンジニア" },
+  "roleHint": {
+    "message": "デザイナー表示は見た目の検査に集中し、エンジニア向けツール(レンダー計測・エディタ連携)を隠します。機能は消えません — いつでも切替可能。"
+  },
+
   "sectionSite": { "message": "このサイトで使う" },
   "sectionModes": { "message": "モード" },
   "sectionDisplay": { "message": "表示設定" },
@@ -111,11 +118,34 @@
     "message": "記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示"
   },
   "statsTitle": { "message": "再描画ランキング(画面更新 {n} 回)" },
-  "statsColsSupported": { "message": "列: コンポーネント / 再描画回数 / 累積処理時間(ms)" },
+  "statsColsSupported": { "message": "行にホバーすると再描画の原因(state / props / 親)が見えます" },
   "statsColsUnsupported": {
-    "message": "このページでは処理時間を計測できないため 0 表示になります(開発ビルドが必要)"
+    "message": "本番ビルド: 回数と原因は正確に取れます。処理時間の計測には開発ビルドが必要です"
   },
   "statsEmpty": { "message": "再描画は記録されませんでした" },
+  "statsSummary": { "message": "レンダー {renders} 回 · 無駄 {wasted} 回 · 自己時間 {ms}ms" },
+  "statsWastedHint": {
+    "message": "無駄 = props が同一なのに親の再描画に巻き込まれた回数 → React.memo 候補"
+  },
+  "statsColComponent": { "message": "コンポーネント" },
+  "statsColRenders": { "message": "回数" },
+  "statsColWasted": { "message": "無駄" },
+  "statsColMs": { "message": "自己ms" },
+  "statsCopy": { "message": "AI レポートをコピー" },
+  "statsCopied": {
+    "message": "レポートをコピーしました — AI アシスタントに貼り付ければ分析を始められます"
+  },
+  "statsCopyFail": { "message": "コピーできませんでした — このページではクリップボードを使えません" },
+  "vitalsTitle": { "message": "ページ性能" },
+  "vitalsLongTasks": { "message": "ロングタスク" },
+  "causeState": { "message": "自身の state 変化 (useState/useReducer)" },
+  "causeProps": { "message": "props の値が変化" },
+  "causeParent": { "message": "親の再描画に巻き込まれ(無駄)" },
+  "causeMount": { "message": "初回マウント" },
+  "causeOther": { "message": "Context ほか" },
+  "changedPropsHint": { "message": "直近で変化した props: {list}" },
+  "changedHooksHint": { "message": "直近で変化した hooks: {list}" },
+  "panelClose": { "message": "閉じる" },
 
   "dsColor": { "message": "文字色" },
   "dsBg": { "message": "背景色" },

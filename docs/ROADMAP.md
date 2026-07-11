@@ -3,6 +3,19 @@
 要件定義書 v3.0(FR-05〜FR-27)を、**現行アーキテクチャに接地した実装計画**へ落としたもの。
 Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本書は以降の計画。
 
+> **完了済み追記 — レンダープロファイリング v2(2026-07)**
+> レンダー計測を React DevTools と同一基準に刷新済み:
+> - 判定: `flags & PerformedWork` + alternate 差分走査(bailout サブツリーをスキップ)。
+>   production ビルドでも回数・原因が正確(時間計測のみ dev/profiling ビルド必要)。
+> - why-did-render: 原因分類 `mount / state(hook index 付き) / props(変化キー付き) / parent(無駄=memo 候補) / other`
+>   (`src/renderCause.ts`)。統計パネルの行 hover で内訳表示。
+> - Page vitals: LCP/CLS/INP/FCP/TTFB/LongTasks を PerformanceObserver で常時観測(`src/vitals.ts`)。
+>   Closed 環境での Lighthouse 代替。
+> - AI レポート: 記録スナップショット + vitals から Markdown 分析レポートを生成しクリップボードへ
+>   (`src/report.ts`)。AI アシスタントに貼ってチューニング対話を始められる。
+> - popup: darkmode ファースト + WCAG AA コントラスト + 職域スイッチ(designer/engineer、
+>   `Settings.role`)でエンジニア専用 UI の表示を切替。
+
 - 見積は 1 人日 = 集中作業 6h 換算の粗見積(±50%)
 - 各項目に「再利用する既存モジュール」「新規モジュール」「受け入れ条件」を付す
 - MoSCoW は v3.0 の優先度を踏襲

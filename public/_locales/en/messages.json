@@ -7,6 +7,13 @@
   "cmdToggleRender": { "message": "Toggle render visualization mode" },
   "cmdToggleTree": { "message": "Toggle component tree mode" },
 
+  "roleTitle": { "message": "Optimize this popup for" },
+  "roleDesigner": { "message": "Designer" },
+  "roleEngineer": { "message": "Engineer" },
+  "roleHint": {
+    "message": "Designer view focuses on visual inspection and hides engineering tools (render profiling, editor link). Nothing is deleted — switch back anytime."
+  },
+
   "sectionSite": { "message": "Use on this site" },
   "sectionModes": { "message": "Modes" },
   "sectionDisplay": { "message": "Display" },
@@ -112,12 +119,35 @@
   },
   "statsTitle": { "message": "Re-render ranking ({n} screen updates)" },
   "statsColsSupported": {
-    "message": "Columns: component / re-renders / cumulative self time (ms)"
+    "message": "Hover a row for why it re-rendered (state / props / parent)"
   },
   "statsColsUnsupported": {
-    "message": "Profiler timer unavailable here; time shows 0 (needs a dev build)"
+    "message": "Production build: render counts and causes are exact, timings need a dev build"
   },
   "statsEmpty": { "message": "No re-renders were recorded" },
+  "statsSummary": { "message": "{renders} renders · {wasted} wasted · {ms}ms self time" },
+  "statsWastedHint": {
+    "message": "wasted = re-rendered by a parent with identical props → React.memo candidate"
+  },
+  "statsColComponent": { "message": "component" },
+  "statsColRenders": { "message": "renders" },
+  "statsColWasted": { "message": "wasted" },
+  "statsColMs": { "message": "self ms" },
+  "statsCopy": { "message": "Copy AI report" },
+  "statsCopied": {
+    "message": "Report copied — paste it into your AI assistant to start the analysis"
+  },
+  "statsCopyFail": { "message": "Copy failed — clipboard is unavailable on this page" },
+  "vitalsTitle": { "message": "Page vitals" },
+  "vitalsLongTasks": { "message": "long tasks" },
+  "causeState": { "message": "own state (useState/useReducer)" },
+  "causeProps": { "message": "props changed" },
+  "causeParent": { "message": "parent re-render (wasted)" },
+  "causeMount": { "message": "mount" },
+  "causeOther": { "message": "context/other" },
+  "changedPropsHint": { "message": "last changed props: {list}" },
+  "changedHooksHint": { "message": "last changed hooks: {list}" },
+  "panelClose": { "message": "Close" },
 
   "dsColor": { "message": "text color" },
   "dsBg": { "message": "background" },

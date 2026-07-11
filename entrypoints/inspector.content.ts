@@ -5,6 +5,7 @@ import { RenderDebugger } from '../src/renderDebug';
 import { TreeView } from '../src/treeView';
 import { DEV_MATCHES } from '../src/matches';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS } from '../src/types';
+import { VitalsCollector } from '../src/vitals';
 
 /**
  * MAIN world / document_start: React 読み込み前に DevTools フックを確立し、
@@ -31,7 +32,11 @@ export default defineContentScript({
     const strings = { ...DEFAULT_STRINGS };
     const overlay = new Overlay(DEFAULT_SETTINGS, strings);
     const inspector = new Inspector(hookState, overlay, strings);
-    const renderDebugger = new RenderDebugger(hookState, overlay, strings);
+    // Page vitals は document_start から常時観測 (buffered observer で初期エントリも遡取)。
+    // 観測のみで DOM/描画には触れず、レポート生成時に snapshot を読む。
+    const vitals = new VitalsCollector();
+    vitals.start();
+    const renderDebugger = new RenderDebugger(hookState, overlay, strings, vitals);
     const treeView = new TreeView(hookState, overlay, strings);
 
     // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化 → ツリーの順に
