@@ -47,6 +47,11 @@ export interface PathMapping {
 }
 
 export interface Settings {
+  /**
+   * 職域モード: popup の情報設計を切り替える (デザイナー = デザイン検査中心 /
+   * エンジニア = レンダー計測・エディタ連携を含む全機能)。機能自体は消さず表示を最適化する。
+   */
+  role: 'designer' | 'engineer';
   /** インスペクタ有効/無効の既定 (オリジン単位の制御は Phase 2) */
   editor: 'vscode' | 'cursor' | 'antigravity' | 'webstorm' | 'custom';
   /** editor === 'custom' 時の URL テンプレート ({file} {line} {column}) */
@@ -79,6 +84,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  role: 'engineer',
   editor: 'vscode',
   customUrlTemplate: 'vscode://file{file}:{line}:{column}',
   muiSkip: true,
@@ -129,6 +135,33 @@ export interface UiStrings {
   statsColsSupported: string;
   statsColsUnsupported: string;
   statsEmpty: string;
+  /** 記録サマリ行。{renders}=総レンダー数 / {wasted}=無駄レンダー数 / {ms}=自己時間合計 */
+  statsSummary: string;
+  /** 無駄レンダー (parent 巻き込まれ) の説明行 */
+  statsWastedHint: string;
+  /** 列ヘッダ */
+  statsColComponent: string;
+  statsColRenders: string;
+  statsColWasted: string;
+  statsColMs: string;
+  /** AI レポートコピー */
+  statsCopy: string;
+  statsCopied: string;
+  statsCopyFail: string;
+  /** Web Vitals ブロック */
+  vitalsTitle: string;
+  vitalsLongTasks: string;
+  /** 再レンダー原因ラベル (行ツールチップ用) */
+  causeState: string;
+  causeProps: string;
+  causeParent: string;
+  causeMount: string;
+  causeOther: string;
+  /** 行ツールチップの補助 (直近変化)。{list} = キー/インデックス一覧 */
+  changedPropsHint: string;
+  changedHooksHint: string;
+  /** パネル共通の閉じるボタン (aria-label / title) */
+  panelClose: string;
   /** デザインチップの表示名 (DesignProp.label は内部 id のまま、表示層でここに解決) */
   dsColor: string;
   dsBg: string;
@@ -171,9 +204,28 @@ export const DEFAULT_STRINGS: UiStrings = {
   treeOff: 'Component tree OFF',
   treeTitle: 'Component tree',
   statsTitle: 'Re-render ranking ({n} screen updates)',
-  statsColsSupported: 'Columns: component / re-renders / cumulative self time (ms)',
-  statsColsUnsupported: 'Profiler timer unavailable here; time shows 0 (needs a dev build)',
+  statsColsSupported: 'Hover a row for why it re-rendered (state / props / parent)',
+  statsColsUnsupported: 'Production build: render counts and causes are exact, timings need a dev build',
   statsEmpty: 'No re-renders were recorded',
+  statsSummary: '{renders} renders · {wasted} wasted · {ms}ms self time',
+  statsWastedHint: 'wasted = re-rendered by a parent with identical props → React.memo candidate',
+  statsColComponent: 'component',
+  statsColRenders: 'renders',
+  statsColWasted: 'wasted',
+  statsColMs: 'self ms',
+  statsCopy: 'Copy AI report',
+  statsCopied: 'Report copied — paste it into your AI assistant to start the analysis',
+  statsCopyFail: 'Copy failed — clipboard is unavailable on this page',
+  vitalsTitle: 'Page vitals',
+  vitalsLongTasks: 'long tasks',
+  causeState: 'own state (useState/useReducer)',
+  causeProps: 'props changed',
+  causeParent: 'parent re-render (wasted)',
+  causeMount: 'mount',
+  causeOther: 'context/other',
+  changedPropsHint: 'last changed props: {list}',
+  changedHooksHint: 'last changed hooks: {list}',
+  panelClose: 'Close',
   dsColor: 'text color',
   dsBg: 'background',
   dsFont: 'font size',

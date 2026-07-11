@@ -12,7 +12,8 @@ React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeSc
   (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
 - ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
 
-現状: Phase 1-2 + production両対応 M1/M2/M3 完成。詳細 `docs/ROADMAP.md`。
+現状: Phase 1-2 + production両対応 M1/M2/M3 + レンダープロファイリング v2
+(PerformedWork 判定 / why-did-render / Page vitals / AI レポート / 職域スイッチ) 完成。詳細 `docs/ROADMAP.md`。
 
 ## アーキテクチャ(2 world 構成 — 最重要)
 

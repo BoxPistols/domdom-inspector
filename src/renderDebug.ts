@@ -2,7 +2,9 @@ import type { HookState } from './hook';
 import type { Overlay } from './overlay';
 import { normalizeRecordKey } from './recordKey';
 import { RenderTracker } from './renderTracker';
+import { buildReport } from './report';
 import { DEFAULT_STRINGS, type UiStrings } from './types';
+import type { VitalsCollector } from './vitals';
 
 /**
  * レンダーデバッガ (React DevTools Profiler の軽量版):
@@ -26,6 +28,7 @@ export class RenderDebugger {
     private hookState: HookState,
     private overlay: Overlay,
     private strings: UiStrings = DEFAULT_STRINGS,
+    private vitals: VitalsCollector | null = null,
   ) {}
 
   applySettings(recordKey: string) {
@@ -126,11 +129,19 @@ export class RenderDebugger {
     if (!this.enabled) return;
     if (this.tracker.isRecording()) {
       this.tracker.stopRecording();
-      this.overlay.showRenderStats(
-        this.tracker.snapshot(),
-        this.hookState.devMode,
-        () => this.tracker.reset(),
-      );
+      const snapshot = this.tracker.snapshot();
+      const vitals = this.vitals?.snapshot() ?? { metrics: [], longTasks: 0, blockingMs: 0 };
+      this.overlay.showRenderStats(snapshot, vitals, {
+        onClose: () => this.tracker.reset(),
+        buildReport: () =>
+          buildReport({
+            page: { url: window.location.href, title: document.title },
+            devMode: snapshot.timingSupported,
+            snapshot,
+            vitals: this.vitals?.snapshot() ?? vitals,
+            generatedAt: new Date().toISOString(),
+          }),
+      });
     } else {
       this.overlay.hideRenderStats();
       this.tracker.startRecording();

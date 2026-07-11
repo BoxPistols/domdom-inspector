@@ -27,6 +27,15 @@ function applyI18n() {
   document.documentElement.lang = ja ? 'ja' : 'en';
 }
 
+// 職域スイッチ (designer/engineer)。body[data-role] で eng-only 表示を切替える
+const roleEls = [...document.querySelectorAll<HTMLInputElement>('input[name="role"]')];
+const currentRole = (): Settings['role'] =>
+  (roleEls.find((r) => r.checked)?.value as Settings['role']) ?? DEFAULT_SETTINGS.role;
+function applyRole(role: Settings['role']) {
+  for (const r of roleEls) r.checked = r.value === role;
+  document.body.dataset.role = role;
+}
+
 const editorEl = $<HTMLSelectElement>('editor');
 const templateEl = $<HTMLInputElement>('customUrlTemplate');
 const muiSkipEl = $<HTMLInputElement>('muiSkip');
@@ -68,6 +77,7 @@ async function load() {
   const settings: Settings = { ...DEFAULT_SETTINGS, ...(stored.settings ?? {}) };
   const { popupDevOpen } = await browser.storage.local.get('popupDevOpen');
   devSectionEl.open = popupDevOpen === true;
+  applyRole(settings.role);
   editorEl.value = settings.editor;
   templateEl.value = settings.customUrlTemplate;
   muiSkipEl.checked = settings.muiSkip;
@@ -82,6 +92,7 @@ async function load() {
 async function save() {
   const settings: Settings = {
     ...DEFAULT_SETTINGS,
+    role: currentRole(),
     editor: editorEl.value as Settings['editor'],
     customUrlTemplate: templateEl.value || DEFAULT_SETTINGS.customUrlTemplate,
     muiSkip: muiSkipEl.checked,
@@ -103,6 +114,12 @@ function syncTemplateState() {
 for (const el of [editorEl, templateEl, muiSkipEl, openEditorEl, badgeDetailEl, mappingsEl, recordKeyEl]) {
   el.addEventListener('change', () => {
     syncTemplateState();
+    void save();
+  });
+}
+for (const r of roleEls) {
+  r.addEventListener('change', () => {
+    applyRole(currentRole());
     void save();
   });
 }
