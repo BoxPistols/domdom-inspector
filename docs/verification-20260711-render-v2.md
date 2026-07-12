@@ -45,6 +45,38 @@
 - popup: ダーク既定 / ライト両テーマ、designer 切替でレンダー計測・開発者設定が
   非表示になり engineer で復帰。ⓘ はラベル行内に表示。
 
+## 追記: Figma デザイントークン照合の検証 (同日)
+
+同じ E2E 環境で、popup に W3C Design Tokens JSON
+(`color/primary=#1668d4, color/ink, space/1=4px, space/2=8px, radius/md=6px`) を貼り付け:
+
+- popup ステータス: 「Loaded: 2 colors / 3 sizes」を実測。
+- トークン一致要素 (h1: color #1668d4 / padding 8px) のバッジ:
+  `color/primary`・`space/2` が緑のトークン名で注釈される。
+- 野良値要素 (color #2a76d8 / padding 10px / radius 6px) のバッジ:
+  `≠ token · near color/primary`・`≠ token · near space/2` の黄警告 +
+  radius は `radius/md` 一致。**radius のグリッド警告が抑制される**
+  (トークン一致が 4px グリッドより優先) ことも確認。
+- font size 16px のようにトークンから遠いサイズは警告しない (ノイズ抑制) ことを確認。
+
+## 追記: セルフレビュー指摘の修正と回帰検証 (同日)
+
+Ultracode の多次元セルフレビュー (4 次元 × 敵対的検証) で検出した medium 2 件
+(いずれも M3 野良値検出を偽陰性で損なう) を修正し、実機で回帰確認した:
+
+- **カテゴリ非区別バグ**: `TokenSize` に `category`(space/radius/font)を持たせ、
+  ラベル→カテゴリで照合候補を絞るよう変更。E2E で `fontSize/sm=10px` トークンを
+  追加した状態でも `padding:10px` が font トークンに誤マッチせず、正しく
+  `≠ token · near space/2`(黄)+ グリッド警告保持になることを確認。
+- **単位なし値の px 混入**: `classifySize` で長さかつ用途が判別できるトークンのみ
+  登録。lineHeight/fontWeight/opacity/z-index/裸の数値は sizes に入らない
+  (単体テストで検証)。
+- 併せて low/nit を修正: annotateProp の順序依存 (遠い値が近い外れ値を握りつぶす) /
+  tokens payload の shape 検証 (EMPTY_TOKEN_DICT フォールバック) / popup トークンの
+  input デバウンス保存 / `.tk` 11px / aria-describedby。
+
+全 156 tests / typecheck / build green。
+
 ## 既知の制限
 
 - INP は 40ms 超のインタラクションが無いと観測されない (テスト環境では未観測)。

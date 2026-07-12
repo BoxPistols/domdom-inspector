@@ -1,4 +1,5 @@
 import { DEV_MATCHES } from '../src/matches';
+import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, type UiStrings } from '../src/types';
 
 /**
@@ -30,6 +31,15 @@ export default defineContentScript({
       );
     };
 
+    // デザイントークン辞書 (popup で解析済み) を MAIN world へ中継
+    const pushTokens = async () => {
+      const { tokenDict } = await browser.storage.local.get('tokenDict');
+      window.postMessage(
+        { source: BRIDGE_SOURCE, type: 'tokens', payload: tokenDict ?? EMPTY_TOKEN_DICT },
+        '*',
+      );
+    };
+
     // UiStrings の各キーを _locales から解決 (欠落時は英語既定にフォールバック)
     const pushStrings = () => {
       const resolved = {} as UiStrings;
@@ -41,8 +51,13 @@ export default defineContentScript({
 
     pushStrings();
     void pushSettings();
-    browser.storage.onChanged.addListener((_changes, area) => {
-      if (area === 'local') void pushSettings();
+    void pushTokens();
+    // 変更されたキーに対応する中継だけを行う (popupDevOpen 等の無関係な変更で
+    // settings の再取得・postMessage を走らせない)
+    browser.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return;
+      if ('settings' in changes) void pushSettings();
+      if ('tokenDict' in changes) void pushTokens();
     });
 
     browser.runtime.onMessage.addListener((message) => {

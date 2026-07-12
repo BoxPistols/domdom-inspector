@@ -157,5 +157,17 @@
   "dsRadius": { "message": "角丸" },
   "dsShadow": { "message": "影" },
   "dsGap": { "message": "間隔" },
-  "offGridWarn": { "message": "{label} {values}px({grid}px の倍数外)" }
+  "offGridWarn": { "message": "{label} {values}px({grid}px の倍数外)" },
+  "tokenNear": { "message": "≠ トークン · 近い: {name}" },
+  "tokenNone": { "message": "≠ トークン" },
+
+  "sectionTokens": { "message": "デザイントークン (Figma)" },
+  "labelTokens": { "message": "トークン JSON を貼り付け (Figma Variables / W3C / Tokens Studio)" },
+  "hintTokens": {
+    "message": "Figma Variables のエクスポート(または任意のデザイントークン JSON)をここに貼り付けてください。インスペクト中、色・余白チップに一致トークン名が表示され、外れた値は野良値として最近傍トークン付きで警告されます。本番サイトでも動作します。"
+  },
+  "tokensStatus": { "message": "読込済み: 色 {colors} 件 / サイズ {sizes} 件" },
+  "tokensEmpty": { "message": "トークン未読込" },
+  "tokensError": { "message": "JSON が不正です — エクスポートしたトークンファイルをそのまま貼り付けてください" },
+  "btnTokensClear": { "message": "トークンを削除" }
 }

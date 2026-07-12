@@ -4,6 +4,7 @@ import { el } from './overlayDom';
 import { colorFor, designLabel, heatColor, visibleProps } from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
 import type { RenderSnapshot, RenderStat } from './renderTracker';
+import { annotateProp, EMPTY_TOKEN_DICT, type TokenDict } from './tokenDict';
 import { lintSpacing } from './tokenLint';
 import type { TreeNode } from './tree';
 import { formatVital, type VitalsSnapshot } from './vitals';
@@ -46,8 +47,15 @@ export class Overlay {
     private strings: UiStrings = DEFAULT_STRINGS,
   ) {}
 
+  /** Figma トークン辞書 (bridge → inspector.content 経由で注入)。空 = 照合オフ */
+  private tokenDict: TokenDict = EMPTY_TOKEN_DICT;
+
   updateSettings(settings: Settings) {
     this.settings = settings;
+  }
+
+  updateTokens(dict: TokenDict) {
+    this.tokenDict = dict;
   }
 
   /** イベントがオーバーレイ自身の上で起きたか (自己ホバーの除外用) */
@@ -166,6 +174,10 @@ export class Overlay {
     // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。
     if ((detail !== 'compact' || !info.devMode) && info.design.length) {
       const designEl = el('div', 'design');
+      // トークン注釈を先に計算 (トークン一致したラベルはグリッド警告を抑制するため)
+      const annotations = new Map(
+        info.design.map((p) => [p.label, annotateProp(p, this.tokenDict)] as const),
+      );
       for (const p of info.design) {
         const chip = el('span', 'chip');
         const lb = el('span', 'lb', designLabel(p.label, this.strings));
@@ -178,12 +190,27 @@ export class Overlay {
         }
         const val = el('span', undefined, p.value);
         chip.append(val);
+        // Figma トークン照合: 一致ならトークン名、外れなら野良値警告 + 最近傍
+        const token = annotations.get(p.label) ?? null;
+        if (token?.kind === 'hit') {
+          chip.append(el('span', 'tk ok', token.names.join(', ')));
+        } else if (token?.kind === 'miss') {
+          const text = token.nearest
+            ? this.strings.tokenNear.replace('{name}', token.nearest)
+            : this.strings.tokenNone;
+          chip.append(el('span', 'tk ng', text));
+          chip.classList.add('stray');
+        }
         designEl.append(chip);
       }
       this.badge.append(designEl);
 
       // 野良値検出 (グリッド外の余白/角丸)。テーマ非依存で production でも動く。
-      const findings = lintSpacing(info.design, SPACING_GRID);
+      // ただしトークン辞書に一致したラベルはトークンが正なのでグリッド警告を抑制する
+      // (例: radius/md=6px はグリッド 4px の倍数でなくても正規値)。
+      const findings = lintSpacing(info.design, SPACING_GRID).filter(
+        (f) => annotations.get(f.label)?.kind !== 'hit',
+      );
       if (findings.length) {
         const warn = el('span', 'warn');
         warn.textContent =

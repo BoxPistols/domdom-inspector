@@ -4,6 +4,7 @@ import { Overlay } from '../src/overlay';
 import { RenderDebugger } from '../src/renderDebug';
 import { TreeView } from '../src/treeView';
 import { DEV_MATCHES } from '../src/matches';
+import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS } from '../src/types';
 import { VitalsCollector } from '../src/vitals';
 
@@ -64,6 +65,14 @@ export default defineContentScript({
         treeView.applySettings(data.payload);
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
+      if (data.type === 'tokens') {
+        // payload の shape を検証 (同一 window の任意ページからの postMessage を素通しにしない)。
+        // colors/sizes 配列を欠く不正 payload は EMPTY にフォールバックしバッジ描画を守る。
+        const p = data.payload;
+        overlay.updateTokens(
+          p && Array.isArray(p.colors) && Array.isArray(p.sizes) ? p : EMPTY_TOKEN_DICT,
+        );
+      }
       if (data.type === 'toggle') inspector.toggle();
       if (data.type === 'inspect-on') inspector.enableOnly();
       if (data.type === 'toggle-render') renderDebugger.toggle();

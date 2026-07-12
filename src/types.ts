@@ -175,6 +175,9 @@ export interface UiStrings {
   dsGap: string;
   /** 野良値警告。{label}=表示名 / {values}=グリッド外 px 値 / {grid}=グリッド幅 px */
   offGridWarn: string;
+  /** デザイントークン照合 (Figma)。miss 時のチップ注釈。{name}=最近傍トークン名 */
+  tokenNear: string;
+  tokenNone: string;
 }
 
 export const DEFAULT_STRINGS: UiStrings = {
@@ -237,6 +240,8 @@ export const DEFAULT_STRINGS: UiStrings = {
   dsShadow: 'shadow',
   dsGap: 'gap',
   offGridWarn: '{label} {values}px (not on the {grid}px grid)',
+  tokenNear: '≠ token · near {name}',
+  tokenNone: '≠ token',
 };
 
 /** page (MAIN world) と bridge (ISOLATED) 間の postMessage 識別子 */
