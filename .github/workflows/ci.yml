@@ -25,6 +25,13 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # console.log の commit 禁止 (CLAUDE.md 規約) を機械化。untrusted input は使用しない
+      - name: No console.log
+        run: |
+          if grep -rn "console\.log" src/ entrypoints/ --include='*.ts'; then
+            echo "::error::console.log found (CLAUDE.md 規約違反)"; exit 1
+          fi
+
       - name: Typecheck
         run: pnpm typecheck
 
