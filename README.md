@@ -2,116 +2,98 @@
 
 [![CI](https://github.com/BoxPistols/domdom-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/BoxPistols/domdom-inspector/actions/workflows/ci.yml)
 
-**あらゆる React アプリ**のコンポーネントをブラウザ上でホバー識別し、ソースコードへワンクリックでジャンプする Chrome 拡張機能。
-要件定義書 v3.0 の **Phase 1: インスペクタ MVP**(FR-01〜04, 08, 09, 12)に加え、レンダー可視化・パフォーマンスデバッグ、英日 i18n、ストア配信準備までを実装。
+**Hover any element to see its design values — and match them against your design tokens.**
+A zero-config Chrome extension for design measurement on any website: MUI, Tailwind, CSS Modules, or plain CSS.
 
-> **対象範囲の要点**: インスペクト(コンポーネント識別・ツリー・エディタジャンプ)とレンダー/パフォーマンス計測は **React Fiber ベースで、スタイル手法に非依存**(Tailwind / styled-components / CSS Modules 等どの React アプリでも動く)。**デザイン検査(computed-style ベースの色/余白/角丸 + 野良値)は非 React サイトでも動く**(素の HTML/CSS/JS でもホバーで design バッジが出る=フレームワーク非依存)。**MUI 固有なのは分類の「青=MUI」判別と将来のトークンリント(Phase 3、MUI テーマ前提)** のみ。Storybook はプレビューが iframe のため現状未対応(FR-13)。
+どんなサイトでも要素にホバーするだけで色・余白・角丸・タイポグラフィを計測し、デザイントークンと照合できる Chrome 拡張。
 
-## 機能
+## Features / 機能
 
-- **インスペクトモード** — `Alt+Shift+I` またはポップアップから切替、`Esc` で解除。有効中はページへのクリックを遮断(誤操作防止)
-- **ホバーハイライト** — MUI = 青 / 自作 = 緑 / サードパーティ = グレーの 3 分類で枠表示
-- **フローティングバッジ** — コンポーネント名 + 主要 props + ソースファイル:行。MUI 内部の styled スロット名 (例: `MuiCardContentRoot`) はユーザーが JSX に書いたセマンティック名 (例: `CardContent`) に解決して表示
-- **親子ナビゲーション** — `↑` で親コンポーネントへ、`↓` で子へ戻る(ホバー困難な入れ子でもキーボードで往来可能)
-- **クリックでエディタジャンプ** — VS Code / Cursor / Antigravity / WebStorm / カスタム URL スキーム対応
-- **MUI スキップ** — MUI 内部実装を飛ばし、自作コードの JSX callsite へジャンプ(設定で切替可)
-- **Alt+クリック** — owner チェーン(誰がレンダリングしたか)のパネル表示、各行からジャンプ可能
-- **Production セーフモード** — dev ビルド未検出時は `Mui*` クラス由来の名前表示のみに自動縮退
-- **レンダー可視化 / パフォーマンスデバッグ** (`Alt+Shift+R`) — 各コミットで再描画した要素を Shadow DOM 上の canvas でヒートマップ明滅(青=低頻度→赤=高頻度)。`R` で記録開始→停止でコンポーネント別の再描画回数・自己時間ランキングを表示。React DevTools Profiler より軽量で「どこが何回・どの順で再描画したか」を画面上で直接確認できる
+- **Inspect mode** (`Alt+Shift+I`, exit with `Esc`) — hover any element to see a floating badge with its computed design values: text color, background, spacing (margin/padding), border-radius, typography
+- **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
+- **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
+- **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child (reach nested elements you can't hover precisely)
+- **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
+- **Bilingual** — English / Japanese UI, switches with the browser locale
 
-## セットアップ
+将来機能(レンダープロファイリング / コンポーネントツリー / エディタジャンプ / MUI テーマ自動取得 / AI レポート)は [issue #4-#9](https://github.com/BoxPistols/domdom-inspector/issues) で管理。実装は同梱済みだが初回リリースでは到達不能化してある。
+
+## Setup / セットアップ
 
 ```sh
 pnpm install
 pnpm dev        # 開発 (自動リロード付きで Chrome が起動)
 pnpm build      # .output/chrome-mv3 に成果物
-pnpm test       # ユニットテスト
+pnpm test       # ユニットテスト (vitest)
+pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 ```
 
 手動読み込み: `pnpm build` 後、`chrome://extensions` → デベロッパーモード → 「パッケージ化されていない拡張機能を読み込む」→ `.output/chrome-mv3`
 
-対象オリジンは `localhost` / `127.0.0.1` のみ(権限最小化)。
+## Using on deployed sites / デプロイ済みサイトでの利用
 
-## ショートカットの再設定
+権限は最小化してある。既定で自動有効なのは `localhost` / `127.0.0.1` のみ:
 
-- **モード切替**(`Alt+Shift+I` インスペクト / `Alt+Shift+R` レンダー可視化)は manifest commands。ポップアップの「切替ショートカットを変更」ボタンから **`chrome://extensions/shortcuts`** を開き、任意のキーへ再割当できます(競合検出も Chrome 純正機能に委任)。拡張からショートカットを直接書き換える API は存在しないため、この純正ページ経由が正攻法
-- ポップアップのショートカット表示は `chrome.commands.getAll()` の**実バインドを OS 表記で**出す(Mac は ⌥⇧I、Windows は Alt+Shift+I)。ユーザーが再割当した内容もそのまま反映される
-- **ページ内の記録キー**(レンダーモード中の記録トグル、既定 `R`)はポップアップの設定値。`chrome.storage` に保存され、bridge 経由で MAIN world の RenderDebugger に反映
-- `Esc`(解除)・`↑`/`↓`(親子移動)は固定の慣用キー
+1. 検査したいサイトを開き、拡張アイコン → **「現在のサイトで有効化」**を 1 回クリック
+2. そのままインスペクトが始まる(以後そのオリジンでは permanent。取り消しも popup から)
+3. 全サイト一括許可のトグルも popup にある(任意)
 
-## その他の設定
+ページを読むだけで、外部送信・ページ内容保存・リモートコード実行は一切ない。詳細は [`SECURITY.md`](./SECURITY.md)。
 
-- **クリックでエディタを開く**(既定 ON): OFF にすると、ホバーでハイライトはしつつクリックしてもエディタを開かない(閲覧専用)。Alt+クリックの owner ツリーは維持
-- **レンダーモードの常設コントロール**: レンダー可視化 ON 中は画面左下に状態表示 + 記録ボタン(`● 記録 (R)` ⇔ `■ 停止 (R)`)を表示。キーを知らなくてもクリックで記録開始/停止でき、記録中は `REC` が点滅
+## Shortcuts / ショートカット
 
-## 多言語 (i18n)
+- `Alt+Shift+I` — インスペクトモード切替(popup の「切替ショートカットを変更」から `chrome://extensions/shortcuts` で再割当可能)
+- `↑` / `↓` — 親子要素へ選択移動
+- `Esc` — モード解除
 
-`chrome.i18n` で英語 (`default_locale`) と日本語に対応。ブラウザの UI 言語で自動切替します。
+popup のショートカット表示は `chrome.commands.getAll()` の実バインドを OS 表記で出す(Mac は ⌥⇧I)。
+
+## i18n
+
+`chrome.i18n` で英語 (`default_locale`) と日本語に対応。ブラウザの UI 言語で自動切替。
 - カタログ: `public/_locales/{en,ja}/messages.json`(単一の真実のソース)
-- MAIN world の inspector/overlay/renderDebug は拡張 API を使えないため、bridge (ISOLATED) が `browser.i18n` で解決した文字列を postMessage で流し込む。英語をコード内の既定値として持ち、解決前でも動作する
-- popup は `data-i18n` 属性を `browser.i18n.getMessage` で流し込み、ヘルプは UI 言語に応じて英/日ブロックを出し分け
+- MAIN world は拡張 API を使えないため、bridge (ISOLATED) が `browser.i18n` で解決した文字列を postMessage で注入。英語をコード内の既定値として持ち、解決前でも動作する
+- popup は `data-i18n` 属性で流し込み、ヘルプは UI 言語で英/日ブロックを出し分け
 
-## ストア配信 (Chrome Web Store)
+## Store distribution / ストア配信 (Chrome Web Store)
 
-限定公開 (Unlisted) 前提。**公開手順の全ステップは [`PUBLISHING.md`](./PUBLISHING.md) に集約**(zip 作成 → プライバシー URL ホスト → デベロッパー登録 → 掲載情報入力 → 審査 → 更新リリース)。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシー本文は `PRIVACY.md`。アイコンは `public/icon/{16,32,48,96,128}.png`。
+限定公開 (Unlisted) 前提。**公開手順の全ステップは [`PUBLISHING.md`](./PUBLISHING.md) に集約**。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシー本文は `PRIVACY.md`。アイコンは `public/icon/{16,32,48,96,128}.png`。
 
-配布用 zip は `pnpm zip`(→ `.output/domdom-inspector-<version>-chrome.zip`)。残作業: スクリーンショット撮影、プライバシーポリシーの公開ホスティング、デベロッパー登録($5)。
+配布用 zip は `pnpm zip`(→ `.output/domdom-inspector-<version>-chrome.zip`)。
 
-## アーキテクチャ
+## Architecture / アーキテクチャ
 
 ```
 entrypoints/
-  inspector.content.ts  MAIN world / document_start。DevTools フック確立 + インスペクタ / レンダーデバッガ本体
-  bridge.content.ts     ISOLATED world。設定・トグル指示の中継 + i18n 文字列を browser.i18n で解決して MAIN world へ注入
-  background.ts         キーボードショートカット (inspect / render) → タブへトグル指示
-  popup/                設定 UI (エディタ・MUI スキップ・パスマッピング) + インスペクト/レンダー切替ボタン + 使い方ヘルプ
+  inspector.content.ts  MAIN world / document_start。フック確立 + インスペクタ本体
+  bridge.content.ts     ISOLATED world。設定・トークン・トグル指示の中継 + i18n 注入
+  background.ts         キーボードショートカット → タブへトグル指示
+  popup/                職域スイッチ・サイト有効化・トークン貼り付け・表示設定・ヘルプ
 src/
   hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ シム (React 読み込み前に設置)
-  fiber.ts       Fiber 解析 (名前・分類・owner チェーン・ソース解決)
-  source.ts      パス正規化 + React 19 _debugStack のスタック解析 (純関数)
+  fiber.ts       要素情報の解決 (design-only / safe / dev の 3 段フォールバック)
+  designStyle.ts computed style からのデザイン値抽出 (純関数)
+  tokenDict.ts   デザイントークン JSON の解析と照合 (純関数)
+  tokenLint.ts   4/8px グリッド野良値検出 (純関数)
   classify.ts    MUI / 自作 / サードパーティ分類 (純関数)
-  editor.ts      エディタ URL 生成 (純関数)
-  overlay.ts     Shadow DOM 隔離のハイライト / バッジ / owner パネル / レンダー明滅 canvas / 統計パネル
+  overlay.ts     Shadow DOM 隔離のハイライト / デザインバッジ
   inspector.ts   インスペクトモードの状態機械
-  renderTracker.ts  コミット走査による再描画検出・集計 (純関数寄り、self 時間で祖先を除外)
-  renderDebug.ts    レンダー可視化モードの制御 (commit 購読 → 明滅 / 記録 → ランキング)
 ```
 
-### レンダー可視化の仕組み
+要素情報は 3 段フォールバック: React 無し → computed style のみ(`isReact:false`)/ production React → クラス名推定 + デザイン値 / dev React → コンポーネント名も解決。**デザイン計測は React 非依存**。
 
-`onCommitFiberRoot` を購読し、コミットごとに Fiber ツリーを走査。`actualDuration`(dev ビルドの Profiler タイマ)から子の分を差し引いた「自己時間」が正の fiber のみを「自分が再描画した」とみなすことで、再描画した子を持つだけの祖先の過剰報告を防ぐ。走査は `requestAnimationFrame` でコミットを束ねて実行し、対象ページのフレーム落ちを避ける。production ビルドでは `actualDuration` が無いため明滅のみ(時間計測不可)。
+### 既知の制約 / Known limitations
 
-### ソース位置解決の多層戦略
+- production ビルドでは自作コンポーネント名は原理的に取得不可(デザイン計測は全ビルドで動作)
+- RSC(Server Components)はクライアント側 Fiber が無いためコンポーネント名対象外
+- sandbox iframe(opaque origin)は注入対象外(blob/srcdoc iframe は対応済み)
 
-1. `fiber._debugSource` — React ≤18 dev ビルド(`@babel/plugin-transform-react-jsx-source`)
-2. `fiber._debugStack` — React 19 dev ビルド(owner stacks)。スタックから node_modules / React 内部を除いた最初のフレームを採用
-3. どちらも無い場合はバッジに `source unavailable` を表示しジャンプ不可
-
-### 既知の制約
-
-- production ビルドではセーフモード(名前推定のみ、ジャンプ不可)
-- RSC(Server Components)はクライアント側 Fiber が無いため対象外
-- iframe(Storybook)・Portal 対応、ビジュアルツリーは Phase 2
-
-## デプロイ済み / production App での利用(デザイナー向け)
-
-localhost を立てないデザイナーが、デプロイ済み(=production ビルド)の App を検査するための「両対応・自動縮退」を実装済み。
-
-- **任意オリジン対応(M1)**: ポップアップの「現在のサイトで有効化」で、そのオリジンへのアクセスを**ユーザー明示許可**(既定は localhost のみ=権限最小化)。`browser.scripting.registerContentScripts`(`world:'MAIN'` / `runAt:'document_start'`)で動的登録するため、許可後に**1度リロード**すれば React 読み込み前にフックが効く
-- **production computed-style インスペクト(M2)**: production は Fiber の dev フィールドが剥がれソースジャンプ等が不可。代わりに **computed style(color / bg / font / radius / padding / margin / shadow / gap)+ `Mui*` クラス種別**をバッジに表示(`designStyle.ts`)。デザイナーが「この要素の見た目」を掴める
-- **トークン準拠検出=野良値(M3)**: spacing 値が **4/8px グリッド外**なら警告表示(`tokenLint.ts`)。MUI テーマ取得に依存せず production で動く、デザイナー向けの主価値
-- 制約: production では自作コンポーネント名・ソース位置・正確なレンダー時間は原理的に取得不可(dev ビルドでのみ全機能)
-
-## ドキュメント
+## Documents / ドキュメント
 
 | 目的 | ファイル |
 |------|---------|
-| 開発ガイド(アーキテクチャ/規約/地雷/テスト戦略/ワークフロー) | [`CLAUDE.md`](./CLAUDE.md) |
+| 開発ガイド(アーキテクチャ/規約/地雷/テスト戦略) | [`CLAUDE.md`](./CLAUDE.md) |
 | セキュリティ(監査エビデンス/脅威モデル/権限正当化) | [`SECURITY.md`](./SECURITY.md) |
 | 配布(A: ローカル zip / B: Chrome Web Store) | [`PUBLISHING.md`](./PUBLISHING.md) |
 | 掲載文・プライバシー | [`STORE_LISTING.md`](./STORE_LISTING.md) / [`PRIVACY.md`](./PRIVACY.md) |
-| フェーズ計画 | [`docs/ROADMAP.md`](./docs/ROADMAP.md) |
-
-## ロードマップ
-
-Phase 2〜5(ビジュアルツリー / デザインリント / レポート・Skills / BYOK AI)の要件定義と実装計画は [`docs/ROADMAP.md`](./docs/ROADMAP.md) に集約。現行アーキテクチャの再利用点・新規モジュール・受け入れ条件・見積・リスク先出し(テーマ取得 / iframe の PoC 推奨)まで含む。
+| フェーズ計画(将来機能) | [`docs/ROADMAP.md`](./docs/ROADMAP.md) |

@@ -1,18 +1,19 @@
-# Privacy Policy — MUI Design Inspector
+# Privacy Policy — DomDom Inspector
 
-_Last updated: 2026-07-07_
+_Last updated: 2026-07-16_
 
-MUI Design Inspector ("the extension") is a developer tool that identifies React/MUI
-components on a page and links them to their source code. This policy explains what the
-extension does and does not do with your data.
+DomDom Inspector ("the extension") is a design measurement tool that displays the design
+values (colors, spacing, border-radius, typography) of page elements and matches them
+against the user's design tokens. This policy explains what the extension does and does
+not do with your data.
 
 ## Summary
 
 - **No telemetry, no analytics, no tracking.** The extension does not collect usage data.
 - **No remote servers.** The extension has no backend. Nothing you inspect is transmitted
   off your machine.
-- **All data stays local.** Your settings are stored only in your browser via
-  `chrome.storage.local`.
+- **All data stays local.** Your settings and pasted design tokens are stored only in your
+  browser via `chrome.storage.local`.
 - **Localhost works out of the box; other sites are opt-in.** The extension activates
   automatically on `localhost` / `127.0.0.1`. Any other site is inspected only after you
   explicitly enable it, and even then it only reads the page — never sending or storing it.
@@ -21,11 +22,13 @@ extension does and does not do with your data.
 
 | Data | Where | Purpose |
 |------|-------|---------|
-| Settings (editor choice, custom URL template, MUI-skip flag, path mappings) | `chrome.storage.local` on your device | Remember your preferences |
+| Settings (display options, popup role) | `chrome.storage.local` on your device | Remember your preferences |
+| Design tokens you paste (JSON) | `chrome.storage.local` on your device | Annotate measured values with token names |
 
-The extension reads the page's React component tree in memory to display component names,
-props, and source locations. This information is used only to render the on-screen overlay
-and is **not stored or transmitted**.
+The extension reads the page's DOM and computed styles in memory to display design values.
+When the page uses React, it also reads React's in-memory component tree to show component
+names as context. This information is used only to render the on-screen overlay and is
+**not stored or transmitted**.
 
 ## Data the extension does NOT collect
 
@@ -35,7 +38,7 @@ and is **not stored or transmitted**.
 
 ## Permissions
 
-- `storage` — to save your settings locally.
+- `storage` — to save your settings and pasted design tokens locally.
 - `activeTab` — to read the current tab's origin when you open the popup.
 - `scripting` — to inject the inspector into origins you have enabled.
 - Host access — `localhost` / `127.0.0.1` is covered by a static content script. Any other
@@ -58,20 +61,21 @@ Questions or requests: open an issue at the project's repository, or email the d
 
 ---
 
-# プライバシーポリシー — MUI Design Inspector
+# プライバシーポリシー — DomDom Inspector
 
-_最終更新: 2026-07-07_
+_最終更新: 2026-07-16_
 
-MUI Design Inspector(以下「本拡張機能」)は、ページ上の React/MUI コンポーネントを識別し、
-ソースコードに結びつける開発者向けツールです。本ポリシーは、本拡張機能がデータをどう扱うか
-(扱わないか)を説明します。
+DomDom Inspector(以下「本拡張機能」)は、ページ上の要素のデザイン値(色・余白・角丸・
+タイポグラフィ)を表示し、利用者のデザイントークンと照合するデザイン計測ツールです。
+本ポリシーは、本拡張機能がデータをどう扱うか(扱わないか)を説明します。
 
 ## 要約
 
 - **テレメトリ・分析・トラッキングは一切なし。** 利用状況データを収集しません。
 - **サーバーを持ちません。** バックエンドは存在せず、検査対象が端末外へ送信されることは
   ありません。
-- **すべてのデータはローカルに留まります。** 設定は `chrome.storage.local` にのみ保存します。
+- **すべてのデータはローカルに留まります。** 設定と貼り付けたデザイントークンは
+  `chrome.storage.local` にのみ保存します。
 - **localhost は自動、その他のサイトはオプトインです。** `localhost` / `127.0.0.1` では自動で
   有効化されます。その他のサイトはあなたが明示的に「有効化」した時のみ検査対象になり、その場合も
   ページを読むだけで、送信・保存は行いません。
@@ -80,10 +84,12 @@ MUI Design Inspector(以下「本拡張機能」)は、ページ上の React/MUI
 
 | データ | 保存先 | 目的 |
 |------|--------|------|
-| 設定(エディタ選択・カスタム URL・MUI スキップ・パスマッピング) | 端末の `chrome.storage.local` | 設定の記憶 |
+| 設定(表示オプション・ポップアップの職域) | 端末の `chrome.storage.local` | 設定の記憶 |
+| 貼り付けたデザイントークン(JSON) | 端末の `chrome.storage.local` | 計測値へのトークン名注釈 |
 
-コンポーネント名・props・ソース位置の表示のためにページの React ツリーをメモリ上で読み取り
-ますが、これは画面オーバーレイの描画にのみ使用し、**保存も送信もしません**。
+デザイン値の表示のためにページの DOM と computed style をメモリ上で読み取ります。ページが
+React を使用している場合は、コンポーネント名の補足表示のために React のメモリ上のコンポーネント
+ツリーも読み取ります。これらは画面オーバーレイの描画にのみ使用し、**保存も送信もしません**。
 
 ## 収集しないもの
 
@@ -93,7 +99,7 @@ MUI Design Inspector(以下「本拡張機能」)は、ページ上の React/MUI
 
 ## 権限
 
-- `storage` — 設定をローカル保存するため。
+- `storage` — 設定と貼り付けたデザイントークンをローカル保存するため。
 - `activeTab` — ポップアップを開いた時に現タブの origin を取得するため。
 - `scripting` — あなたが有効化したオリジンにインスペクタを注入するため。
 - ホストアクセス — `localhost` / `127.0.0.1` は静的コンテンツスクリプトで対応。その他の

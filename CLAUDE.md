@@ -1,4 +1,4 @@
-# CLAUDE.md — MUI Design Inspector 開発ガイド
+# CLAUDE.md — DomDom Inspector 開発ガイド
 
 全セッションの冒頭に読み込まれる。**新しい機能・保守を始める前に必ずここを読むこと。**
 
@@ -12,9 +12,10 @@ React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeSc
   (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
 - ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
 
-現状: Phase 1-2 + production両対応 M1/M2/M3 + レンダープロファイリング v2
-(PerformedWork 判定 / why-did-render / Page vitals / AI レポート / 職域スイッチ)
-+ Figma デザイントークン照合 (tokenDict) 完成。詳細 `docs/ROADMAP.md`。
+現状: **初回リリース (v0.2.0) はデザイン計測に単一化**。inspect (design バッジ +
+tokenDict 照合 + 野良値) のみ配線され、レンダープロファイリング v2 / ツリー /
+エディタジャンプ / vitals は実装同梱のまま**配線外しで到達不能**(issue #4-#9 で将来化)。
+復活時は本ファイル地雷3の 4 点配線を戻す。詳細 `docs/ROADMAP.md`。
 
 ## アーキテクチャ(2 world 構成 — 最重要)
 

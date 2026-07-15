@@ -1,4 +1,4 @@
-# 配布マニュアル — MUI Design Inspector
+# 配布マニュアル — DomDom Inspector
 
 配布は 2 通り。用途で選ぶ。
 
@@ -21,7 +21,7 @@
 ```sh
 pnpm install
 pnpm test && pnpm typecheck   # 全 green を確認
-pnpm zip                      # → .output/mui-inspector-<version>-chrome.zip
+pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zip
 ```
 
 **メンバーへの案内(そのまま送れる):**
@@ -29,8 +29,8 @@ pnpm zip                      # → .output/mui-inspector-<version>-chrome.zip
 2. Chrome で `chrome://extensions` を開く
 3. 右上「**デベロッパー モード**」を ON
 4. 「**パッケージ化されていない拡張機能を読み込む**」→ 解凍したフォルダを選択
-5. localhost の React アプリで `Alt+Shift+I`。デプロイ済みサイトはポップアップの
-   「**現在のサイトで有効化**」→ 許可 → 使用可能
+5. 任意のサイトで `Alt+Shift+I`(localhost は自動、その他はポップアップの
+   「**現在のサイトで有効化**」→ 許可 → 使用可能)
 
 > 注: Chrome は zip を直接読み込めない(要解凍)。`.crx` 署名配布は鍵管理が要るため、
 > 社内なら「解凍 + パッケージ化されていない拡張機能を読み込む」が最も簡単。
@@ -61,7 +61,7 @@ pnpm zip                      # → .output/mui-inspector-<version>-chrome.zip
 
 ```sh
 pnpm install
-pnpm test        # 76 tests
+pnpm test        # 157 tests
 pnpm typecheck   # tsc --noEmit
 pnpm build       # .output/chrome-mv3
 ```
@@ -83,7 +83,7 @@ pnpm build       # .output/chrome-mv3
 pnpm zip
 ```
 
-生成物: **`.output/mui-inspector-<version>-chrome.zip`**(例: `.output/mui-inspector-0.1.0-chrome.zip`)。
+生成物: **`.output/domdom-inspector-<version>-chrome.zip`**(例: `.output/domdom-inspector-0.1.0-chrome.zip`)。
 これが CWS にアップロードするファイル。
 
 > `pnpm zip` は内部で `pnpm build` 相当を実行してから固める。`.output/chrome-mv3/` を手動 zip
@@ -98,7 +98,7 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 
 **A. GitHub Gist(最短・推奨)**
 1. https://gist.github.com/ を開く
-2. ファイル名 `mui-design-inspector-privacy.md`、本文に `PRIVACY.md` を貼り付け
+2. ファイル名 `domdom-inspector-privacy.md`、本文に `PRIVACY.md` を貼り付け
 3. 「Create public gist」→ 表示された URL を控える(この URL を §4 で使う)
 
 **B. 公開リポジトリ + GitHub Pages**
@@ -121,30 +121,30 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 ## 4. 新規アイテムの作成とアップロード
 
 1. デベロッパーダッシュボードで **「新しいアイテム」** をクリック
-2. §1 の zip(`.output/mui-inspector-<version>-chrome.zip`)をアップロード
+2. §1 の zip(`.output/domdom-inspector-<version>-chrome.zip`)をアップロード
 3. アップロード後、各タブを埋める(次項)
 
 ### 4-1. ストアの掲載情報 (Store listing)
 
 `STORE_LISTING.md` から転記する。
 
-- **名前**: MUI Design Inspector(manifest から自動でも可)
+- **名前**: DomDom Inspector(manifest から自動でも可)
 - **概要 (Summary)**: `STORE_LISTING.md` の Summary(132 文字以内)
 - **説明 (Description)**: `STORE_LISTING.md` の Detailed description
 - **カテゴリ**: Developer Tools
 - **言語**: 既定 English(日本語対応は `_locales` により自動。掲載文の各言語版は任意で追加可)
 - **アイコン**: 128×128 は zip 内 `icon/128.png` が使われる(別途アップロード不要な場合あり)
 - **スクリーンショット**: **1280×800**(または 640×400)を 1〜5 枚 【必須・要撮影】
-  - 推奨カット: ①インスペクト中のバッジ ②owner ツリー ③レンダーヒートマップ ④記録ランキング ⑤設定ポップアップ
+  - 推奨カット: ①インスペクト中のデザインバッジ ②トークン照合の注釈(一致名表示) ③野良値警告 ④設定ポップアップ(トークン貼り付け)
   - 撮り方は §7 参照
 
 ### 4-2. プライバシー (Privacy practices)
 
 - **単一目的の説明 (Single purpose)**:
-  「ローカル開発中の React + MUI の UI について、コンポーネントの識別・ソースへの誘導・
-  再描画/パフォーマンスの可視化を行う開発者向け検査ツール。」
+  「ページ要素のデザイン値(色/余白/角丸/タイポグラフィ)をローカルで計測・表示し、
+  ユーザーのデザイントークンと照合する検査ツール。」(STORE_LISTING.md と同一文言)
 - **権限の正当化 (Permission justification)** — SECURITY.md の 4 権限表を転記:
-  - `storage`: ユーザー設定(エディタ・パスマッピング等)のローカル保存
+  - `storage`: ユーザー設定・貼り付けたデザイントークンのローカル保存
   - `activeTab`: ポップアップから現タブ origin の取得
   - `scripting`: ユーザーが有効化したオリジンへのインスペクタ動的注入
   - `optional_host_permissions` (`*://*/*`): デプロイ済みサイト検査用。既定未付与、ユーザーが
@@ -188,16 +188,15 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 
 ## 7. スクリーンショットの撮り方(補助)
 
-拡張は localhost 開発ビルドでフル機能(ソースジャンプ・レンダー計測を含む)が揃うため、
-スクショは dev の実アプリで撮るのが手軽(デプロイ済みサイトでもデザイン検査は動くが、
-コード位置は取れず名前推定のセーフモードになる)。
+デザイン計測はどのサイトでも動くため、見栄えの良い実アプリ(自作の MUI/Tailwind アプリ等)で
+撮るのが手軽。トークン照合のカットは Figma トークン JSON を貼り付けた状態で撮る。
 
-1. 撮影対象の React + MUI アプリを dev で起動(例 `http://localhost:5173`)
+1. 撮影対象のアプリを開く(localhost 推奨。デプロイ済みサイトなら「現在のサイトで有効化」)
 2. `pnpm build` 済みの `.output/chrome-mv3` を `chrome://extensions`(デベロッパーモード)で読み込む
-3. アプリを開き `Alt+Shift+I` でインスペクト、`Alt+Shift+R` でレンダー可視化
+3. popup にトークン JSON を貼り付け → `Alt+Shift+I` でインスペクトし、バッジの一致名/野良値を出す
 4. 各機能の状態で OS のスクショを撮り、**1280×800** にトリミング/リサイズ
    - macOS: `Cmd+Shift+4` で範囲選択。サイズ調整は「プレビュー」→ ツール → サイズを調整
-5. 5 枚を目安に用意
+5. 4 枚を目安に用意
 
 > 撮影用に web-ext 自動起動を避けたい場合は、上記の「手動読み込み」方式が確実
 > (WXT の `pnpm dev` は使い捨てプロファイルで別ウィンドウを開くため、実アプリのタブが無い)。
@@ -208,7 +207,7 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 
 | CWS の入力欄 | このリポジトリの出典 |
 |--------------|---------------------|
-| パッケージ (zip) | `pnpm zip` → `.output/mui-inspector-<version>-chrome.zip` |
+| パッケージ (zip) | `pnpm zip` → `.output/domdom-inspector-<version>-chrome.zip` |
 | 概要 / 説明 | `STORE_LISTING.md` |
 | 単一目的 / 権限正当化 / データ申告 | `STORE_LISTING.md`(Privacy 節)+ 本書 §4-2 |
 | プライバシーポリシー URL | §2 でホストした URL(本文は `PRIVACY.md`) |
