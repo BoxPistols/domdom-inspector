@@ -25,6 +25,17 @@ describe('i18n locale coverage', () => {
     expect(ja).toEqual(en);
   });
 
+  // en ロケールへの CJK 混入 (和文の書き忘れ・貼り間違い) を機械検知する。
+  // description フィールドは審査者向けメモのため対象は message のみ。
+  it('en: message に CJK 文字が混入していない', () => {
+    const en = loadLocale('en');
+    const cjk = /[　-ヿ㐀-鿿！-｠]/;
+    const offenders = Object.entries(en)
+      .filter(([, v]) => cjk.test((v as { message: string }).message))
+      .map(([k]) => k);
+    expect(offenders).toEqual([]);
+  });
+
   // 文言の一括置換で {n} / {key} / {origin} 等の置換アンカーを壊すと実行時に
   // 生プレースホルダが表示される。集合一致を機械強制して置換破壊を検知する。
   it('プレースホルダの集合が DEFAULT_STRINGS / en / ja で一致する', () => {
