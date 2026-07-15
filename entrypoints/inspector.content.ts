@@ -20,9 +20,9 @@ export default defineContentScript({
   matchOriginAsFallback: true,
   main() {
     // executeScript による即時注入と、登録済みスクリプトの二重実行を防ぐガード
-    const w = window as unknown as { __MUI_INSPECTOR_LOADED__?: boolean };
-    if (w.__MUI_INSPECTOR_LOADED__) return;
-    w.__MUI_INSPECTOR_LOADED__ = true;
+    const w = window as unknown as { __DOMDOM_INSPECTOR_LOADED__?: boolean };
+    if (w.__DOMDOM_INSPECTOR_LOADED__) return;
+    w.__DOMDOM_INSPECTOR_LOADED__ = true;
 
     const hookState = installHook();
     // strings は 1 つの共有オブジェクト。bridge からの 'i18n' で in-place 更新すると

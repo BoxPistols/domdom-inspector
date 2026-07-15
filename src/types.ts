@@ -245,5 +245,5 @@ export const DEFAULT_STRINGS: UiStrings = {
 };
 
 /** page (MAIN world) と bridge (ISOLATED) 間の postMessage 識別子 */
-export const BRIDGE_SOURCE = 'mui-inspector-bridge';
-export const PAGE_SOURCE = 'mui-inspector-page';
+export const BRIDGE_SOURCE = 'domdom-inspector-bridge';
+export const PAGE_SOURCE = 'domdom-inspector-page';

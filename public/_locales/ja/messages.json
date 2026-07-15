@@ -1,5 +1,5 @@
 {
-  "extName": { "message": "MUI Design Inspector" },
+  "extName": { "message": "DomDom Inspector" },
   "extDescription": {
     "message": "あらゆる React アプリを検査: ホバーで識別・ソースへジャンプ・再描画を可視化。MUI 判別対応、任意のスタイルで動作。"
   },

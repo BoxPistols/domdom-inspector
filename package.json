@@ -1,9 +1,9 @@
 {
-  "name": "mui-inspector",
+  "name": "domdom-inspector",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MUI Design Inspector — React/MUI コンポーネントのホバー識別・エディタジャンプ Chrome 拡張",
+  "description": "DomDom Inspector — DOM/HTML/CSS デザイン計測 (色/余白/角丸 + デザイントークン照合) Chrome 拡張",
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "wxt",

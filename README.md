@@ -1,6 +1,6 @@
-# MUI Design Inspector
+# DomDom Inspector
 
-[![CI](https://github.com/BoxPistols/react-design-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/BoxPistols/react-design-inspector/actions/workflows/ci.yml)
+[![CI](https://github.com/BoxPistols/domdom-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/BoxPistols/domdom-inspector/actions/workflows/ci.yml)
 
 **あらゆる React アプリ**のコンポーネントをブラウザ上でホバー識別し、ソースコードへワンクリックでジャンプする Chrome 拡張機能。
 要件定義書 v3.0 の **Phase 1: インスペクタ MVP**(FR-01〜04, 08, 09, 12)に加え、レンダー可視化・パフォーマンスデバッグ、英日 i18n、ストア配信準備までを実装。
@@ -55,7 +55,7 @@ pnpm test       # ユニットテスト
 
 限定公開 (Unlisted) 前提。**公開手順の全ステップは [`PUBLISHING.md`](./PUBLISHING.md) に集約**(zip 作成 → プライバシー URL ホスト → デベロッパー登録 → 掲載情報入力 → 審査 → 更新リリース)。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシー本文は `PRIVACY.md`。アイコンは `public/icon/{16,32,48,96,128}.png`。
 
-配布用 zip は `pnpm zip`(→ `.output/mui-inspector-<version>-chrome.zip`)。残作業: スクリーンショット撮影、プライバシーポリシーの公開ホスティング、デベロッパー登録($5)。
+配布用 zip は `pnpm zip`(→ `.output/domdom-inspector-<version>-chrome.zip`)。残作業: スクリーンショット撮影、プライバシーポリシーの公開ホスティング、デベロッパー登録($5)。
 
 ## アーキテクチャ
 

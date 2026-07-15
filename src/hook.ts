@@ -15,7 +15,7 @@ export interface HookState {
   onCommit(listener: CommitListener): () => void;
 }
 
-const STATE_KEY = '__MUI_INSPECTOR_STATE__';
+const STATE_KEY = '__DOMDOM_INSPECTOR_STATE__';
 
 export function installHook(): HookState {
   const w = window as any;

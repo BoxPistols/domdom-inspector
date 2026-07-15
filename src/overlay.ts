@@ -65,7 +65,7 @@ export class Overlay {
 
   private ensureMounted() {
     if (this.host?.isConnected) return;
-    this.host = document.createElement('mui-inspector-overlay');
+    this.host = document.createElement('domdom-inspector-overlay');
     const root = this.host.attachShadow({ mode: 'closed' });
 
     const style = document.createElement('style');

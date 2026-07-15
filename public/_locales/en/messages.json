@@ -1,5 +1,5 @@
 {
-  "extName": { "message": "MUI Design Inspector" },
+  "extName": { "message": "DomDom Inspector" },
   "extDescription": {
     "message": "Inspect any React app: identify components on hover, jump to source, visualize re-renders. MUI-aware, any styling."
   },
