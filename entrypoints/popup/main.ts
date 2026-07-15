@@ -1,4 +1,3 @@
-import { parseMappings } from '../../src/mappings';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
@@ -36,12 +35,9 @@ function applyRole(role: Settings['role']) {
   document.body.dataset.role = role;
 }
 
-const editorEl = $<HTMLSelectElement>('editor');
-const templateEl = $<HTMLInputElement>('customUrlTemplate');
-const muiSkipEl = $<HTMLInputElement>('muiSkip');
-const openEditorEl = $<HTMLInputElement>('openEditorOnClick');
+// エディタ連携 (editor/customUrlTemplate/muiSkip/openEditorOnClick/pathMappings) の
+// 設定 UI は初回リリース非搭載 (issue #6)。Settings 型と既定値は温存
 const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
-const mappingsEl = $<HTMLTextAreaElement>('pathMappings');
 
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
@@ -120,12 +116,7 @@ async function load() {
   const { popupDevOpen } = await browser.storage.local.get('popupDevOpen');
   devSectionEl.open = popupDevOpen === true;
   applyRole(settings.role);
-  editorEl.value = settings.editor;
-  templateEl.value = settings.customUrlTemplate;
-  muiSkipEl.checked = settings.muiSkip;
-  openEditorEl.checked = settings.openEditorOnClick;
   badgeDetailEl.value = settings.badgeDetail;
-  mappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
   const { tokenJson, tokenDict } = (await browser.storage.local.get([
     'tokenJson',
@@ -138,7 +129,6 @@ async function load() {
   } else {
     tokensStatusEl.textContent = msg('tokensEmpty');
   }
-  syncTemplateState();
   void applyShortcutHints();
 }
 
@@ -146,25 +136,14 @@ async function save() {
   const settings: Settings = {
     ...DEFAULT_SETTINGS,
     role: currentRole(),
-    editor: editorEl.value as Settings['editor'],
-    customUrlTemplate: templateEl.value || DEFAULT_SETTINGS.customUrlTemplate,
-    muiSkip: muiSkipEl.checked,
-    openEditorOnClick: openEditorEl.checked,
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
-    pathMappings: parseMappings(mappingsEl.value),
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
 }
 
-// カスタム URL テンプレートは editor === 'custom' の時だけ編集可能
-function syncTemplateState() {
-  templateEl.disabled = editorEl.value !== 'custom';
-}
-
-for (const el of [editorEl, templateEl, muiSkipEl, openEditorEl, badgeDetailEl, mappingsEl]) {
+for (const el of [badgeDetailEl]) {
   el.addEventListener('change', () => {
-    syncTemplateState();
     void save();
   });
 }

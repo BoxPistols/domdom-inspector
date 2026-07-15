@@ -194,8 +194,8 @@
       </div>
     </fieldset>
     <div class="hint" data-i18n="roleHint">
-      Designer view focuses on visual inspection and hides engineering tools (render profiling,
-      editor link). Nothing is deleted — switch back anytime.
+      Designer view focuses on visual inspection and hides engineering options.
+      Nothing is deleted — switch back anytime.
     </div>
 
     <!-- ① このサイトで使う: デザイナーの主導線 (有効化 → 自動でインスペクト ON) -->
@@ -256,47 +256,16 @@
       </div>
     </section>
 
-    <!-- ⑤ 開発者向け: エディタ連携などエンジニア専用設定 (既定で閉じ、開閉状態は保存) -->
+    <!-- ⑤ 開発者向け: エンジニア専用設定 (既定で閉じ、開閉状態は保存)。
+         エディタ連携 (issue #6) は初回リリース非搭載のため設定 UI も非表示 -->
     <details class="section eng-only" id="devSection">
       <summary data-i18n="sectionDev">For developers (editor link, advanced)</summary>
-
-      <label for="editor" data-i18n="labelEditor">Editor</label>
-      <select id="editor">
-        <option value="vscode">VS Code</option>
-        <option value="cursor">Cursor</option>
-        <option value="antigravity">Antigravity</option>
-        <option value="webstorm">WebStorm</option>
-        <option value="custom">Custom URL</option>
-      </select>
-
-      <label for="customUrlTemplate" data-i18n="labelCustomUrl">Custom URL template</label>
-      <input
-        type="text"
-        id="customUrlTemplate"
-        placeholder="vscode://file{file}:{line}:{column}"
-      />
-
-      <label class="check">
-        <input type="checkbox" id="muiSkip" />
-        <span data-i18n="labelMuiSkip">Skip MUI internals and jump to your own code</span>
-        <span class="q" tabindex="0" data-i18n-title="tipMuiSkip">ⓘ</span>
-      </label>
-
-      <label class="check">
-        <input type="checkbox" id="openEditorOnClick" />
-        <span data-i18n="labelOpenEditor">Open editor on click</span>
-        <span class="q" tabindex="0" data-i18n-title="tipOpenEditor">ⓘ</span>
-      </label>
-
-      <label for="pathMappings"><span data-i18n="labelPathMappings">Path mappings (one per line: from=to)</span><span class="q" tabindex="0" data-i18n-title="tipPathMappings">ⓘ</span></label>
-      <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
-
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
         Change toggle shortcuts…
       </button>
       <div class="hint" data-i18n="hintConfigureShortcuts">
-        Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys.
+        Opens chrome://extensions/shortcuts to remap Alt+Shift+I to any keys.
       </div>
     </details>
 
@@ -318,29 +287,17 @@
         <span class="legend lg-mui">blue = MUI</span> /
         <span class="legend lg-custom">green = your code</span> /
         <span class="legend lg-third">gray = other libraries</span>.
-        The badge shows "component name (internal name · props · file:line)".</p>
+        The badge shows the design values of the element — color, background, spacing,
+        border-radius, typography — with names resolved against your pasted design tokens.</p>
         <table>
-          <tr><td>Click</td><td>open the source line in your editor</td></tr>
-          <tr><td>Alt+Click</td><td>show the rendered-by tree (who rendered it); click a row to jump</td></tr>
           <tr><td>↑ / ↓</td><td>move selection to parent / child component</td></tr>
-          <tr><td>Esc</td><td>close panel / exit mode</td></tr>
+          <tr><td>Esc</td><td>exit mode</td></tr>
         </table>
-        <p><b>Skip MUI internals</b>: when ON, jumps to your own JSX instead of MUI library files.</p>
-        <p><b>Path mappings</b>: if clicking doesn't open the file, map the dev-server path to a
-        local absolute path (e.g. <code>/src=/Users/you/project/src</code>).</p>
-        <p><b>Antigravity</b>: launches via the <code>antigravity-ide://</code> scheme.
-        If it doesn't open, adjust with "Custom URL".</p>
-        <p>On production builds it falls back to a name-only safe mode.</p>
-        <p><b>Render visualization</b> (Alt+Shift+R): elements that actually re-rendered flash,
-        colored as a heatmap of re-render count (<span class="legend hc-blue">blue=few</span> →
-        <span class="legend hc-green">green</span> →
-        <span class="legend hc-yellow">yellow</span> →
-        <span class="legend hc-red">red=many</span>).
-        Press <b>R</b> to record, interact, then <b>R</b> to stop: you get a per-component
-        ranking with <b>why</b> each one re-rendered (own state / props changed / dragged along
-        by a parent = wasted), page vitals (LCP/CLS/INP), and a "Copy AI report" button that
-        produces a Markdown report you can paste into an AI assistant to start a tuning
-        conversation. Timings need a dev build; counts and causes are exact even on production.</p>
+        <p><b>Design tokens</b>: paste your Figma Variables / W3C / Tokens Studio JSON above.
+        Matched values show the token name; unmatched "rogue" values are flagged so you can
+        spot design-system drift on any site — MUI, Tailwind, CSS Modules, or plain CSS.</p>
+        <p><b>Works anywhere</b>: React apps (dev or production build) and non-React pages
+        alike. Component names appear when React is present; design measurement never needs it.</p>
       </div>
 
       <div class="help" data-help="ja" hidden>
@@ -351,31 +308,17 @@
         <span class="legend lg-mui">青 = MUI</span> /
         <span class="legend lg-custom">緑 = 自作</span> /
         <span class="legend lg-third">グレー = その他ライブラリ</span>。
-        バッジは「コンポーネント名 (内部名 · props · ファイル:行)」です。</p>
+        バッジには要素のデザイン値 — 色・背景・余白・角丸・タイポグラフィ — が表示され、
+        貼り付けたデザイントークンと照合した名前が併記されます。</p>
         <table>
-          <tr><td>クリック</td><td>エディタでソースの該当行を開く</td></tr>
-          <tr><td>Alt+クリック</td><td>描画元ツリー (誰が描画したか) を表示。行クリックでジャンプ</td></tr>
           <tr><td>↑ / ↓</td><td>親コンポーネント ⇔ 子へ選択を移動 (Card の中身から Card 本体へ等)</td></tr>
-          <tr><td>Esc</td><td>パネルを閉じる / モード解除</td></tr>
+          <tr><td>Esc</td><td>モード解除</td></tr>
         </table>
-        <p><b>MUI 内部スキップ</b>: ON だと MUI のライブラリ内部ではなく、自分の JSX
-        (例: SurfacesPage.tsx の &lt;Card&gt; を書いた行) へジャンプします。</p>
-        <p><b>パスマッピング</b>: クリックしてもエディタでファイルが開かない場合、
-        dev サーバのパスをローカルの絶対パスに変換します
-        (例: <code>/src=/Users/you/project/src</code>)。</p>
-        <p><b>Antigravity</b>: <code>antigravity-ide://</code> スキームで起動します。
-        開かない場合は「カスタム URL」で調整してください。</p>
-        <p>本番サイト (公開ビルド) では名前推定のみの簡易表示になります。</p>
-        <p><b>再描画の可視化</b> (Alt+Shift+R): 実際に再描画された要素だけが明滅します。色は
-        再描画回数のヒートマップ (<span class="legend hc-blue">青=少</span> →
-        <span class="legend hc-green">緑</span> →
-        <span class="legend hc-yellow">黄</span> →
-        <span class="legend hc-red">赤=多</span>)。
-        <b>R</b> で記録 → 操作 → <b>R</b> で停止すると、コンポーネント別ランキングに
-        <b>再描画の原因</b> (自身の state / props 変化 / 親に巻き込まれた=無駄) が出ます。
-        ページ性能 (LCP/CLS/INP) も併記され、「AI レポートをコピー」で Markdown レポートを
-        AI アシスタントに貼ってチューニングの対話を始められます。時間計測は開発ビルドが必要
-        ですが、回数と原因は本番ビルドでも正確です。</p>
+        <p><b>デザイントークン</b>: 上の欄に Figma Variables / W3C / Tokens Studio の JSON を
+        貼り付けると、一致した値にはトークン名が表示され、一致しない「野良値」には警告が付きます。
+        MUI / Tailwind / CSS Modules / 素の CSS を問わず、デザインシステムからの逸脱を発見できます。</p>
+        <p><b>どこでも動作</b>: React アプリ (開発・本番ビルドとも) でも、React を使わないページ
+        でも動きます。React があればコンポーネント名も表示されます (デザイン計測自体は React 不要)。</p>
       </div>
     </details>
 

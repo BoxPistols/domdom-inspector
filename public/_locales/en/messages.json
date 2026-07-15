@@ -1,56 +1,124 @@
 {
-  "extName": { "message": "DomDom Inspector" },
+  "extName": {
+    "message": "DomDom Inspector"
+  },
   "extDescription": {
     "message": "Inspect any React app: identify components on hover, jump to source, visualize re-renders. MUI-aware, any styling."
   },
-  "cmdToggleInspect": { "message": "Toggle inspect mode" },
-  "cmdToggleRender": { "message": "Toggle render visualization mode" },
-  "cmdToggleTree": { "message": "Toggle component tree mode" },
-
-  "roleTitle": { "message": "Optimize this popup for" },
-  "roleDesigner": { "message": "Designer" },
-  "roleEngineer": { "message": "Engineer" },
-  "roleHint": {
-    "message": "Designer view focuses on visual inspection and hides engineering tools (render profiling, editor link). Nothing is deleted — switch back anytime."
+  "cmdToggleInspect": {
+    "message": "Toggle inspect mode"
   },
-
-  "sectionSite": { "message": "Use on this site" },
-  "sectionModes": { "message": "Modes" },
-  "sectionDisplay": { "message": "Display" },
-  "sectionDev": { "message": "For developers (editor link, advanced)" },
-  "popupToggleInspect": { "message": "Toggle inspect mode on this tab" },
-  "popupToggleTree": { "message": "Toggle component tree on this tab" },
-  "popupToggleTreeHint": { "message": "Shortcut: {key} / Exit: Esc" },
-  "optBadgeCompact": { "message": "Compact (name & location)" },
-  "optBadgeNormal": { "message": "Standard (+ colors & spacing)" },
-  "optBadgeDetailed": { "message": "Detailed (everything)" },
-  "btnEnableSite": { "message": "Enable on current site…" },
+  "cmdToggleRender": {
+    "message": "Toggle render visualization mode"
+  },
+  "cmdToggleTree": {
+    "message": "Toggle component tree mode"
+  },
+  "roleTitle": {
+    "message": "Optimize this popup for"
+  },
+  "roleDesigner": {
+    "message": "Designer"
+  },
+  "roleEngineer": {
+    "message": "Engineer"
+  },
+  "roleHint": {
+    "message": "Designer view focuses on visual inspection and hides engineering options. Nothing is deleted — switch back anytime."
+  },
+  "sectionSite": {
+    "message": "Use on this site"
+  },
+  "sectionModes": {
+    "message": "Modes"
+  },
+  "sectionDisplay": {
+    "message": "Display"
+  },
+  "sectionDev": {
+    "message": "Advanced"
+  },
+  "popupToggleInspect": {
+    "message": "Toggle inspect mode on this tab"
+  },
+  "popupToggleTree": {
+    "message": "Toggle component tree on this tab"
+  },
+  "popupToggleTreeHint": {
+    "message": "Shortcut: {key} / Exit: Esc"
+  },
+  "optBadgeCompact": {
+    "message": "Compact (name & location)"
+  },
+  "optBadgeNormal": {
+    "message": "Standard (+ colors & spacing)"
+  },
+  "optBadgeDetailed": {
+    "message": "Detailed (everything)"
+  },
+  "btnEnableSite": {
+    "message": "Enable on current site…"
+  },
   "hintEnableSite": {
     "message": "For deployed/production sites (not just localhost). Grants access to this site and starts inspecting right away — no reload needed."
   },
-  "btnAllSitesOn": { "message": "Enable on all sites (once)" },
-  "btnAllSitesOff": { "message": "Revoke all-sites access" },
+  "btnAllSitesOn": {
+    "message": "Enable on all sites (once)"
+  },
+  "btnAllSitesOff": {
+    "message": "Revoke all-sites access"
+  },
   "hintAllSites": {
     "message": "Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button. This extension only reads the page — it never sends data, stores page content, or runs remote code."
   },
-  "allSitesEnabled": { "message": "Enabled on all sites." },
-  "allSitesRevoked": { "message": "All-sites access revoked." },
-  "permDenied": { "message": "Permission was not granted." },
+  "allSitesEnabled": {
+    "message": "Enabled on all sites."
+  },
+  "allSitesRevoked": {
+    "message": "All-sites access revoked."
+  },
+  "permDenied": {
+    "message": "Permission was not granted."
+  },
   "permError": {
     "message": "The permission request didn't go through — close this popup, open it again, and press the button once more."
   },
-  "siteUnavailable": { "message": "This page (non-http/https or unknown URL) can't be enabled." },
-  "siteTarget": { "message": "Target: {origin}" },
-  "injectError": { "message": "Couldn't start on this page — reload the page and try again." },
-  "shortcutUnset": { "message": "(not set)" },
-  "popupToggleInspectHint": { "message": "Shortcut: {key} / Exit: Esc" },
-  "popupToggleRender": { "message": "Toggle render visualization mode" },
-  "popupToggleRenderHint": { "message": "Shortcut: {key} / Record: {rec} / Exit: Esc" },
-  "labelEditor": { "message": "Editor" },
-  "labelCustomUrl": { "message": "Custom URL template" },
-  "labelMuiSkip": { "message": "Skip MUI internals and jump to your own code" },
-  "labelOpenEditor": { "message": "Open editor on click" },
-  "labelBadgeDetail": { "message": "Badge detail level" },
+  "siteUnavailable": {
+    "message": "This page (non-http/https or unknown URL) can't be enabled."
+  },
+  "siteTarget": {
+    "message": "Target: {origin}"
+  },
+  "injectError": {
+    "message": "Couldn't start on this page — reload the page and try again."
+  },
+  "shortcutUnset": {
+    "message": "(not set)"
+  },
+  "popupToggleInspectHint": {
+    "message": "Shortcut: {key} / Exit: Esc"
+  },
+  "popupToggleRender": {
+    "message": "Toggle render visualization mode"
+  },
+  "popupToggleRenderHint": {
+    "message": "Shortcut: {key} / Record: {rec} / Exit: Esc"
+  },
+  "labelEditor": {
+    "message": "Editor"
+  },
+  "labelCustomUrl": {
+    "message": "Custom URL template"
+  },
+  "labelMuiSkip": {
+    "message": "Skip MUI internals and jump to your own code"
+  },
+  "labelOpenEditor": {
+    "message": "Open editor on click"
+  },
+  "labelBadgeDetail": {
+    "message": "Badge detail level"
+  },
   "tipMuiSkip": {
     "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
   },
@@ -66,110 +134,223 @@
   "tipPathMappings": {
     "message": "If clicking doesn't open the file, map the dev-server path to your local absolute path (e.g. /src=/Users/you/app/src), one per line."
   },
-  "labelPathMappings": { "message": "Path mappings (one per line: from=to)" },
+  "labelPathMappings": {
+    "message": "Path mappings (one per line: from=to)"
+  },
   "hintTarget": {
     "message": "Localhost works out of the box; enable any other site in “Use on this site” above. Settings save automatically."
   },
-  "helpSummary": { "message": "How to use" },
-  "btnConfigureShortcuts": { "message": "Change toggle shortcuts…" },
-  "hintConfigureShortcuts": {
-    "message": "Opens chrome://extensions/shortcuts to remap Alt+Shift+I / Alt+Shift+R to any keys."
+  "helpSummary": {
+    "message": "How to use"
   },
-  "labelRecordKey": { "message": "Record key (in render mode)" },
-
+  "btnConfigureShortcuts": {
+    "message": "Change toggle shortcuts…"
+  },
+  "hintConfigureShortcuts": {
+    "message": "Opens chrome://extensions/shortcuts to remap Alt+Shift+I to any keys."
+  },
+  "labelRecordKey": {
+    "message": "Record key (in render mode)"
+  },
   "inspectOn": {
     "message": "Inspect ON — hover to inspect, Esc to exit. Click: editor / Alt+Click: rendered-by tree / ↑↓: parent/child"
   },
   "inspectOnSafe": {
     "message": "Inspect ON — no dev build detected, safe mode (names only / Esc to exit)"
   },
-  "inspectOff": { "message": "Inspect OFF" },
-  "noOuterComponent": { "message": "No further outer component" },
+  "inspectOff": {
+    "message": "Inspect OFF"
+  },
+  "noOuterComponent": {
+    "message": "No further outer component"
+  },
   "jumpUnresolved": {
     "message": "Could not resolve source location (React 19 may need the Babel source plugin)"
   },
-  "jumpProd": { "message": "Source jump is unavailable on production builds" },
+  "jumpProd": {
+    "message": "Source jump is unavailable on production builds"
+  },
   "editorLinkOff": {
     "message": "Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree."
   },
-  "sourceUnavailable": { "message": "source unavailable" },
-  "prodSafeMode": { "message": "production build (safe mode)" },
-  "ownerPanelTitle": { "message": "Rendered by (click to open editor)" },
+  "sourceUnavailable": {
+    "message": "source unavailable"
+  },
+  "prodSafeMode": {
+    "message": "production build (safe mode)"
+  },
+  "ownerPanelTitle": {
+    "message": "Rendered by (click to open editor)"
+  },
   "renderOn": {
     "message": "Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit"
   },
   "renderOnNoDev": {
     "message": "Render viz ON — no dev build detected, timing unavailable (flash only)"
   },
-  "renderOff": { "message": "Render viz OFF" },
-  "ctrlTitle": { "message": "Render viz" },
-  "ctrlRecord": { "message": "Record" },
-  "ctrlStop": { "message": "Stop" },
-  "ctrlRecording": { "message": "REC" },
-  "inspectPill": { "message": "Inspecting — Esc to exit" },
-  "inspectPillClose": { "message": "Exit inspect mode" },
+  "renderOff": {
+    "message": "Render viz OFF"
+  },
+  "ctrlTitle": {
+    "message": "Render viz"
+  },
+  "ctrlRecord": {
+    "message": "Record"
+  },
+  "ctrlStop": {
+    "message": "Stop"
+  },
+  "ctrlRecording": {
+    "message": "REC"
+  },
+  "inspectPill": {
+    "message": "Inspecting — Esc to exit"
+  },
+  "inspectPillClose": {
+    "message": "Exit inspect mode"
+  },
   "treeOn": {
     "message": "Component tree ON — hover a row to highlight, hover the page to locate it. Esc to close"
   },
-  "treeOnSafe": { "message": "Component tree ON — no dev build detected, names are estimated" },
-  "treeOff": { "message": "Component tree OFF" },
-  "treeTitle": { "message": "Component tree" },
+  "treeOnSafe": {
+    "message": "Component tree ON — no dev build detected, names are estimated"
+  },
+  "treeOff": {
+    "message": "Component tree OFF"
+  },
+  "treeTitle": {
+    "message": "Component tree"
+  },
   "recordStart": {
     "message": "Recording — interact to trigger re-renders, press R to stop and see the ranking"
   },
-  "statsTitle": { "message": "Re-render ranking ({n} screen updates)" },
+  "statsTitle": {
+    "message": "Re-render ranking ({n} screen updates)"
+  },
   "statsColsSupported": {
     "message": "Hover a row for why it re-rendered (state / props / parent)"
   },
   "statsColsUnsupported": {
     "message": "Production build: render counts and causes are exact, timings need a dev build"
   },
-  "statsEmpty": { "message": "No re-renders were recorded" },
-  "statsSummary": { "message": "{renders} renders · {wasted} wasted · {ms}ms self time" },
+  "statsEmpty": {
+    "message": "No re-renders were recorded"
+  },
+  "statsSummary": {
+    "message": "{renders} renders · {wasted} wasted · {ms}ms self time"
+  },
   "statsWastedHint": {
     "message": "wasted = re-rendered by a parent with identical props → React.memo candidate"
   },
-  "statsColComponent": { "message": "component" },
-  "statsColRenders": { "message": "renders" },
-  "statsColWasted": { "message": "wasted" },
-  "statsColMs": { "message": "self ms" },
-  "statsCopy": { "message": "Copy AI report" },
+  "statsColComponent": {
+    "message": "component"
+  },
+  "statsColRenders": {
+    "message": "renders"
+  },
+  "statsColWasted": {
+    "message": "wasted"
+  },
+  "statsColMs": {
+    "message": "self ms"
+  },
+  "statsCopy": {
+    "message": "Copy AI report"
+  },
   "statsCopied": {
     "message": "Report copied — paste it into your AI assistant to start the analysis"
   },
-  "statsCopyFail": { "message": "Copy failed — clipboard is unavailable on this page" },
-  "vitalsTitle": { "message": "Page vitals" },
-  "vitalsLongTasks": { "message": "long tasks" },
-  "causeState": { "message": "own state (useState/useReducer)" },
-  "causeProps": { "message": "props changed" },
-  "causeParent": { "message": "parent re-render (wasted)" },
-  "causeMount": { "message": "mount" },
-  "causeOther": { "message": "context/other" },
-  "changedPropsHint": { "message": "last changed props: {list}" },
-  "changedHooksHint": { "message": "last changed hooks: {list}" },
-  "panelClose": { "message": "Close" },
-
-  "dsColor": { "message": "text color" },
-  "dsBg": { "message": "background" },
-  "dsFont": { "message": "font size" },
-  "dsWeight": { "message": "weight" },
-  "dsLineHeight": { "message": "line height" },
-  "dsPadding": { "message": "padding" },
-  "dsMargin": { "message": "margin" },
-  "dsRadius": { "message": "radius" },
-  "dsShadow": { "message": "shadow" },
-  "dsGap": { "message": "gap" },
-  "offGridWarn": { "message": "{label} {values}px (not on the {grid}px grid)" },
-  "tokenNear": { "message": "≠ token · near {name}" },
-  "tokenNone": { "message": "≠ token" },
-
-  "sectionTokens": { "message": "Design tokens (Figma)" },
-  "labelTokens": { "message": "Paste tokens JSON (Figma Variables / W3C / Tokens Studio)" },
+  "statsCopyFail": {
+    "message": "Copy failed — clipboard is unavailable on this page"
+  },
+  "vitalsTitle": {
+    "message": "Page vitals"
+  },
+  "vitalsLongTasks": {
+    "message": "long tasks"
+  },
+  "causeState": {
+    "message": "own state (useState/useReducer)"
+  },
+  "causeProps": {
+    "message": "props changed"
+  },
+  "causeParent": {
+    "message": "parent re-render (wasted)"
+  },
+  "causeMount": {
+    "message": "mount"
+  },
+  "causeOther": {
+    "message": "context/other"
+  },
+  "changedPropsHint": {
+    "message": "last changed props: {list}"
+  },
+  "changedHooksHint": {
+    "message": "last changed hooks: {list}"
+  },
+  "panelClose": {
+    "message": "Close"
+  },
+  "dsColor": {
+    "message": "text color"
+  },
+  "dsBg": {
+    "message": "background"
+  },
+  "dsFont": {
+    "message": "font size"
+  },
+  "dsWeight": {
+    "message": "weight"
+  },
+  "dsLineHeight": {
+    "message": "line height"
+  },
+  "dsPadding": {
+    "message": "padding"
+  },
+  "dsMargin": {
+    "message": "margin"
+  },
+  "dsRadius": {
+    "message": "radius"
+  },
+  "dsShadow": {
+    "message": "shadow"
+  },
+  "dsGap": {
+    "message": "gap"
+  },
+  "offGridWarn": {
+    "message": "{label} {values}px (not on the {grid}px grid)"
+  },
+  "tokenNear": {
+    "message": "≠ token · near {name}"
+  },
+  "tokenNone": {
+    "message": "≠ token"
+  },
+  "sectionTokens": {
+    "message": "Design tokens (Figma)"
+  },
+  "labelTokens": {
+    "message": "Paste tokens JSON (Figma Variables / W3C / Tokens Studio)"
+  },
   "hintTokens": {
     "message": "Export your Figma Variables (or any design-tokens JSON) and paste it here. While inspecting, each color/spacing chip shows the matching token name — or flags it as a stray value with the nearest token. Works on production sites."
   },
-  "tokensStatus": { "message": "Loaded: {colors} colors / {sizes} sizes" },
-  "tokensEmpty": { "message": "No tokens loaded" },
-  "tokensError": { "message": "Invalid JSON — paste the exported tokens file as-is" },
-  "btnTokensClear": { "message": "Clear tokens" }
+  "tokensStatus": {
+    "message": "Loaded: {colors} colors / {sizes} sizes"
+  },
+  "tokensEmpty": {
+    "message": "No tokens loaded"
+  },
+  "tokensError": {
+    "message": "Invalid JSON — paste the exported tokens file as-is"
+  },
+  "btnTokensClear": {
+    "message": "Clear tokens"
+  }
 }

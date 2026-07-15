@@ -1,56 +1,124 @@
 {
-  "extName": { "message": "DomDom Inspector" },
+  "extName": {
+    "message": "DomDom Inspector"
+  },
   "extDescription": {
     "message": "あらゆる React アプリを検査: ホバーで識別・ソースへジャンプ・再描画を可視化。MUI 判別対応、任意のスタイルで動作。"
   },
-  "cmdToggleInspect": { "message": "インスペクトモードの切替" },
-  "cmdToggleRender": { "message": "再描画の可視化モードの切替" },
-  "cmdToggleTree": { "message": "コンポーネントツリーモードの切替" },
-
-  "roleTitle": { "message": "このポップアップの最適化対象" },
-  "roleDesigner": { "message": "デザイナー" },
-  "roleEngineer": { "message": "エンジニア" },
-  "roleHint": {
-    "message": "デザイナー表示は見た目の検査に集中し、エンジニア向けツール(レンダー計測・エディタ連携)を隠します。機能は消えません — いつでも切替可能。"
+  "cmdToggleInspect": {
+    "message": "インスペクトモードの切替"
   },
-
-  "sectionSite": { "message": "このサイトで使う" },
-  "sectionModes": { "message": "モード" },
-  "sectionDisplay": { "message": "表示設定" },
-  "sectionDev": { "message": "開発者向け(エディタ連携など)" },
-  "popupToggleInspect": { "message": "このタブでインスペクトモード切替" },
-  "popupToggleTree": { "message": "このタブでコンポーネントツリー切替" },
-  "popupToggleTreeHint": { "message": "ショートカット: {key} / 解除: Esc" },
-  "optBadgeCompact": { "message": "少なめ(名前と場所)" },
-  "optBadgeNormal": { "message": "標準(+色・余白)" },
-  "optBadgeDetailed": { "message": "詳細(すべての情報)" },
-  "btnEnableSite": { "message": "現在のサイトで有効化…" },
+  "cmdToggleRender": {
+    "message": "再描画の可視化モードの切替"
+  },
+  "cmdToggleTree": {
+    "message": "コンポーネントツリーモードの切替"
+  },
+  "roleTitle": {
+    "message": "このポップアップの最適化対象"
+  },
+  "roleDesigner": {
+    "message": "デザイナー"
+  },
+  "roleEngineer": {
+    "message": "エンジニア"
+  },
+  "roleHint": {
+    "message": "デザイナー表示は視覚検査に集中できるよう、エンジニア向けオプションを隠します。機能は削除されません — いつでも戻せます。"
+  },
+  "sectionSite": {
+    "message": "このサイトで使う"
+  },
+  "sectionModes": {
+    "message": "モード"
+  },
+  "sectionDisplay": {
+    "message": "表示設定"
+  },
+  "sectionDev": {
+    "message": "高度な設定"
+  },
+  "popupToggleInspect": {
+    "message": "このタブでインスペクトモード切替"
+  },
+  "popupToggleTree": {
+    "message": "このタブでコンポーネントツリー切替"
+  },
+  "popupToggleTreeHint": {
+    "message": "ショートカット: {key} / 解除: Esc"
+  },
+  "optBadgeCompact": {
+    "message": "少なめ(名前と場所)"
+  },
+  "optBadgeNormal": {
+    "message": "標準(+色・余白)"
+  },
+  "optBadgeDetailed": {
+    "message": "詳細(すべての情報)"
+  },
+  "btnEnableSite": {
+    "message": "現在のサイトで有効化…"
+  },
   "hintEnableSite": {
     "message": "デプロイ済み/本番サイト用(localhost 以外)。このサイトへのアクセスを許可し、その場でインスペクトが始まります(リロード不要)。"
   },
-  "btnAllSitesOn": { "message": "全サイトで許可(一度だけ)" },
-  "btnAllSitesOff": { "message": "全サイト許可を解除" },
+  "btnAllSitesOn": {
+    "message": "全サイトで許可(一度だけ)"
+  },
+  "btnAllSitesOff": {
+    "message": "全サイト許可を解除"
+  },
   "hintAllSites": {
     "message": "一度許可すれば以降どのサイトでも都度許可なしで使えます。解除も同じボタンから。この拡張はページを読み取るだけで、データの外部送信・ページ内容の保存・リモートコードの実行は行いません。"
   },
-  "allSitesEnabled": { "message": "全サイトで有効化しました。" },
-  "allSitesRevoked": { "message": "全サイト許可を解除しました。" },
-  "permDenied": { "message": "許可されませんでした。" },
+  "allSitesEnabled": {
+    "message": "全サイトで有効化しました。"
+  },
+  "allSitesRevoked": {
+    "message": "全サイト許可を解除しました。"
+  },
+  "permDenied": {
+    "message": "許可されませんでした。"
+  },
   "permError": {
     "message": "許可リクエストを実行できませんでした — ポップアップを開き直して、もう一度ボタンを押してください。"
   },
-  "siteUnavailable": { "message": "このページ(http/https 以外、または URL 不明)では有効化できません。" },
-  "siteTarget": { "message": "対象: {origin}" },
-  "injectError": { "message": "このページで開始できませんでした — ページをリロードしてもう一度お試しください。" },
-  "shortcutUnset": { "message": "(未設定)" },
-  "popupToggleInspectHint": { "message": "ショートカット: {key} / 解除: Esc" },
-  "popupToggleRender": { "message": "再描画の可視化モード切替" },
-  "popupToggleRenderHint": { "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc" },
-  "labelEditor": { "message": "エディタ" },
-  "labelCustomUrl": { "message": "カスタム URL テンプレート" },
-  "labelMuiSkip": { "message": "MUI 内部をスキップして自作コードへジャンプ" },
-  "labelOpenEditor": { "message": "クリックでエディタを開く" },
-  "labelBadgeDetail": { "message": "バッジの情報量" },
+  "siteUnavailable": {
+    "message": "このページ(http/https 以外、または URL 不明)では有効化できません。"
+  },
+  "siteTarget": {
+    "message": "対象: {origin}"
+  },
+  "injectError": {
+    "message": "このページで開始できませんでした — ページをリロードしてもう一度お試しください。"
+  },
+  "shortcutUnset": {
+    "message": "(未設定)"
+  },
+  "popupToggleInspectHint": {
+    "message": "ショートカット: {key} / 解除: Esc"
+  },
+  "popupToggleRender": {
+    "message": "再描画の可視化モード切替"
+  },
+  "popupToggleRenderHint": {
+    "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc"
+  },
+  "labelEditor": {
+    "message": "エディタ"
+  },
+  "labelCustomUrl": {
+    "message": "カスタム URL テンプレート"
+  },
+  "labelMuiSkip": {
+    "message": "MUI 内部をスキップして自作コードへジャンプ"
+  },
+  "labelOpenEditor": {
+    "message": "クリックでエディタを開く"
+  },
+  "labelBadgeDetail": {
+    "message": "バッジの情報量"
+  },
   "tipMuiSkip": {
     "message": "ON: クリックで MUI ライブラリ内部ではなく、あなたが書いた JSX の該当行(例: <Card> を書いた行)へジャンプ。OFF: MUI の内部ファイルへジャンプ。"
   },
@@ -66,108 +134,223 @@
   "tipPathMappings": {
     "message": "クリックしてもファイルが開かない時、dev サーバのパスをローカルの絶対パスに変換(例: /src=/Users/you/app/src)。1 行 1 件。"
   },
-  "labelPathMappings": { "message": "パスマッピング (1 行 1 件: from=to)" },
+  "labelPathMappings": {
+    "message": "パスマッピング (1 行 1 件: from=to)"
+  },
   "hintTarget": {
     "message": "localhost はそのまま使えます。他のサイトは上の「このサイトで使う」で有効化。設定は自動保存されます。"
   },
-  "helpSummary": { "message": "使い方ヘルプ" },
-  "btnConfigureShortcuts": { "message": "切替ショートカットを変更…" },
-  "hintConfigureShortcuts": {
-    "message": "chrome://extensions/shortcuts を開き、Alt+Shift+I / Alt+Shift+R を任意のキーに再割当できます。"
+  "helpSummary": {
+    "message": "使い方ヘルプ"
   },
-  "labelRecordKey": { "message": "記録キー(再描画の可視化モード中)" },
-
+  "btnConfigureShortcuts": {
+    "message": "切替ショートカットを変更…"
+  },
+  "hintConfigureShortcuts": {
+    "message": "chrome://extensions/shortcuts を開き、Alt+Shift+I を任意のキーに変更できます。"
+  },
+  "labelRecordKey": {
+    "message": "記録キー(再描画の可視化モード中)"
+  },
   "inspectOn": {
     "message": "インスペクト ON — ホバーで検査、Esc で終了。クリック: エディタ / Alt+クリック: 描画元ツリー / ↑↓: 親子移動"
   },
   "inspectOnSafe": {
     "message": "インスペクト ON — 開発ビルド未検出のため簡易表示(名前のみ / Esc で終了)"
   },
-  "inspectOff": { "message": "インスペクト OFF" },
-  "noOuterComponent": { "message": "これ以上外側のコンポーネントはありません" },
+  "inspectOff": {
+    "message": "インスペクト OFF"
+  },
+  "noOuterComponent": {
+    "message": "これ以上外側のコンポーネントはありません"
+  },
   "jumpUnresolved": {
     "message": "コードの位置を特定できませんでした(React 19 ではビルド設定により位置情報が出ないことがあります)"
   },
-  "jumpProd": { "message": "本番サイト(公開ビルド)のため、コードへのジャンプは使えません" },
+  "jumpProd": {
+    "message": "本番サイト(公開ビルド)のため、コードへのジャンプは使えません"
+  },
   "editorLinkOff": {
     "message": "エディタ連携は OFF です(ポップアップで切替)。Alt+クリックは描画元ツリーを開きます。"
   },
-  "sourceUnavailable": { "message": "ソース不明" },
-  "prodSafeMode": { "message": "本番サイト(公開ビルド)" },
-  "ownerPanelTitle": { "message": "描画元 (クリックでエディタへ)" },
+  "sourceUnavailable": {
+    "message": "ソース不明"
+  },
+  "prodSafeMode": {
+    "message": "本番サイト(公開ビルド)"
+  },
+  "ownerPanelTitle": {
+    "message": "描画元 (クリックでエディタへ)"
+  },
   "renderOn": {
     "message": "再描画の可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF"
   },
   "renderOnNoDev": {
     "message": "再描画の可視化 ON — 開発ビルド未検出のため時間計測は不可 (明滅のみ)"
   },
-  "renderOff": { "message": "再描画の可視化 OFF" },
-  "ctrlTitle": { "message": "再描画の可視化" },
-  "ctrlRecord": { "message": "記録" },
-  "ctrlStop": { "message": "停止" },
-  "ctrlRecording": { "message": "記録中" },
-  "inspectPill": { "message": "インスペクト中 — Esc で終了" },
-  "inspectPillClose": { "message": "インスペクトを終了" },
+  "renderOff": {
+    "message": "再描画の可視化 OFF"
+  },
+  "ctrlTitle": {
+    "message": "再描画の可視化"
+  },
+  "ctrlRecord": {
+    "message": "記録"
+  },
+  "ctrlStop": {
+    "message": "停止"
+  },
+  "ctrlRecording": {
+    "message": "記録中"
+  },
+  "inspectPill": {
+    "message": "インスペクト中 — Esc で終了"
+  },
+  "inspectPillClose": {
+    "message": "インスペクトを終了"
+  },
   "treeOn": {
     "message": "コンポーネントツリー ON — 行 hover でハイライト / ページ hover で該当行へ / Esc で解除"
   },
-  "treeOnSafe": { "message": "コンポーネントツリー ON — dev ビルド未検出のため名前は推定" },
-  "treeOff": { "message": "コンポーネントツリー OFF" },
-  "treeTitle": { "message": "コンポーネントツリー" },
+  "treeOnSafe": {
+    "message": "コンポーネントツリー ON — dev ビルド未検出のため名前は推定"
+  },
+  "treeOff": {
+    "message": "コンポーネントツリー OFF"
+  },
+  "treeTitle": {
+    "message": "コンポーネントツリー"
+  },
   "recordStart": {
     "message": "記録開始 — 操作して再描画を発生させ、R で停止するとランキング表示"
   },
-  "statsTitle": { "message": "再描画ランキング(画面更新 {n} 回)" },
-  "statsColsSupported": { "message": "行にホバーすると再描画の原因(state / props / 親)が見えます" },
+  "statsTitle": {
+    "message": "再描画ランキング(画面更新 {n} 回)"
+  },
+  "statsColsSupported": {
+    "message": "行にホバーすると再描画の原因(state / props / 親)が見えます"
+  },
   "statsColsUnsupported": {
     "message": "本番ビルド: 回数と原因は正確に取れます。処理時間の計測には開発ビルドが必要です"
   },
-  "statsEmpty": { "message": "再描画は記録されませんでした" },
-  "statsSummary": { "message": "レンダー {renders} 回 · 無駄 {wasted} 回 · 自己時間 {ms}ms" },
+  "statsEmpty": {
+    "message": "再描画は記録されませんでした"
+  },
+  "statsSummary": {
+    "message": "レンダー {renders} 回 · 無駄 {wasted} 回 · 自己時間 {ms}ms"
+  },
   "statsWastedHint": {
     "message": "無駄 = props が同一なのに親の再描画に巻き込まれた回数 → React.memo 候補"
   },
-  "statsColComponent": { "message": "コンポーネント" },
-  "statsColRenders": { "message": "回数" },
-  "statsColWasted": { "message": "無駄" },
-  "statsColMs": { "message": "自己ms" },
-  "statsCopy": { "message": "AI レポートをコピー" },
+  "statsColComponent": {
+    "message": "コンポーネント"
+  },
+  "statsColRenders": {
+    "message": "回数"
+  },
+  "statsColWasted": {
+    "message": "無駄"
+  },
+  "statsColMs": {
+    "message": "自己ms"
+  },
+  "statsCopy": {
+    "message": "AI レポートをコピー"
+  },
   "statsCopied": {
     "message": "レポートをコピーしました — AI アシスタントに貼り付ければ分析を始められます"
   },
-  "statsCopyFail": { "message": "コピーできませんでした — このページではクリップボードを使えません" },
-  "vitalsTitle": { "message": "ページ性能" },
-  "vitalsLongTasks": { "message": "ロングタスク" },
-  "causeState": { "message": "自身の state 変化 (useState/useReducer)" },
-  "causeProps": { "message": "props の値が変化" },
-  "causeParent": { "message": "親の再描画に巻き込まれ(無駄)" },
-  "causeMount": { "message": "初回マウント" },
-  "causeOther": { "message": "Context ほか" },
-  "changedPropsHint": { "message": "直近で変化した props: {list}" },
-  "changedHooksHint": { "message": "直近で変化した hooks: {list}" },
-  "panelClose": { "message": "閉じる" },
-
-  "dsColor": { "message": "文字色" },
-  "dsBg": { "message": "背景色" },
-  "dsFont": { "message": "文字サイズ" },
-  "dsWeight": { "message": "太さ" },
-  "dsLineHeight": { "message": "行間" },
-  "dsPadding": { "message": "内余白" },
-  "dsMargin": { "message": "外余白" },
-  "dsRadius": { "message": "角丸" },
-  "dsShadow": { "message": "影" },
-  "dsGap": { "message": "間隔" },
-  "offGridWarn": { "message": "{label} {values}px({grid}px の倍数外)" },
-  "tokenNear": { "message": "≠ トークン · 近い: {name}" },
-  "tokenNone": { "message": "≠ トークン" },
-
-  "sectionTokens": { "message": "デザイントークン (Figma)" },
-  "labelTokens": { "message": "トークン JSON を貼り付け (Figma Variables / W3C / Tokens Studio)" },
+  "statsCopyFail": {
+    "message": "コピーできませんでした — このページではクリップボードを使えません"
+  },
+  "vitalsTitle": {
+    "message": "ページ性能"
+  },
+  "vitalsLongTasks": {
+    "message": "ロングタスク"
+  },
+  "causeState": {
+    "message": "自身の state 変化 (useState/useReducer)"
+  },
+  "causeProps": {
+    "message": "props の値が変化"
+  },
+  "causeParent": {
+    "message": "親の再描画に巻き込まれ(無駄)"
+  },
+  "causeMount": {
+    "message": "初回マウント"
+  },
+  "causeOther": {
+    "message": "Context ほか"
+  },
+  "changedPropsHint": {
+    "message": "直近で変化した props: {list}"
+  },
+  "changedHooksHint": {
+    "message": "直近で変化した hooks: {list}"
+  },
+  "panelClose": {
+    "message": "閉じる"
+  },
+  "dsColor": {
+    "message": "文字色"
+  },
+  "dsBg": {
+    "message": "背景色"
+  },
+  "dsFont": {
+    "message": "文字サイズ"
+  },
+  "dsWeight": {
+    "message": "太さ"
+  },
+  "dsLineHeight": {
+    "message": "行間"
+  },
+  "dsPadding": {
+    "message": "内余白"
+  },
+  "dsMargin": {
+    "message": "外余白"
+  },
+  "dsRadius": {
+    "message": "角丸"
+  },
+  "dsShadow": {
+    "message": "影"
+  },
+  "dsGap": {
+    "message": "間隔"
+  },
+  "offGridWarn": {
+    "message": "{label} {values}px({grid}px の倍数外)"
+  },
+  "tokenNear": {
+    "message": "≠ トークン · 近い: {name}"
+  },
+  "tokenNone": {
+    "message": "≠ トークン"
+  },
+  "sectionTokens": {
+    "message": "デザイントークン (Figma)"
+  },
+  "labelTokens": {
+    "message": "トークン JSON を貼り付け (Figma Variables / W3C / Tokens Studio)"
+  },
   "hintTokens": {
     "message": "Figma Variables のエクスポート(または任意のデザイントークン JSON)をここに貼り付けてください。インスペクト中、色・余白チップに一致トークン名が表示され、外れた値は野良値として最近傍トークン付きで警告されます。本番サイトでも動作します。"
   },
-  "tokensStatus": { "message": "読込済み: 色 {colors} 件 / サイズ {sizes} 件" },
-  "tokensEmpty": { "message": "トークン未読込" },
-  "tokensError": { "message": "JSON が不正です — エクスポートしたトークンファイルをそのまま貼り付けてください" },
-  "btnTokensClear": { "message": "トークンを削除" }
+  "tokensStatus": {
+    "message": "読込済み: 色 {colors} 件 / サイズ {sizes} 件"
+  },
+  "tokensEmpty": {
+    "message": "トークン未読込"
+  },
+  "tokensError": {
+    "message": "JSON が不正です — エクスポートしたトークンファイルをそのまま貼り付けてください"
+  },
+  "btnTokensClear": {
+    "message": "トークンを削除"
+  }
 }

@@ -106,36 +106,12 @@ export class Inspector {
   };
 
   private onIntercept = (event: Event) => {
-    // パネル内クリックは通す (エディタジャンプ行の操作)
+    // パネル内クリックは通す
     if (this.overlay.containsTarget(event.target)) return;
+    // 初回リリースはデザイン計測のみ: クリックのページ側動作だけ抑止する。
+    // エディタジャンプ (issue #6) / owner チェーンパネル (issue #5) は将来化 (配線外し)。
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (event.type !== 'click') return;
-
-    const mouse = event as MouseEvent;
-    if (!this.currentInfo) return;
-
-    if (mouse.altKey) {
-      // Alt+クリック: owner チェーンパネル (FR-04)
-      this.overlay.showChainPanel(this.currentInfo, mouse.clientX, mouse.clientY);
-      return;
-    }
-    if (this.overlay.isChainPanelOpen()) {
-      this.overlay.hideChainPanel();
-      return;
-    }
-    // エディタ連携 OFF: ハイライトはするがクリックでは開かない (Alt+クリックは上で処理済み)
-    if (!this.settings.openEditorOnClick) {
-      this.overlay.toast(this.strings.editorLinkOff);
-      return;
-    }
-    if (this.currentInfo.jumpTarget) {
-      this.overlay.openEditor(this.currentInfo.jumpTarget);
-    } else {
-      this.overlay.toast(
-        this.currentInfo.devMode ? this.strings.jumpUnresolved : this.strings.jumpProd,
-      );
-    }
   };
 
   /**
