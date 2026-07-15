@@ -68,12 +68,6 @@ export default defineContentScript({
       if (message?.type === 'inspect-on') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'inspect-on' }, '*');
       }
-      if (message?.type === 'toggle-render') {
-        window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle-render' }, '*');
-      }
-      if (message?.type === 'toggle-tree') {
-        window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle-tree' }, '*');
-      }
     });
   },
 });

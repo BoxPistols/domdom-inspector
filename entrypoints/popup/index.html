@@ -218,18 +218,6 @@
       <h2 data-i18n="sectionModes">Modes</h2>
       <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
       <div class="hint" id="hintInspect">Shortcut: Alt+Shift+I / Exit: Esc</div>
-
-      <button id="toggleTree" class="secondary" data-i18n="popupToggleTree">
-        Toggle component tree on this tab
-      </button>
-      <div class="hint" id="hintTree">Shortcut: Alt+Shift+T / Exit: Esc</div>
-
-      <div class="eng-only">
-        <button id="toggleRender" class="secondary" data-i18n="popupToggleRender">
-          Toggle render visualization mode
-        </button>
-        <div class="hint" id="hintRender">Shortcut: Alt+Shift+R / Record: R / Exit: Esc</div>
-      </div>
     </section>
 
     <!-- ③ デザイントークン (Figma): デザイナーの中核機能。両ロールで表示 -->
@@ -303,8 +291,6 @@
       <label for="pathMappings"><span data-i18n="labelPathMappings">Path mappings (one per line: from=to)</span><span class="q" tabindex="0" data-i18n-title="tipPathMappings">ⓘ</span></label>
       <textarea id="pathMappings" placeholder="/src=/Users/you/project/src"></textarea>
 
-      <label for="recordKey"><span data-i18n="labelRecordKey">Record key (in render mode)</span><span class="q" tabindex="0" data-i18n-title="tipRecordKey">ⓘ</span></label>
-      <input type="text" id="recordKey" maxlength="1" style="width: 60px" />
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
         Change toggle shortcuts…

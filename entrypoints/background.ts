@@ -1,4 +1,5 @@
-const COMMANDS = new Set(['toggle-inspect', 'toggle-render', 'toggle-tree']);
+// 初回リリースはデザイン計測 (inspect) のみ。render/tree は issue #4-#9 で将来化
+const COMMANDS = new Set(['toggle-inspect']);
 
 export default defineBackground(() => {
   // キーボードショートカット (manifest commands) → アクティブタブへトグル指示 (FR-01)

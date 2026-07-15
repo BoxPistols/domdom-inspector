@@ -1,12 +1,9 @@
 import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
 import { Overlay } from '../src/overlay';
-import { RenderDebugger } from '../src/renderDebug';
-import { TreeView } from '../src/treeView';
 import { DEV_MATCHES } from '../src/matches';
 import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS } from '../src/types';
-import { VitalsCollector } from '../src/vitals';
 
 /**
  * MAIN world / document_start: React 読み込み前に DevTools フックを確立し、
@@ -33,20 +30,15 @@ export default defineContentScript({
     const strings = { ...DEFAULT_STRINGS };
     const overlay = new Overlay(DEFAULT_SETTINGS, strings);
     const inspector = new Inspector(hookState, overlay, strings);
-    // Page vitals は document_start から常時観測 (buffered observer で初期エントリも遡取)。
-    // 観測のみで DOM/描画には触れず、レポート生成時に snapshot を読む。
-    const vitals = new VitalsCollector();
-    vitals.start();
-    const renderDebugger = new RenderDebugger(hookState, overlay, strings, vitals);
-    const treeView = new TreeView(hookState, overlay, strings);
+    // 初回リリースはデザイン計測 (inspect) のみ。render/tree/vitals の配線は
+    // issue #4-#9 で将来化 (実装ファイルは温存、到達不能)。
 
-    // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化 → ツリーの順に
-    // 1 度で 1 つだけ閉じる。複数モード同時 ON でも競合しない。
+    // Esc は中央で所有する (単一モードでも将来のモード追加時に競合しない構え)
     window.addEventListener(
       'keydown',
       (event) => {
         if (event.key !== 'Escape') return;
-        if (inspector.onEscape() || renderDebugger.onEscape() || treeView.onEscape()) {
+        if (inspector.onEscape()) {
           event.preventDefault();
           event.stopImmediatePropagation();
         }
@@ -61,8 +53,6 @@ export default defineContentScript({
       if (data.type === 'settings') {
         inspector.applySettings(data.payload);
         overlay.updateSettings(data.payload);
-        renderDebugger.applySettings(data.payload.recordKey);
-        treeView.applySettings(data.payload);
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
       if (data.type === 'tokens') {
@@ -75,8 +65,6 @@ export default defineContentScript({
       }
       if (data.type === 'toggle') inspector.toggle();
       if (data.type === 'inspect-on') inspector.enableOnly();
-      if (data.type === 'toggle-render') renderDebugger.toggle();
-      if (data.type === 'toggle-tree') treeView.toggle();
     });
   },
 });
