@@ -1,6 +1,6 @@
 # Support the Project ☕
 
-React Design Inspector is free and will stay free. If it saves you time or makes your design-dev workflow better, a small tip is always appreciated.
+DomDom Inspector is free and will stay free. If it saves you time or makes your design-dev workflow better, a small tip is always appreciated.
 
 ---
 

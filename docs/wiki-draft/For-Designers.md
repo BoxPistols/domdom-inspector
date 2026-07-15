@@ -1,6 +1,6 @@
 # For Designers
 
-React Design Inspector gives designers superpowers in the browser — no engineering background required.
+DomDom Inspector gives designers superpowers in the browser — no engineering background required.
 
 ---
 
@@ -10,32 +10,33 @@ React Design Inspector gives designers superpowers in the browser — no enginee
 
 Click the extension icon → **Enable on this site**. This is a one-time click per domain. The extension never sends data anywhere; it only reads what's already in the page.
 
-### Step 2 — Activate Design Mode
+### Step 2 — Activate Inspect Mode
 
-Press **Alt+Shift+I** (or click the inspector icon in the popup). Hover over any element — a tooltip shows:
+Press **Alt+Shift+I** (or click the toggle in the popup). Hover over any element — a badge shows:
 
-- The **component name** (`MuiButton`, `ProductCard`, etc.)
-- The **computed color**, spacing, and border-radius values
-- Whether the element is a **React component** or plain HTML
+- The **computed color** (background, text, border) as a hex chip
+- **Spacing** values (margin, padding) in px, with a flag if they fall outside the 4/8 px grid
+- **Border-radius** and **typography** (font-family, size, weight, line-height)
+- When React is present: the **component name** as context (`MuiButton`, `ProductCard`, etc.)
 
-### Step 3 — Check a specific element
+### Step 3 — Read the badge
 
-Click to lock the inspection on that element. The panel shows:
+The badge shows design values in plain language:
 
 ```
-Color:          #1565C0  →  primary.dark  ✓
-Background:     #FFFFFF  →  background.paper  ✓
-Padding:        12px 16px  →  ⚠ rogue value (no token match)
-Border-radius:  4px  →  shape.borderRadius  ✓
+Background:     #c62828  →  color/error  ✓
+Padding:        12px  →  ⚠ rogue value (not on 4px grid)
+Border-radius:  8px  →  spacing/sm  ✓
+Font size:      16px
 ```
 
 Rogue values (ones that don't match any design token) are highlighted. This tells you exactly where the implementation diverged from your design system.
 
 ### Step 4 — Match against your Figma tokens
 
-1. Export variables from your Figma file (Plugins → Design Tokens → Copy JSON)
-2. Click **Paste Tokens** in the inspector panel
-3. The badge next to each value updates: green = matched token name, orange = rogue
+1. Export variables from your Figma file (Plugins → Design Tokens → Copy JSON, or use W3C / Tokens Studio format)
+2. Open the extension popup → paste JSON into the **Design Tokens** field → Save
+3. The badge next to each value updates: token name shown for matches, "rogue" flag for mismatches
 
 ---
 
