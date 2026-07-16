@@ -40,3 +40,25 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  # e2e (playwright) は unit と別ジョブ。フレークが unit マージを止めない構造。
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build
+        run: pnpm build
+      # badge / framework-matrix (非React↑↓・MUI・Tailwind) / popup を実 Chromium で検証
+      - name: E2E
+        run: pnpm e2e

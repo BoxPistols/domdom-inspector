@@ -135,6 +135,30 @@ describe('getParentComponentElement', () => {
 
     expect(getParentComponentElement(contentSpan)).toBe(cardDiv);
   });
+
+  // 不変条件: ↑ で返る host は必ず現在要素の DOM 祖先 (host.contains(base))。
+  // getHostElementOfFiber は component subtree の DFS 最初の host を返すため、
+  // 別サブツリーの host (現在要素を包含しない) を拾いうる。その場合に誤ジャンプせず
+  // スキップ (= null) することを固定する。a7346c5 と同類型「Fiber は取れるが誤答」の予防。
+  it('包含しない host (別サブツリー) は返さず、DOM 祖先でなければ null', () => {
+    const child = document.createElement('span');
+    document.body.appendChild(child);
+    // 別サブツリーの要素 (child を包含しない)
+    const lone = document.createElement('div');
+    document.body.appendChild(lone);
+
+    const childComp: Fiber = { tag: 0, type: function Inner() {} };
+    const childHost: Fiber = { tag: 5, type: 'span', stateNode: child, return: childComp };
+    childComp.child = childHost;
+    // outerComp の最初の host は lone (child を包含しない)
+    const loneHost: Fiber = { tag: 5, type: 'div', stateNode: lone };
+    const outerComp: Fiber = { tag: 0, type: function Outer() {}, child: loneHost };
+    childComp.return = outerComp;
+    attach(child, childHost);
+
+    // outerComp の host=lone は child を包含しないので採用されず、祖先が無いため null
+    expect(getParentComponentElement(child)).toBeNull();
+  });
 });
 
 describe('inspectElement', () => {
@@ -177,5 +201,27 @@ describe('inspectElement', () => {
     expect(info?.jumpTarget).toBeNull();
     expect(info?.ownerChain).toEqual([]);
     expect(Array.isArray(info?.design)).toBe(true); // computed style は取得される
+  });
+
+  // 4象限 (React有無 × dev/prod) のうち「React有 × production」を固定。
+  // production ビルドは _debugOwner/_debugSource が剥がれる → safeMode に縮退し、
+  // devMode:false / jumpTarget:null でも design 配列は必ず取得できる (デザイナー主価値の不変条件)。
+  it('production 相当 fiber (_debug* なし) は safeMode に縮退し design は保つ', () => {
+    const el = document.createElement('div');
+    el.className = 'MuiButton-root';
+    document.body.appendChild(el);
+    // component fiber だが _debugOwner も _debugSource も無い = production 剥離相当
+    const comp: Fiber = { tag: 0, type: function Button() {} };
+    const host: Fiber = { tag: 5, type: 'div', stateNode: el, return: comp };
+    comp.child = host;
+    attach(el, host);
+
+    const info = inspectElement(el, true);
+    expect(info?.isReact).toBe(true);
+    expect(info?.devMode).toBe(false); // dev フィールドが無い
+    expect(info?.jumpTarget).toBeNull(); // ソース位置は取れない
+    expect(info?.classification).toBe('mui'); // Mui* クラスから推定
+    expect(info?.name).toBe('MuiButton');
+    expect(Array.isArray(info?.design)).toBe(true); // design は常に取得できる
   });
 });
