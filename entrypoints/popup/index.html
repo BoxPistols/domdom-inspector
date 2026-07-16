@@ -64,33 +64,7 @@
       }
       h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: 0.01em; }
 
-      /* 職域スイッチ (デザイナー / エンジニア)。radio を視覚的に隠しつつ操作可能に保つ */
-      .seg { border: 0; margin: 0 0 4px; padding: 0; }
-      .seg legend {
-        padding: 0; margin-bottom: 6px;
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.05em; color: var(--muted);
-      }
-      .seg-row {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
-        padding: 3px; border-radius: 10px; background: var(--surface-2);
-      }
-      .seg-row label { position: relative; display: block; }
-      .seg-row input {
-        position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer;
-      }
-      .seg-row span {
-        display: block; text-align: center; padding: 6px 4px;
-        border-radius: 8px; font-weight: 700; color: var(--muted); cursor: pointer;
-      }
-      .seg-row input:checked + span {
-        background: var(--accent-bg); color: var(--on-accent);
-      }
-      .seg-row input:focus-visible + span {
-        outline: 2px solid var(--focus); outline-offset: 2px;
-      }
-
-      /* デザイナー動線 (サイトで使う → モード → 表示設定) を群で区切る */
+      /* 動線 (サイトで使う → モード → 表示設定 → 詳細) を群で区切る */
       .section { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
       .section h2, summary.h2 {
         margin: 0 0 2px;
@@ -100,8 +74,6 @@
         letter-spacing: 0.05em;
         color: var(--muted);
       }
-      /* デザイナー表示ではエンジニア専用 UI を隠す (機能は残る) */
-      body[data-role="designer"] .eng-only { display: none; }
 
       label { display: block; margin: 10px 0 4px; font-weight: 600; }
       select, input[type="text"], textarea {
@@ -179,25 +151,6 @@
   <body>
     <h1 data-i18n="extName">DomDom Inspector</h1>
 
-    <!-- 職域モード: メンタルモデルに合わせて popup の情報量を切替える -->
-    <fieldset class="seg">
-      <legend data-i18n="roleTitle">Optimize this popup for</legend>
-      <div class="seg-row">
-        <label>
-          <input type="radio" name="role" value="designer" />
-          <span data-i18n="roleDesigner">Designer</span>
-        </label>
-        <label>
-          <input type="radio" name="role" value="engineer" />
-          <span data-i18n="roleEngineer">Engineer</span>
-        </label>
-      </div>
-    </fieldset>
-    <div class="hint" data-i18n="roleHint">
-      Designer view focuses on visual inspection and hides engineering options.
-      Nothing is deleted — switch back anytime.
-    </div>
-
     <!-- ① このサイトで使う: デザイナーの主導線 (有効化 → 自動でインスペクト ON) -->
     <section class="section">
       <h2 data-i18n="sectionSite">Use on this site</h2>
@@ -259,7 +212,7 @@
 
     <!-- ⑤ 開発者向け: エンジニア専用設定 (既定で閉じ、開閉状態は保存)。
          エディタ連携 (issue #6) は初回リリース非搭載のため設定 UI も非表示 -->
-    <details class="section eng-only" id="devSection">
+    <details class="section" id="devSection">
       <summary data-i18n="sectionDev">Advanced</summary>
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">

@@ -14,18 +14,6 @@
   "cmdToggleTree": {
     "message": "コンポーネントツリーモードの切替"
   },
-  "roleTitle": {
-    "message": "このポップアップの最適化対象"
-  },
-  "roleDesigner": {
-    "message": "デザイナー"
-  },
-  "roleEngineer": {
-    "message": "エンジニア"
-  },
-  "roleHint": {
-    "message": "デザイナー表示は視覚検査に集中できるよう、エンジニア向けオプションを隠します。機能は削除されません — いつでも戻せます。"
-  },
   "sectionSite": {
     "message": "このサイトで使う"
   },

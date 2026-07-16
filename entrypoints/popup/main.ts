@@ -26,17 +26,10 @@ function applyI18n() {
   document.documentElement.lang = ja ? 'ja' : 'en';
 }
 
-// 職域スイッチ (designer/engineer)。body[data-role] で eng-only 表示を切替える
-const roleEls = [...document.querySelectorAll<HTMLInputElement>('input[name="role"]')];
-const currentRole = (): Settings['role'] =>
-  (roleEls.find((r) => r.checked)?.value as Settings['role']) ?? DEFAULT_SETTINGS.role;
-function applyRole(role: Settings['role']) {
-  for (const r of roleEls) r.checked = r.value === role;
-  document.body.dataset.role = role;
-}
-
+// 職域スイッチ (designer/engineer) は v0.2.0 では機能差が無い (render/tree/editor が配線外し)
+// ため popup から除去し単一モード化。Settings.role 型は dormant で温存 (Phase 1 で機能復活時に再導入)。
 // エディタ連携 (editor/customUrlTemplate/muiSkip/openEditorOnClick/pathMappings) の
-// 設定 UI は初回リリース非搭載 (issue #6)。Settings 型と既定値は温存
+// 設定 UI も初回リリース非搭載 (issue #6)。Settings 型と既定値は温存
 const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
 const showVarNamesEl = $<HTMLInputElement>('showVarNames');
 
@@ -116,7 +109,6 @@ async function load() {
   const settings: Settings = { ...DEFAULT_SETTINGS, ...(stored.settings ?? {}) };
   const { popupDevOpen } = await browser.storage.local.get('popupDevOpen');
   devSectionEl.open = popupDevOpen === true;
-  applyRole(settings.role);
   badgeDetailEl.value = settings.badgeDetail;
   showVarNamesEl.checked = settings.showVarNames;
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
@@ -137,7 +129,6 @@ async function load() {
 async function save() {
   const settings: Settings = {
     ...DEFAULT_SETTINGS,
-    role: currentRole(),
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
     showVarNames: showVarNamesEl.checked,
   };
@@ -147,12 +138,6 @@ async function save() {
 
 for (const el of [badgeDetailEl, showVarNamesEl]) {
   el.addEventListener('change', () => {
-    void save();
-  });
-}
-for (const r of roleEls) {
-  r.addEventListener('change', () => {
-    applyRole(currentRole());
     void save();
   });
 }

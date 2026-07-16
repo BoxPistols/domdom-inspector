@@ -14,18 +14,6 @@
   "cmdToggleTree": {
     "message": "Toggle component tree mode"
   },
-  "roleTitle": {
-    "message": "Optimize this popup for"
-  },
-  "roleDesigner": {
-    "message": "Designer"
-  },
-  "roleEngineer": {
-    "message": "Engineer"
-  },
-  "roleHint": {
-    "message": "Designer view focuses on visual inspection and hides engineering options. Nothing is deleted — switch back anytime."
-  },
   "sectionSite": {
     "message": "Use on this site"
   },
