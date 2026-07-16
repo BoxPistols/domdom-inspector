@@ -188,8 +188,17 @@ export class Overlay {
           sw.style.background = p.value;
           chip.append(sw);
         }
-        const val = el('span', undefined, p.value);
-        chip.append(val);
+        // 変数名優先 (showVarNames かつ宣言された CSS 変数がある) なら変数名を主・生値を従で描画。
+        // トークン準拠の検証が主目的なので「実装で宣言された変数名」を第一級で見せる。
+        if (this.settings.showVarNames && p.varName) {
+          const suffix = p.ambiguous ? ` (+${(p.varNames?.length ?? 1) - 1})` : '';
+          const varEl = el('span', 'var', `${p.varName}${suffix}`);
+          if (p.ambiguous && p.varNames) varEl.title = p.varNames.join(', ');
+          chip.append(varEl);
+          chip.append(el('span', 'raw', p.value));
+        } else {
+          chip.append(el('span', undefined, p.value));
+        }
         // Figma トークン照合: 一致ならトークン名、外れなら野良値警告 + 最近傍
         const token = annotations.get(p.label) ?? null;
         if (token?.kind === 'hit') {

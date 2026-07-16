@@ -1,8 +1,10 @@
+import { collectAuthoredVars, type VarMatch } from './cssVars';
 import type { DesignProp } from './types';
 
 // production ビルドでは Fiber の dev フィールドが剥がれるが、computed style は常に取れる。
 // デザイナー向けに「見た目」を構成する主要プロパティを curate して抽出する (FR-23 の一部)。
-const PROPS: { prop: string; label: string; skip?: (v: string) => boolean }[] = [
+// cssVars.ts が label↔prop 対応を参照するため export する。
+export const PROPS: { prop: string; label: string; skip?: (v: string) => boolean }[] = [
   { prop: 'color', label: 'color' },
   {
     prop: 'background-color',
@@ -48,8 +50,12 @@ export function toHex(v: string): string {
 /**
  * getter (prop → 値) から主要デザインプロパティを抽出する純関数。
  * 既定値・ゼロ余白・none は除外してノイズを減らす。テスト容易性のため getter を受ける。
+ * getVar (label → 宣言 CSS 変数) を渡すと、宣言された変数名を DesignProp に添える (省略時は従来動作)。
  */
-export function pickDesignStyle(get: (prop: string) => string): DesignProp[] {
+export function pickDesignStyle(
+  get: (prop: string) => string,
+  getVar?: (label: string) => VarMatch | null,
+): DesignProp[] {
   const out: DesignProp[] = [];
   for (const { prop, label, skip } of PROPS) {
     const value = (get(prop) || '').trim();
@@ -57,13 +63,35 @@ export function pickDesignStyle(get: (prop: string) => string): DesignProp[] {
     if (skip && skip(value)) continue;
     // 色系は hex に整形してデザイナーに読みやすく
     const formatted = label === 'color' || label === 'bg' ? toHex(value) : value;
-    out.push({ label, value: shorten(formatted) });
+    const dp: DesignProp = { label, value: shorten(formatted) };
+    const v = getVar?.(label);
+    if (v) {
+      dp.varName = v.name;
+      if (v.ambiguous) {
+        dp.ambiguous = true;
+        dp.varNames = v.names;
+      }
+    }
+    out.push(dp);
   }
   return out;
 }
 
-/** 実 DOM 要素の computed style から主要デザインプロパティを抽出 */
+/**
+ * 実 DOM 要素の computed style から主要デザインプロパティを抽出。
+ * 併せて「宣言された CSS 変数名」(Tier1 authored) を回収し添える。CSSOM 走査が
+ * 失敗しても computed のみで縮退する (production/クロスオリジンで壊さない)。
+ */
 export function extractDesignStyle(element: Element): DesignProp[] {
   const cs = getComputedStyle(element);
-  return pickDesignStyle((prop) => cs.getPropertyValue(prop));
+  let vars: Map<string, VarMatch> | null = null;
+  try {
+    vars = collectAuthoredVars(element);
+  } catch {
+    vars = null;
+  }
+  return pickDesignStyle(
+    (prop) => cs.getPropertyValue(prop),
+    vars ? (label) => vars.get(label) ?? null : undefined,
+  );
 }

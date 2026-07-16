@@ -119,6 +119,12 @@
   "labelBadgeDetail": {
     "message": "バッジの情報量"
   },
+  "labelShowVarNames": {
+    "message": "生値より CSS 変数名を優先表示"
+  },
+  "tipShowVarNames": {
+    "message": "ON: 値が CSS 変数 (例 var(--text)) で宣言されていれば変数名を表示し、UI がデザイントークンに基づくか検証できます。OFF: 常に生値 (#hex/px) を表示。変数名を精密に取れるのは same-origin の CSS のみで、それ以外は生値に縮退します。"
+  },
   "tipMuiSkip": {
     "message": "ON: クリックで MUI ライブラリ内部ではなく、あなたが書いた JSX の該当行(例: <Card> を書いた行)へジャンプ。OFF: MUI の内部ファイルへジャンプ。"
   },

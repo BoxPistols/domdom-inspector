@@ -48,6 +48,10 @@ export const OVERLAY_CSS = `
         width: 10px; height: 10px; border-radius: 3px; flex: none;
         border: 1px solid rgba(255,255,255,0.6);
       }
+      /* 宣言された CSS 変数名 (実装トークン): 主表示は紫系 (Figma tk=緑/黄・design 値=青と分離) */
+      .badge .chip .var { color: #c0a5ff; font-weight: 600; }
+      /* 変数名優先時の生値: 従属表示 (淡色・小) */
+      .badge .chip .raw { opacity: 0.5; font-size: 11px; }
       /* デザイントークン照合の注釈: 一致=緑でトークン名 / 野良値=黄で最近傍 */
       .badge .chip .tk { font-size: 11px; padding-left: 2px; }
       .badge .chip .tk.ok { color: #7ddb99; }

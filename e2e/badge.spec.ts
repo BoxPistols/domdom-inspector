@@ -73,12 +73,23 @@ test.afterAll(async () => {
   await context.close();
 });
 
+// CSS 変数で宣言した要素 (color/bg/padding が var(--x) 由来)。変数名優先表示の検証用。
+const VAR_FIXTURE_HTML = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>DomDom Var E2E Fixture</title>
+<style>
+  :root { --text: #eaedf4; --surface: #212a3c; --sp-2: 8px; }
+  .card { color: var(--text); background: var(--surface); padding: var(--sp-2); font-size: 14px; }
+</style></head>
+<body style="margin:0"><div id="target" class="card">Var me</div></body>
+</html>`;
+
 /** fixture ページを開き MAIN world content script の確立を待つ */
-async function openFixture() {
+async function openFixture(html: string = FIXTURE_HTML) {
   const page = await context.newPage();
   // localhost/* 宛てのリクエストを fixture HTML で応答 (サーバ不要)
   await page.route(`${FIXTURE_ORIGIN}/**`, (route) => {
-    route.fulfill({ contentType: 'text/html; charset=utf-8', body: FIXTURE_HTML });
+    route.fulfill({ contentType: 'text/html; charset=utf-8', body: html });
   });
   await page.goto(`${FIXTURE_ORIGIN}/`, { waitUntil: 'domcontentloaded' });
   // inspector.content.ts が document_start で設定する guard flag を待つ
@@ -174,6 +185,69 @@ test('注入したトークン名がバッジに描画される', async () => {
     .poll(async () => badgeText(page), { timeout: 3000 })
     .toContain('color/error');
   expect(await badgeText(page)).toContain('spacing/sm');
+
+  await page.close();
+});
+
+/**
+ * CSS 変数名優先 (既定): color/bg/padding が var(--x) 由来なら、生値でなく宣言変数名を主表示。
+ * 実 Chrome の CSSOM 挙動 (matched-rule walk / var 入り shorthand 非展開) をここで固定する。
+ */
+test('宣言された CSS 変数名がバッジに主表示される', async () => {
+  const page = await openFixture(VAR_FIXTURE_HTML);
+
+  await activate(page);
+  await page.hover('#target');
+
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  // color→--text / background→--surface / padding→--sp-2 の全変数名が出る
+  await expect
+    .poll(async () => badgeText(page), { timeout: 3000 })
+    .toContain('--text');
+  const text = await badgeText(page);
+  expect(text).toContain('--surface');
+  expect(text).toContain('--sp-2');
+
+  await page.close();
+});
+
+/**
+ * showVarNames=false の時は生値 (#hex) を主表示し変数名は出さない (トグルの疎通確認)。
+ */
+test('showVarNames=false で生値表示に切り替わる', async () => {
+  const page = await openFixture(VAR_FIXTURE_HTML);
+
+  // settings 経路で変数名優先を OFF にする (既存 settings 配線に相乗り)。
+  // bridge は常に完全な settings ({...DEFAULT_SETTINGS,...stored}) を送るため、
+  // overlay が参照する colors も含めて実契約に忠実な payload を渡す。
+  await page.evaluate(
+    (src) =>
+      window.postMessage(
+        {
+          source: src,
+          type: 'settings',
+          payload: {
+            showVarNames: false,
+            badgeDetail: 'normal',
+            colors: { mui: '#2196f3', custom: '#4caf50', thirdParty: '#9e9e9e' },
+          },
+        },
+        '*',
+      ),
+    BRIDGE_SOURCE,
+  );
+
+  await activate(page);
+  await page.hover('#target');
+
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  // color の生値 #eaedf4 が出て、変数名 --text は出ない
+  await expect
+    .poll(async () => badgeText(page), { timeout: 3000 })
+    .toContain('#eaedf4');
+  expect(await badgeText(page)).not.toContain('--text');
 
   await page.close();
 });

@@ -19,6 +19,12 @@ export interface OwnerEntry {
 export interface DesignProp {
   label: string;
   value: string;
+  /** 実装で宣言された CSS 変数名 (var(--x) の --x)。トークン準拠検証の主表示 (cssVars Tier1) */
+  varName?: string;
+  /** varName が複数候補 (shorthand で side 別変数等) の全件 */
+  varNames?: string[];
+  /** 変数が単一に絞れない (padding: var(--a) var(--b) 等) */
+  ambiguous?: boolean;
 }
 
 /** ホバー中の要素について収集した情報 */
@@ -68,6 +74,12 @@ export interface Settings {
    * detailed=全props を複数行で。file:line は常に独立行で表示し省略しない。
    */
   badgeDetail: 'compact' | 'normal' | 'detailed';
+  /**
+   * デザイン値を「宣言された CSS 変数名優先」で表示するか (既定 true)。
+   * ミッション = トークン準拠検証のため、var(--x) 宣言があれば変数名を主・生値を従で出す。
+   * false にすると常に生値 (#hex/px) を主表示する。
+   */
+  showVarNames: boolean;
   colors: {
     mui: string;
     custom: string;
@@ -90,6 +102,7 @@ export const DEFAULT_SETTINGS: Settings = {
   muiSkip: true,
   openEditorOnClick: true,
   badgeDetail: 'normal',
+  showVarNames: true,
   colors: {
     mui: '#2196f3',
     custom: '#4caf50',

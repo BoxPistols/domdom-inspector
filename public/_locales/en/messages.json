@@ -119,6 +119,12 @@
   "labelBadgeDetail": {
     "message": "Badge detail level"
   },
+  "labelShowVarNames": {
+    "message": "Prefer CSS variable names over raw values"
+  },
+  "tipShowVarNames": {
+    "message": "ON: when a value is declared with a CSS variable (e.g. var(--text)), the badge shows the variable name so you can verify the UI uses your design tokens. OFF: always shows the raw value (#hex/px). Only same-origin CSS variables can be read precisely; others fall back to the raw value."
+  },
   "tipMuiSkip": {
     "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
   },

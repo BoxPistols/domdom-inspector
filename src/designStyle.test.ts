@@ -55,6 +55,33 @@ describe('pickDesignStyle', () => {
     const props = pickDesignStyle(getter({ color: 'rgba(0, 0, 0, 0.5)' }));
     expect(props[0].value).toBe('rgba(0, 0, 0, 0.5)');
   });
+
+  it('getVar 未指定なら varName は付かない (後方互換)', () => {
+    const props = pickDesignStyle(getter({ color: 'rgb(1, 2, 3)' }));
+    expect(props[0].varName).toBeUndefined();
+    expect(props[0].ambiguous).toBeUndefined();
+  });
+
+  it('getVar を渡すと宣言変数名を DesignProp に添える', () => {
+    const props = pickDesignStyle(
+      getter({ color: 'rgb(1, 2, 3)', padding: '8px 12px' }),
+      (label) =>
+        label === 'color'
+          ? { name: '--text', names: ['--text'], ambiguous: false }
+          : label === 'padding'
+            ? { name: '--sp-2', names: ['--sp-2', '--sp-3'], ambiguous: true }
+            : null,
+    );
+    const color = props.find((p) => p.label === 'color');
+    expect(color?.varName).toBe('--text');
+    expect(color?.ambiguous).toBeUndefined();
+    expect(color?.value).toBe('#010203'); // 生値も維持
+
+    const padding = props.find((p) => p.label === 'padding');
+    expect(padding?.varName).toBe('--sp-2');
+    expect(padding?.ambiguous).toBe(true);
+    expect(padding?.varNames).toEqual(['--sp-2', '--sp-3']);
+  });
 });
 
 describe('isColorValue', () => {

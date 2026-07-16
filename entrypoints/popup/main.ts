@@ -38,6 +38,7 @@ function applyRole(role: Settings['role']) {
 // エディタ連携 (editor/customUrlTemplate/muiSkip/openEditorOnClick/pathMappings) の
 // 設定 UI は初回リリース非搭載 (issue #6)。Settings 型と既定値は温存
 const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
+const showVarNamesEl = $<HTMLInputElement>('showVarNames');
 
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
@@ -117,6 +118,7 @@ async function load() {
   devSectionEl.open = popupDevOpen === true;
   applyRole(settings.role);
   badgeDetailEl.value = settings.badgeDetail;
+  showVarNamesEl.checked = settings.showVarNames;
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
   const { tokenJson, tokenDict } = (await browser.storage.local.get([
     'tokenJson',
@@ -137,12 +139,13 @@ async function save() {
     ...DEFAULT_SETTINGS,
     role: currentRole(),
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
+    showVarNames: showVarNamesEl.checked,
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
 }
 
-for (const el of [badgeDetailEl]) {
+for (const el of [badgeDetailEl, showVarNamesEl]) {
   el.addEventListener('change', () => {
     void save();
   });
