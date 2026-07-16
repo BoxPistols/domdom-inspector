@@ -4,6 +4,19 @@ import { Overlay } from './overlay';
 import { DEFAULT_SETTINGS, DEFAULT_STRINGS, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /**
+ * ↑ で選ぶ「1 つ外側」の要素を返す。React ではコンポーネント親 (wrapper を読み飛ばした
+ * host)、Fiber が無い / コンポーネント親が尽きた場合は素の DOM 親へフォールバックする。
+ * これにより非 React な HTML/CSS サイトでも親要素をたどれる (design 計測は React 非依存)。
+ * componentParent は DI (テスト時にモック可能)。
+ */
+export function resolveOuterElement(
+  element: Element,
+  componentParent: (el: Element) => Element | null,
+): Element | null {
+  return componentParent(element) ?? element.parentElement;
+}
+
+/**
  * インスペクトモードの状態機械 (FR-01〜04)。
  * 有効中は click / pointer 系を capture で握りつぶし、ページ誤操作を防ぐ。
  */
@@ -137,7 +150,7 @@ export class Inspector {
       event.preventDefault();
       event.stopImmediatePropagation();
       if (!this.currentElement) return;
-      const parent = getParentComponentElement(this.currentElement);
+      const parent = resolveOuterElement(this.currentElement, getParentComponentElement);
       if (parent) {
         this.navStack.push(this.currentElement);
         this.keyboardNav = true;

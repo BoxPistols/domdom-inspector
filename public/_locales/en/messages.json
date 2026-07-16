@@ -162,7 +162,7 @@
     "message": "Inspect OFF"
   },
   "noOuterComponent": {
-    "message": "No further outer component"
+    "message": "No further outer element"
   },
   "jumpUnresolved": {
     "message": "Could not resolve source location (React 19 may need the Babel source plugin)"

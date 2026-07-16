@@ -162,7 +162,7 @@
     "message": "インスペクト OFF"
   },
   "noOuterComponent": {
-    "message": "これ以上外側のコンポーネントはありません"
+    "message": "これ以上外側の要素はありません"
   },
   "jumpUnresolved": {
     "message": "コードの位置を特定できませんでした(React 19 ではビルド設定により位置情報が出ないことがあります)"

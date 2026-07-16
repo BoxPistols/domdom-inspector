@@ -184,7 +184,7 @@ export const DEFAULT_STRINGS: UiStrings = {
   inspectOn: 'Inspect ON — hover to inspect, Esc to exit. Click: editor / Alt+Click: rendered-by tree / ↑↓: parent/child',
   inspectOnSafe: 'Inspect ON — no dev build detected, safe mode (names only / Esc to exit)',
   inspectOff: 'Inspect OFF',
-  noOuterComponent: 'No further outer component',
+  noOuterComponent: 'No further outer element',
   jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',
   jumpProd: 'Source jump is unavailable on production builds',
   editorLinkOff: 'Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree.',
