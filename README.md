@@ -25,6 +25,7 @@ pnpm install
 pnpm dev        # 開発 (自動リロード付きで Chrome が起動)
 pnpm build      # .output/chrome-mv3 に成果物
 pnpm build:sync # build + 同期フォルダ (OneDrive 等) へ実体展開 (複数 PC 共有用)
+pnpm bump:patch # version を +0.0.1 (minor/major も可)。manifest/zip に自動反映
 pnpm test       # ユニットテスト (vitest)
 pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 ```
