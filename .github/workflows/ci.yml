@@ -32,6 +32,11 @@ jobs:
             echo "::error::console.log found (CLAUDE.md 規約違反)"; exit 1
           fi
 
+      # ESLint: any 禁止 (Fiber allowlist) / @ts-ignore 禁止 / console.log 禁止 /
+      # design 経路の Fiber import 禁止 (境界契約)。CLAUDE.md 規約を機械強制。
+      - name: Lint
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 

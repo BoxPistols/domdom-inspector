@@ -56,7 +56,7 @@ popup/ ── 設定 UI (browser.* 可)
 - **①機械(自動)**: 純ロジックは vitest+happy-dom。mock 手本は fiber/tree/renderTracker.test.ts。
   DOM 依存は `// @vitest-environment happy-dom`。数値は既知正解値で校正。
 - **③目視(人間)**: 見た目/60fps/操作感/双方向連動/実権限フロー。勝手に PASS にしない。
-- **コミット前ゲート**: `pnpm test && pnpm typecheck && pnpm build` 全 green(locale を触ったら先に `pnpm wxt prepare`)。
+- **コミット前ゲート**: `pnpm lint && pnpm test && pnpm typecheck && pnpm build` 全 green(locale を触ったら先に `pnpm wxt prepare`)。ESLint は any 禁止(Fiber allowlist)/ @ts-ignore 禁止 / console.log 禁止 / design 経路の Fiber import 禁止(境界契約)を機械強制。e2e は `pnpm e2e`(別ゲート)。
 
 ## ワークフロー(fable-emu)
 
