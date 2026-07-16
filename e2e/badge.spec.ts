@@ -104,13 +104,17 @@ test('ホバーでデザインバッジが描画される', async () => {
 
 /**
  * トークン照合パス: token dict 注入後も overlay が正常に描画される。
- * shadow DOM (closed) のためバッジ文言は読めないが、例外なく完走することを確認する。
- * 純関数側 (annotateProp 等) の正確性は tokenDict.test.ts が担保。
+ * ペイロードは bridge が parseTokens で正規化した後の TokenDict 形状
+ * (TokenColor {name,r,g,b,a} / TokenSize {name,px,category})。fixture の
+ * background-color #c62828=rgb(198,40,40) と padding:8px が実際に照合 hit する値を渡すことで、
+ * annotateProp → matchColor/matchSize の照合分岐を実データで通す。
+ * shadow DOM (closed) のためバッジ文言は読めないが、照合が例外なく完走することを確認する。
+ * 照合結果の正確性 (どの値がどのトークンに一致するか) は tokenDict.test.ts が担保。
  */
 test('デザイントークンを注入してもバッジが正常に描画される', async () => {
   const page = await openFixture();
 
-  // #c62828 をトークンとして登録 (fixture の background-color と一致)
+  // fixture の background-color (#c62828) と padding (8px) に一致するトークンを登録
   await page.evaluate(
     (src) =>
       window.postMessage(
@@ -118,8 +122,8 @@ test('デザイントークンを注入してもバッジが正常に描画さ�
           source: src,
           type: 'tokens',
           payload: {
-            colors: [{ name: 'color/error', value: '#c62828' }],
-            sizes: [{ name: 'spacing/sm', value: 8 }],
+            colors: [{ name: 'color/error', r: 198, g: 40, b: 40, a: 1 }],
+            sizes: [{ name: 'spacing/sm', px: 8, category: 'space' }],
           },
         },
         '*',
