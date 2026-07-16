@@ -4,6 +4,7 @@ node_modules/
 stats.html
 stats-*.json
 .env
+.env*.local
 .DS_Store
 
 # Claude Code セッション成果物 (リポジトリに含めない)

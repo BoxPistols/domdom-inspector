@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
+    "sync": "node scripts/sync-extension.mjs",
+    "build:sync": "wxt build && node scripts/sync-extension.mjs",
     "zip": "wxt zip",
     "test": "vitest run",
     "test:watch": "vitest",

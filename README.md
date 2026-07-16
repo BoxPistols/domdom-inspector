@@ -24,11 +24,20 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 pnpm install
 pnpm dev        # 開発 (自動リロード付きで Chrome が起動)
 pnpm build      # .output/chrome-mv3 に成果物
+pnpm build:sync # build + 同期フォルダ (OneDrive 等) へ実体展開 (複数 PC 共有用)
 pnpm test       # ユニットテスト (vitest)
 pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 ```
 
 手動読み込み: `pnpm build` 後、`chrome://extensions` → デベロッパーモード → 「パッケージ化されていない拡張機能を読み込む」→ `.output/chrome-mv3`
+
+### 複数 PC で共有する (OneDrive 等) / Multi-PC dev sync
+
+`pnpm build:sync` は build 成果物を同期フォルダへ**実ファイルとしてコピー**し、複数 PC で同一の unpacked 拡張を共有できるようにする(symlink は OneDrive 同期で壊れるため実体コピー)。
+
+- 展開先の解決順: `EXT_SYNC_DIR` 環境変数 → `.env.local` の `EXT_SYNC_DIR` → macOS 自動検出(`~/Library/CloudStorage/OneDrive-*/Extensions` が一意なら採用)
+- 別 PC / 別 OS では `.env.local` に `EXT_SYNC_DIR=/path/to/OneDrive/Extensions` を書く(`.env.local` は git 管理外)
+- 展開後、各 PC で `chrome://extensions` → 「パッケージ化されていない拡張機能を読み込む」→ `<同期フォルダ>/domdom-inspector`。更新後は拡張の「更新」ボタン(⟳)で反映
 
 ## Using on deployed sites / デプロイ済みサイトでの利用
 
