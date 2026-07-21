@@ -97,7 +97,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   role: 'engineer',
-  editor: 'vscode',
+  editor: 'cursor',
   customUrlTemplate: 'vscode://file{file}:{line}:{column}',
   muiSkip: true,
   openEditorOnClick: true,
@@ -128,6 +128,10 @@ export interface UiStrings {
   editorLinkOff: string;
   sourceUnavailable: string;
   prodSafeMode: string;
+  /** バンドル出力パス (ハッシュ付きチャンク) でジャンプ不可な時の注記 */
+  sourceMinified: string;
+  /** file:line 行に添える「エディタで開く」操作ヒント */
+  editorHint: string;
   ownerPanelTitle: string;
   renderOn: string;
   renderOnNoDev: string;
@@ -203,6 +207,8 @@ export const DEFAULT_STRINGS: UiStrings = {
   editorLinkOff: 'Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree.',
   sourceUnavailable: 'source unavailable',
   prodSafeMode: 'production build (safe mode)',
+  sourceMinified: 'bundled output · run a dev build to jump',
+  editorHint: '⌘/Ctrl+Click to open in editor',
   ownerPanelTitle: 'Rendered by (click to open editor)',
   renderOn:
     'Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit',

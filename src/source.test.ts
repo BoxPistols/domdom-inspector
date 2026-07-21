@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { isMuiPath, isNodeModulesPath, normalizeSourcePath, parseStackLocation } from './source';
+import {
+  isBundledSource,
+  isMuiPath,
+  isNodeModulesPath,
+  normalizeSourcePath,
+  parseStackLocation,
+} from './source';
 
 describe('normalizeSourcePath', () => {
   it('dev サーバ URL から pathname を抽出しクエリを除去する', () => {
@@ -90,5 +96,22 @@ describe('path predicates', () => {
     expect(isNodeModulesPath('/proj/src/App.tsx')).toBe(false);
     expect(isMuiPath('/proj/node_modules/@mui/material/Button/Button.js')).toBe(true);
     expect(isMuiPath('/proj/node_modules/lodash/index.js')).toBe(false);
+  });
+});
+
+describe('isBundledSource (バンドル出力の検知 → ジャンプ抑制)', () => {
+  it('ハッシュ付きチャンクをバンドル出力と判定する', () => {
+    expect(isBundledSource('_31ecaab0._-.js')).toBe(true); // 報告された実例
+    expect(isBundledSource('/assets/index-4f2a8b.js')).toBe(true);
+    expect(isBundledSource('main.a1b2c3d4.js')).toBe(true);
+    expect(isBundledSource('vendor.chunk.js')).toBe(true);
+    expect(isBundledSource('app.bundle.js')).toBe(true);
+  });
+
+  it('dev サーバの実ソースパスはバンドルでない', () => {
+    expect(isBundledSource('/src/components/Box.tsx')).toBe(false);
+    expect(isBundledSource('/src/App.jsx')).toBe(false);
+    expect(isBundledSource('/Users/me/proj/src/pages/Home.ts')).toBe(false);
+    expect(isBundledSource('index.js')).toBe(false); // ハッシュ無しの素の js は許容
   });
 });

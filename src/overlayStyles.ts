@@ -37,6 +37,8 @@ export const OVERLAY_CSS = `
       .badge .name { font-weight: 700; display: block; }
       .badge .meta { opacity: 0.8; display: block; }
       .badge .file { opacity: 0.95; display: block; margin-top: 2px; }
+      /* エディタで開く操作ヒント (⌘Click) */
+      .badge .file .ehint { opacity: 0.55; font-size: 11px; }
       /* デザイン情報は 1 プロパティ = 1 チップで折返し表示 (1 行連結より読める) */
       .badge .design { display: flex; flex-wrap: wrap; gap: 3px 6px; margin-top: 4px; color: #a5d8ff; }
       .badge .chip {

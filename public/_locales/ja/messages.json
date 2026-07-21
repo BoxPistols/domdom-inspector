@@ -173,6 +173,15 @@
   "prodSafeMode": {
     "message": "本番サイト(公開ビルド)"
   },
+  "sourceMinified": {
+    "message": "バンドル出力 · dev ビルドで開けます"
+  },
+  "editorHint": {
+    "message": "⌘/Ctrl+Click でエディタで開く"
+  },
+  "labelEditor": {
+    "message": "ソースを開くエディタ"
+  },
   "ownerPanelTitle": {
     "message": "描画元 (クリックでエディタへ)"
   },

@@ -173,6 +173,15 @@
   "prodSafeMode": {
     "message": "production build (safe mode)"
   },
+  "sourceMinified": {
+    "message": "bundled output · run a dev build to jump"
+  },
+  "editorHint": {
+    "message": "⌘/Ctrl+Click to open in editor"
+  },
+  "labelEditor": {
+    "message": "Open source in"
+  },
   "ownerPanelTitle": {
     "message": "Rendered by (click to open editor)"
   },

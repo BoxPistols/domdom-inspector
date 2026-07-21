@@ -211,9 +211,17 @@
     </section>
 
     <!-- ⑤ 開発者向け: エンジニア専用設定 (既定で閉じ、開閉状態は保存)。
-         エディタ連携 (issue #6) は初回リリース非搭載のため設定 UI も非表示 -->
+         v0.3.0 で Cmd/Ctrl+Click エディタジャンプ (dev ビルド限定) を復活 -->
     <details class="section" id="devSection">
       <summary data-i18n="sectionDev">Advanced</summary>
+
+      <label for="editor"><span data-i18n="labelEditor">Open source in</span></label>
+      <select id="editor">
+        <option value="cursor">Cursor</option>
+        <option value="vscode">VS Code</option>
+        <option value="antigravity">Antigravity IDE</option>
+        <option value="webstorm">WebStorm</option>
+      </select>
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
         Change toggle shortcuts…

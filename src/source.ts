@@ -87,3 +87,18 @@ export function isNodeModulesPath(fileName: string): boolean {
 export function isMuiPath(fileName: string): boolean {
   return /node_modules[\\/]@mui[\\/]/.test(fileName);
 }
+
+/**
+ * ソースパスがバンドラのハッシュ付きチャンク (本番/preview ビルド出力) かどうか。
+ * 例: `_31ecaab0._-.js` / `main.a1b2c3d4.js` / `assets/index-4f2a.js` / `*.chunk.js`。
+ * これらは実ソースでなくエディタで開いても無意味なため、file:line 表示とジャンプを抑制する。
+ * dev サーバ (vite dev 等) の実ソースパス (`/src/App.tsx`) は false。
+ */
+export function isBundledSource(fileName: string): boolean {
+  const base = fileName.split(/[\\/]/).pop() ?? '';
+  return (
+    /[-_.][0-9a-f]{6,}(?:[-_.]|\.[cm]?jsx?$)/i.test(base) || // 埋め込みハッシュ
+    /\/assets\//.test(fileName) || // ビルド出力の慣例ディレクトリ
+    /\.(chunk|bundle)\.[cm]?jsx?$/i.test(base) // *.chunk.js / *.bundle.js
+  );
+}

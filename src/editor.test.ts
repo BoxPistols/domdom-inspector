@@ -8,9 +8,16 @@ const loc = {
   columnNumber: 5,
 };
 
+// 既定エディタ (DEFAULT_SETTINGS.editor) は Cursor のため、vscode 固有の検証は明示指定する
+const vscode: Settings = { ...DEFAULT_SETTINGS, editor: 'vscode' };
+
 describe('buildEditorUrl', () => {
   it('vscode スキームを生成する (パス正規化込み)', () => {
-    expect(buildEditorUrl(DEFAULT_SETTINGS, loc)).toBe('vscode://file/src/App.tsx:12:5');
+    expect(buildEditorUrl(vscode, loc)).toBe('vscode://file/src/App.tsx:12:5');
+  });
+
+  it('既定エディタ (Cursor) のスキームを生成する', () => {
+    expect(buildEditorUrl(DEFAULT_SETTINGS, loc)).toBe('cursor://file/src/App.tsx:12:5');
   });
 
   it('パスマッピング適用後の絶対パスでリンクする', () => {
@@ -40,7 +47,7 @@ describe('buildEditorUrl', () => {
 
   it('column 0 は 1 にフォールバックする', () => {
     expect(
-      buildEditorUrl(DEFAULT_SETTINGS, { ...loc, columnNumber: 0 }),
+      buildEditorUrl(vscode, { ...loc, columnNumber: 0 }),
     ).toBe('vscode://file/src/App.tsx:12:1');
   });
 
@@ -51,7 +58,7 @@ describe('buildEditorUrl', () => {
 
   it('webpack-internal ソースも先頭スラッシュ 1 個に正規化してリンクする', () => {
     expect(
-      buildEditorUrl(DEFAULT_SETTINGS, {
+      buildEditorUrl(vscode, {
         fileName: 'webpack-internal:///./src/App.tsx',
         lineNumber: 3,
         columnNumber: 2,

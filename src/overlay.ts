@@ -1,5 +1,6 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl } from './editor';
+import { isBundledSource } from './source';
 import { el } from './overlayDom';
 import { colorFor, designLabel, heatColor, visibleProps } from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
@@ -146,11 +147,17 @@ export class Overlay {
     const entries = Object.entries(info.props);
     const propsShown = visibleProps(entries, detail);
     const propsText = propsShown.map(([k, v]) => `${k}=${v}`).join(' ');
-    const file = info.jumpTarget
-      ? `${info.jumpTarget.fileName.split('/').pop()}:${info.jumpTarget.lineNumber}`
-      : info.devMode
-        ? this.strings.sourceUnavailable
-        : this.strings.prodSafeMode;
+    // jumpTarget は dev のみ設定される。ただしバンドル出力 (ハッシュ付きチャンク) は
+    // 実ソースでなく開けないため、file:line を出さず注記に切替える (Cmd+Click ジャンプも不可)。
+    const jt = info.jumpTarget;
+    const canJump = !!jt && !isBundledSource(jt.fileName);
+    const file = canJump
+      ? `${jt.fileName.split('/').pop()}:${jt.lineNumber}`
+      : jt
+        ? this.strings.sourceMinified
+        : info.devMode
+          ? this.strings.sourceUnavailable
+          : this.strings.prodSafeMode;
 
     this.badge.replaceChildren();
     const name = el('span', 'name', `<${info.name}>`);
@@ -167,6 +174,8 @@ export class Overlay {
     // 非 React (素の DOM) はソースが存在しないので file 行は出さず design を主情報にする。
     if (info.isReact) {
       const fileEl = el('span', 'file', file);
+      // 実ソースにジャンプ可能な時だけ操作ヒントを添える
+      if (canJump) fileEl.append(el('span', 'ehint', ` · ${this.strings.editorHint}`));
       this.badge.append(fileEl);
     }
 

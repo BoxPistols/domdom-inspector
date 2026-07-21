@@ -32,6 +32,7 @@ function applyI18n() {
 // 設定 UI も初回リリース非搭載 (issue #6)。Settings 型と既定値は温存
 const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
 const showVarNamesEl = $<HTMLInputElement>('showVarNames');
+const editorEl = $<HTMLSelectElement>('editor');
 
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
@@ -111,6 +112,7 @@ async function load() {
   devSectionEl.open = popupDevOpen === true;
   badgeDetailEl.value = settings.badgeDetail;
   showVarNamesEl.checked = settings.showVarNames;
+  editorEl.value = settings.editor;
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
   const { tokenJson, tokenDict } = (await browser.storage.local.get([
     'tokenJson',
@@ -131,12 +133,13 @@ async function save() {
     ...DEFAULT_SETTINGS,
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
     showVarNames: showVarNamesEl.checked,
+    editor: editorEl.value as Settings['editor'],
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
 }
 
-for (const el of [badgeDetailEl, showVarNamesEl]) {
+for (const el of [badgeDetailEl, showVarNamesEl, editorEl]) {
   el.addEventListener('change', () => {
     void save();
   });

@@ -1,7 +1,16 @@
+import { buildEditorUrl } from './editor';
 import { getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
-import { DEFAULT_SETTINGS, DEFAULT_STRINGS, type InspectInfo, type Settings, type UiStrings } from './types';
+import { isBundledSource } from './source';
+import {
+  DEFAULT_SETTINGS,
+  DEFAULT_STRINGS,
+  type InspectInfo,
+  type Settings,
+  type SourceLocation,
+  type UiStrings,
+} from './types';
 
 /**
  * ↑ で選ぶ「1 つ外側」の要素を返す。React ではコンポーネント親 (wrapper を読み飛ばした
@@ -119,13 +128,32 @@ export class Inspector {
   };
 
   private onIntercept = (event: Event) => {
-    // パネル内クリックは通す
+    // パネル内クリック / 自前のエディタ起動アンカーは通す (scheme を開かせる)
     if (this.overlay.containsTarget(event.target)) return;
-    // 初回リリースはデザイン計測のみ: クリックのページ側動作だけ抑止する。
-    // エディタジャンプ (issue #6) / owner チェーンパネル (issue #5) は将来化 (配線外し)。
+    if (event.target instanceof Element && event.target.closest('[data-domdom-editor]')) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    // Cmd(Mac)/Ctrl(Win)+Click で該当ソースをエディタで開く (dev の実ソースのみ)。
+    // 通常クリックはページ誤操作の抑止だけ (デザイン検査に専念)。
+    if (event.type !== 'click') return;
+    const me = event as MouseEvent;
+    if (!me.metaKey && !me.ctrlKey) return;
+    const jt = this.currentInfo?.jumpTarget;
+    if (jt && !isBundledSource(jt.fileName)) this.openEditor(jt);
   };
+
+  /** MAIN world から editor:// scheme を開く。browser.* 不可なので a[href].click() を使う。 */
+  private openEditor(loc: SourceLocation) {
+    const url = buildEditorUrl(this.settings, loc);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('data-domdom-editor', '1'); // onIntercept に素通しさせる
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+    this.overlay.toast(this.strings.editorHint);
+  }
 
   /**
    * Esc 処理。owner パネルが開いていれば閉じ、そうでなければモード解除。
