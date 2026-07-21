@@ -35,20 +35,22 @@
 - Vercel/nextjs/ai-sdk のスキル注入がたびたび発火した。このセッションでは、パス `/Users/ai/` の `ai` やビルド語への誤マッチで、WXT Chrome 拡張のこのリポジトリとは無関係だった。**ただし「常に無関係」と決めつけるな。** 注入の内容を毎回読み、このリポジトリ(Vercel/Next.js/AI SDK 非依存)に本当に関係するか判断してから対応せよ。
 - コミット前ゲートは `pnpm test && pnpm typecheck && pnpm build`。locale/manifest を触ったら**先に** `pnpm wxt prepare`(型を再生成しないと typecheck が古い型で通ってしまう)。
 
-## 現在のステータス (2026-07-16 更新)
+## 現在のステータス (2026-07-21 更新) = v0.3.0
 
-**v0.2.0 リリース準備完了。** リポジトリ名 BoxPistols/domdom-inspector (旧 react-design-inspector から自動リダイレクト)。
+リポジトリ名 BoxPistols/domdom-inspector。コミット前ゲート = **`pnpm lint && pnpm test && pnpm typecheck && pnpm build`**(+ `pnpm e2e` 別ゲート)。全 green(183 unit / e2e 8)。
 
-- 提出用 zip: `.output/domdom-inspector-0.2.0-chrome.zip`
-- 品質ゲート: vitest 157 tests green / playwright popup スモーク (pnpm e2e)
-- e2e badge スモーク: `pnpm e2e` (badge.spec.ts 追加済み — inspect モードのバッジ描画を実 Chromium で確認)
-- 出荷を止めているのはユーザー本人の手続き(スクショ・PRIVACY URL・CWS 登録$5)のみ
+- **v0.3.0 で追加**: (1) CSS 変数名の優先表示(`src/cssVars.ts` Tier1、`Settings.showVarNames`)。(2) **Cmd/Ctrl+Click エディタジャンプ**(dev の実ソースのみ、`isBundledSource` で minified 抑制、popup にエディタ選択=既定 Cursor)。(3) designer/engineer ロールトグル除去(単一モード化、`Settings.role` は dormant)。
+- **回帰防止体制**: `src/boundaries.test.ts`(design 経路 ↛ Fiber import の境界契約)/ framework マトリクステスト(fiber.test)/ `e2e/framework-matrix.spec.ts`(非React ↑↓ 回帰)/ **ESLint**(any/console/@ts-ignore/境界契約を機械強制、Fiber allowlist)/ `.github/pull_request_template.md`(React有・素HTML 両目視を必須化)。CI に lint/e2e ジョブ。
+- 計画: `plans/20260717-worldclass-plan.plan.md`(8 エージェント並列 WF で作成、敵対的検証で設計是正済み)。
+- 提出用 zip は未再生成(v0.2.0 のまま)。v0.3.0 提出時に `pnpm zip` + STORE_LISTING の対外文面更新が必要。
 
 ## 残っている道
 
-- 将来 Phase (issue #4-#9): レンダープロファイリング / コンポーネントツリー / ソースジャンプ / MUI テーマ自動取得 / AI レポート
-- リファクタ: B-4(overlay サーフェス分割 = #4-#9 復活時に一体化)、D(popup 注入抽出 — gesture 順序リスク)。
-- Wiki 公開: docs/wiki-draft/ の HTML を GitHub Wiki へ (Web UI で初回ページ作成後に PUSH_WIKI.sh を実行)。
+- **③目視(headless 不可、要ユーザー確認)**: Cmd+Click で実エディタ起動 / minified サイトで file:line が注記化 / `var(--x)` 使用サイトで変数名表示。
+- 回帰体制の残り: `fiberFactory.ts`(dev/prod 両版 fiber ファクトリ)/ iframe・shadow DOM の e2e。
+- **STORE_LISTING の対外文面**: v0.3.0 でエディタ連携が入り「単一目的」が広がるため要更新(対外文面はユーザー確認必須のため未改稿)。
+- 将来 Phase (issue #4-#9): レンダープロファイリング / コンポーネントツリー / MUI テーマ自動取得 / AI レポート。復活はモード系のみ 4 点配線(エディタジャンプは click ハンドラで配線不要)。
+- Wiki 公開: docs/wiki-draft/ を GitHub Wiki へ(Web UI で初回ページ作成後に PUSH_WIKI.sh)。
 
 ## 最後に、仕事のしかたについて
 このリポジトリのオーナーは、判断を委ねてくれるが、対外向けの文面(掲載文・ポリシー)は必ず確認したい人。だから掲載文の書き換えは diff を見せてから確定した。**可逆なことは聞かずに進め、不可逆・対外的なことは見せてから進める。** この線引きを守ると信頼が積み上がる。
