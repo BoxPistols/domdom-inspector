@@ -12,10 +12,13 @@ React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeSc
   (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
 - ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
 
-現状: **初回リリース (v0.2.0) はデザイン計測に単一化**。inspect (design バッジ +
-tokenDict 照合 + 野良値) のみ配線され、レンダープロファイリング v2 / ツリー /
-エディタジャンプ / vitals は実装同梱のまま**配線外しで到達不能**(issue #4-#9 で将来化)。
-復活時は本ファイル地雷3の 4 点配線を戻す。詳細 `docs/ROADMAP.md`。
+現状: **v0.3.0**。inspect (design バッジ + tokenDict 照合 + 野良値) に加え、
+**CSS 変数名の優先表示** (`cssVars.ts` Tier1) と **Cmd/Ctrl+Click エディタジャンプ**
+(dev の実ソースのみ / minified は `isBundledSource` で抑制) を配線。designer/engineer
+ロールトグルは機能差ゼロのため除去し単一モード化 (`Settings.role` 型は dormant)。
+レンダープロファイリング v2 / ツリー / vitals は実装同梱のまま**配線外しで到達不能**
+(issue #4-#9 で将来化)。モード系の復活時は本ファイル地雷3の 4 点配線を戻す
+(エディタジャンプは click ハンドラで mode ではないため 4 点配線不要)。詳細 `docs/ROADMAP.md`。
 
 ## アーキテクチャ(2 world 構成 — 最重要)
 

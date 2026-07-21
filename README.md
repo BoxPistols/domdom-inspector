@@ -12,11 +12,13 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Inspect mode** (`Alt+Shift+I`, exit with `Esc`) — hover any element to see a floating badge with its computed design values: text color, background, spacing (margin/padding), border-radius, typography
 - **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
-- **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child (reach nested elements you can't hover precisely)
+- **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
+- **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
+- **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
 - **Bilingual** — English / Japanese UI, switches with the browser locale
 
-将来機能(レンダープロファイリング / コンポーネントツリー / エディタジャンプ / MUI テーマ自動取得 / AI レポート)は [issue #4-#9](https://github.com/BoxPistols/domdom-inspector/issues) で管理。実装は同梱済みだが初回リリースでは到達不能化してある。
+将来機能(レンダープロファイリング / コンポーネントツリー / MUI テーマ自動取得 / AI レポート)は [issue #4-#9](https://github.com/BoxPistols/domdom-inspector/issues) で管理。実装は同梱済みだが初回リリースでは到達不能化してある。
 
 ## Setup / セットアップ
 
