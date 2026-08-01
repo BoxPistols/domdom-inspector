@@ -16,6 +16,18 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 > - popup: darkmode ファースト + WCAG AA コントラスト + 職域スイッチ(designer/engineer、
 >   `Settings.role`)でエンジニア専用 UI の表示を切替。
 >
+> **完了済み追記 — v0.4.0(2026-08-02, issue #3-#9 一括解決)**
+> - **Phase 1 機能の再配線**(issue #4/#5): レンダープロファイリング v2 / コンポーネント
+>   ツリー / Page Vitals を 4 点配線 + Esc 中央ハンドラで復活(7166b4f の逆適用)。
+> - **FR-14 MUI テーマ自動取得**(issue #8): `src/muiTheme.ts`(Fiber から context 値を
+>   ダックタイピング発見、DOM 後備つき)+ `tokenDict.parseMuiTheme`(純関数変換)。
+>   手動貼り付け優先で併合、`Settings.autoTheme` で停止可。
+> - **Phase 5 コア FR-24〜27**(issue #9): BYOK(OpenAI/Gemini、モデル ID は設定値)、
+>   background から公式エンドポイントへ fetch、送信前プレビュー必須、AI 生成バッジ、
+>   セッション上限 20、ハード無効化トグル。入力は `src/designScan.ts`(集計スタイル値のみ)。
+>   PRIVACY/SECURITY 改訂済み。
+> - 残: FR-15〜18(リントエンジン/パネル)、Phase 4(FR-19〜22)、FR-23。
+>
 > **完了済み追記 — Figma デザイントークン照合(2026-07)** — Phase 3 FR-15 の
 > 「テーマ取得に依存しない先行版」:
 > - popup にトークン JSON 貼り付け(Figma Variables / W3C Design Tokens / Tokens Studio

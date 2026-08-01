@@ -35,22 +35,38 @@
 - Vercel/nextjs/ai-sdk のスキル注入がたびたび発火した。このセッションでは、パス `/Users/ai/` の `ai` やビルド語への誤マッチで、WXT Chrome 拡張のこのリポジトリとは無関係だった。**ただし「常に無関係」と決めつけるな。** 注入の内容を毎回読み、このリポジトリ(Vercel/Next.js/AI SDK 非依存)に本当に関係するか判断してから対応せよ。
 - コミット前ゲートは `pnpm test && pnpm typecheck && pnpm build`。locale/manifest を触ったら**先に** `pnpm wxt prepare`(型を再生成しないと typecheck が古い型で通ってしまう)。
 
-## 現在のステータス (2026-07-21 更新) = v0.3.0
+## 現在のステータス (2026-08-02 更新) = v0.4.0
 
-リポジトリ名 BoxPistols/domdom-inspector。コミット前ゲート = **`pnpm lint && pnpm test && pnpm typecheck && pnpm build`**(+ `pnpm e2e` 別ゲート)。全 green(183 unit / e2e 8)。
+リポジトリ名 BoxPistols/domdom-inspector。コミット前ゲート = **`pnpm lint && pnpm test && pnpm typecheck && pnpm build`**(+ `pnpm e2e` 別ゲート)。全 green(220 unit / e2e 8)。
 
-- **v0.3.0 で追加**: (1) CSS 変数名の優先表示(`src/cssVars.ts` Tier1、`Settings.showVarNames`)。(2) **Cmd/Ctrl+Click エディタジャンプ**(dev の実ソースのみ、`isBundledSource` で minified 抑制、popup にエディタ選択=既定 Cursor)。(3) designer/engineer ロールトグル除去(単一モード化、`Settings.role` は dormant)。
-- **回帰防止体制**: `src/boundaries.test.ts`(design 経路 ↛ Fiber import の境界契約)/ framework マトリクステスト(fiber.test)/ `e2e/framework-matrix.spec.ts`(非React ↑↓ 回帰)/ **ESLint**(any/console/@ts-ignore/境界契約を機械強制、Fiber allowlist)/ `.github/pull_request_template.md`(React有・素HTML 両目視を必須化)。CI に lint/e2e ジョブ。
-- 計画: `plans/20260717-worldclass-plan.plan.md`(8 エージェント並列 WF で作成、敵対的検証で設計是正済み)。
-- 提出用 zip は未再生成(v0.2.0 のまま)。v0.3.0 提出時に `pnpm zip` + STORE_LISTING の対外文面更新が必要。
+- **v0.4.0 で追加(issue #3-#9 一括解決セッション)**:
+  1. **再配線**(issue #4/#5): レンダープロファイリング v2(Alt+Shift+R)/ コンポーネント
+     ツリー(Alt+Shift+T)/ Page Vitals。7166b4f の逆適用 + popup UI 復元。
+  2. **MUI テーマ自動取得**(issue #8 / FR-14): `src/muiTheme.ts`(Fiber 発見、any allowlist
+     入り)+ `tokenDict.parseMuiTheme`/`mergeTokenDicts`(純関数)。手動貼り付け優先併合、
+     `Settings.autoTheme`(既定 ON)、検出時トースト。
+  3. **BYOK AI デザイン監査**(issue #9 / FR-24〜27): `designScan.ts`(集計、ページ内容
+     非含有をテストで機械検証)→ popup プレビュー → background fetch(OpenAI/Gemini)。
+     **キーは aiConfig/aiKeys 専用ストレージ — Settings に混ぜるな**(settings は MAIN に流れる)。
+  4. 色パース/px 抽出の単一定義化 + 負値サイズトークン照合(issue #3 保留項目)。
+  5. README.en.md 新設 / PRIVACY・SECURITY・STORE_LISTING を BYOK 対応に改訂 /
+     Zenn 記事の名称修正 + リポジトリ URL 追記(published: false のまま)。
+- **回帰防止体制**: `src/boundaries.test.ts` + ESLint(design 経路 10 ファイル ↛ Fiber 8
+  モジュール)/ framework マトリクステスト / e2e 8 本 / CI lint・e2e ジョブ。
 
-## 残っている道
+## 残っている道(ユーザー手動のみ — エージェント可能分は完遂済み)
 
-- **③目視(headless 不可、要ユーザー確認)**: Cmd+Click で実エディタ起動 / minified サイトで file:line が注記化 / `var(--x)` 使用サイトで変数名表示。
-- 回帰体制の残り: `fiberFactory.ts`(dev/prod 両版 fiber ファクトリ)/ iframe・shadow DOM の e2e。
-- **STORE_LISTING の対外文面**: v0.3.0 でエディタ連携が入り「単一目的」が広がるため要更新(対外文面はユーザー確認必須のため未改稿)。
-- 将来 Phase (issue #4-#9): レンダープロファイリング / コンポーネントツリー / MUI テーマ自動取得 / AI レポート。復活はモード系のみ 4 点配線(エディタジャンプは click ハンドラで配線不要)。
-- Wiki 公開: docs/wiki-draft/ を GitHub Wiki へ(Web UI で初回ページ作成後に PUSH_WIKI.sh)。
+- **③目視(headless 不可)**: tree/render モードの実ブラウザ動作(60fps 明滅・Esc 優先順)/
+  実 MUI サイトでテーマ自動検出トースト / BYOK AI を実キーで 1 回実行(プレビュー→送信→
+  レポート表示)/ 負マージン要素でのトークン注釈。`pnpm zip` 生成物の手動ロード確認。
+- **公開系(ユーザー判断・手動操作)**: Zenn 記事の published: true 切替(内容は公開可能な
+  状態)/ STORE_LISTING の改稿レビュー(⚠️ 注記あり。特に CWS Data usage 申告方針)/
+  CWS デベロッパー登録($5)・スクショ・PRIVACY 公開 URL・審査提出 / Wiki 公開
+  (Web UI で初回ページ作成後 PUSH_WIKI.sh)。
+- **実データ検証**: 実際の Figma Variables エクスポート JSON でのトークン照合確認。
+- 回帰体制の残り(任意): `fiberFactory.ts`(dev/prod 両版 fiber ファクトリ)/
+  iframe・shadow DOM の e2e。
+- 次の実装候補: Phase 3 の残り FR-15〜18(リントエンジン/パネル)→ Phase 4(レポート)。
 
 ## 最後に、仕事のしかたについて
 このリポジトリのオーナーは、判断を委ねてくれるが、対外向けの文面(掲載文・ポリシー)は必ず確認したい人。だから掲載文の書き換えは diff を見せてから確定した。**可逆なことは聞かずに進め、不可逆・対外的なことは見せてから進める。** この線引きを守ると信頼が積み上がる。

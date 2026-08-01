@@ -18,10 +18,9 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
-- **Bilingual** — English / Japanese UI, switches with the browser locale
-
 - **Component tree** (`Alt+Shift+T`) — shows the React Fiber tree in a panel. Hovering a node highlights the actual DOM element; clicking jumps to the editor (dev only)
 - **Render profiling** (`Alt+Shift+R`) — re-render measurement using the same criterion as React DevTools (`PerformedWork`). Heatmap flashes + recording (`R`) → cause classification (state/props/parent/memo candidates) + Page Vitals (LCP/CLS/INP) + a Markdown report you can paste into an AI. Counts and causes are accurate even on production builds (only timing measurement requires a dev build)
+- **Bilingual** — English / Japanese UI, switches with the browser locale
 
 ## Setup
 
