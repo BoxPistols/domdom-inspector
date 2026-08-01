@@ -345,3 +345,32 @@ describe('mergeTokenDicts', () => {
     expect(mergeTokenDicts(some, EMPTY_TOKEN_DICT)).toBe(some);
   });
 });
+
+describe('負値 (負マージン等) の照合 (issue #3 保留項目)', () => {
+  // DICT: space/1=4px, space/2=8px (正トークンのみ)
+  it('負値は絶対値がトークンに一致すれば hit (正当な負マージンの照合を壊さない)', () => {
+    expect(annotateProp({ label: 'margin', value: '-8px' }, DICT)).toEqual({
+      kind: 'hit',
+      names: ['space/2'],
+    });
+    expect(annotateProp({ label: 'margin', value: '8px -8px' }, DICT)).toEqual({
+      kind: 'hit',
+      names: ['space/2'],
+    });
+  });
+
+  it('負トークンそのものがあればそれを優先する', () => {
+    const dict = parseTokens({ 'space/neg-2': { $value: '-8px', $type: 'dimension' } });
+    expect(annotateProp({ label: 'margin', value: '-8px' }, dict)).toEqual({
+      kind: 'hit',
+      names: ['space/neg-2'],
+    });
+  });
+
+  it('一致しない負値は警告せず判定保留 (グリッド警告は tokenLint 側に残る)', () => {
+    // -6px は |−6| が space/1=4 / space/2=8 のどちらとも不一致 → null (miss を出さない)
+    expect(annotateProp({ label: 'margin', value: '-6px' }, DICT)).toBeNull();
+    // 正値の一致と混在しても、負値が不一致なら全体 hit を主張しない
+    expect(annotateProp({ label: 'margin', value: '8px -6px' }, DICT)).toBeNull();
+  });
+});

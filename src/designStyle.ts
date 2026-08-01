@@ -1,4 +1,5 @@
 import { collectAuthoredVars, type VarMatch } from './cssVars';
+import { parseColor } from './tokenDict';
 import type { DesignProp } from './types';
 
 // production ビルドでは Fiber の dev フィールドが剥がれるが、computed style は常に取れる。
@@ -31,19 +32,23 @@ function shorten(v: string): string {
   return v.length > 48 ? `${v.slice(0, 48)}…` : v;
 }
 
-/** スウォッチ描画できる色値か (#hex / rgb() / rgba())。キーワード・数値・px・shadow 複合値は対象外 */
+/**
+ * スウォッチ描画できる色値か。色パースの真実は tokenDict.parseColor に一本化しつつ、
+ * rgb() 系だけは中身を見ずに許容する (スウォッチは style.background に生値を渡すだけ
+ * なので、`rgb(var(--x))` のような合成値でもブラウザ側で描画できるため)。
+ */
 export function isColorValue(v: string): boolean {
   const t = v.trim();
-  return /^#[0-9a-f]{3,8}$/i.test(t) || /^rgba?\([^)]*\)$/i.test(t);
+  // 全文アンカー必須: shadow 複合値 (`rgba(...) 0px 2px …`) をスウォッチにしない
+  return parseColor(t) !== null || /^rgba?\([^)]*\)$/i.test(t);
 }
 
 /** rgb()/rgba(不透明) を #rrggbb に整形 (デザイナーに読みやすく)。半透明・非対応はそのまま */
 export function toHex(v: string): string {
-  const m = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
-  if (!m) return v;
-  const alpha = m[4] === undefined ? 1 : parseFloat(m[4]);
-  if (alpha < 1) return v; // 半透明は情報を落とさずそのまま
-  const hex = [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('');
+  if (!/^rgba?\([^)]*\)$/i.test(v.trim())) return v;
+  const c = parseColor(v);
+  if (!c || c.a < 1) return v; // 半透明は情報を落とさずそのまま
+  const hex = [c.r, c.g, c.b].map((n) => n.toString(16).padStart(2, '0')).join('');
   return `#${hex}`;
 }
 

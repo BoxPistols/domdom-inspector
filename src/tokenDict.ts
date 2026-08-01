@@ -1,3 +1,4 @@
+import { extractPxValues } from './tokenLint';
 import type { DesignProp } from './types';
 
 /**
@@ -348,6 +349,9 @@ export type ChipToken =
  *   トークンから遠い値 (レイアウト都合の 100px 等) は判定保留とし、hit も出さない
  *   (= グリッド警告を残す)。全 px が一致したときだけ hit (トークン名を重複排除で列挙)。
  *   判定は px の並び順に依存しない。0 は常に許容。
+ * - 負値 (負マージン等): 負トークンそのもの → 絶対値トークンの順で「一致のみ」拾う。
+ *   near-miss 警告は出さない (負値はレイアウト意図が強く、警告はノイズになるため)。
+ *   一致しない負値は遠い外れ値と同じく判定保留。
  * 辞書が空・対象外ラベル・該当カテゴリのトークンなし・px が取れない値は null (注釈なし)。
  */
 export function annotateProp(prop: DesignProp, dict: TokenDict): ChipToken {
@@ -358,13 +362,21 @@ export function annotateProp(prop: DesignProp, dict: TokenDict): ChipToken {
   }
   const category = LABEL_SIZE_CATEGORY[prop.label];
   if (!category) return null;
-  const pxs = [...prop.value.matchAll(/(-?\d+(?:\.\d+)?)px/g)]
-    .map((m) => parseFloat(m[1]))
-    .filter((px) => px !== 0);
+  const pxs = extractPxValues(prop.value).filter((px) => px !== 0);
   if (!pxs.length) return null;
   const names: string[] = [];
   let hasFar = false;
   for (const px of pxs) {
+    if (px < 0) {
+      const neg = matchSize(dict, px, category);
+      const m = neg?.hit ? neg : matchSize(dict, Math.abs(px), category);
+      if (m?.hit) {
+        if (!names.includes(m.hit)) names.push(m.hit);
+      } else {
+        hasFar = true;
+      }
+      continue;
+    }
     const m = matchSize(dict, px, category);
     if (!m) return null; // 該当カテゴリのトークンが 1 つも無い → 照合できない
     if (m.hit) {

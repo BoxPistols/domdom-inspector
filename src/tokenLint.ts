@@ -3,6 +3,11 @@ import type { DesignProp } from './types';
 // グリッド検査対象の spacing 系プロパティ (designStyle の label)
 const SPACING = new Set(['padding', 'margin', 'radius', 'gap']);
 
+/** 値文字列中の px 数値を列挙する (lintSpacing / tokenDict.annotateProp 共通の単一定義) */
+export function extractPxValues(value: string): number[] {
+  return [...value.matchAll(/(-?\d+(?:\.\d+)?)px/g)].map((m) => parseFloat(m[1]));
+}
+
 export interface TokenFinding {
   label: string;
   value: string;
@@ -19,7 +24,7 @@ export function lintSpacing(design: DesignProp[], grid = 4): TokenFinding[] {
   const findings: TokenFinding[] = [];
   for (const p of design) {
     if (!SPACING.has(p.label)) continue;
-    const pxs = [...p.value.matchAll(/(-?\d+(?:\.\d+)?)px/g)].map((m) => parseFloat(m[1]));
+    const pxs = extractPxValues(p.value);
     if (!pxs.length) continue;
     const offGrid = pxs.filter((px) => px !== 0 && px % grid !== 0);
     if (offGrid.length) findings.push({ label: p.label, value: p.value, offGrid });

@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/BoxPistols/domdom-inspector/actions/workflows/ci.yml/badge.svg)](https://github.com/BoxPistols/domdom-inspector/actions/workflows/ci.yml)
 
+[English](./README.en.md) | **日本語**
+
 **Hover any element to see its design values — and match them against your design tokens.**
 A zero-config Chrome extension for design measurement on any website: MUI, Tailwind, CSS Modules, or plain CSS.
 
