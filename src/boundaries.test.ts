@@ -11,8 +11,19 @@ import { describe, expect, it } from 'vitest';
 //
 // vitest の cwd はプロジェクトルート。
 
-/** framework 非依存であるべき design 計測経路 */
-const DESIGN_PATH = ['designStyle', 'cssVars', 'tokenDict', 'tokenLint', 'classify', 'overlayFormat'];
+/** framework 非依存であるべき design 計測経路 (+AI レイヤは決定論データのみ扱う独立層) */
+const DESIGN_PATH = [
+  'designStyle',
+  'cssVars',
+  'tokenDict',
+  'tokenLint',
+  'classify',
+  'overlayFormat',
+  'designScan',
+  'aiPrompt',
+  'aiProviders',
+  'aiCost',
+];
 
 /** design 経路から import 禁止の Fiber 結合モジュール (source は純パス処理なので除外) */
 const FORBIDDEN = ['fiber', 'hook', 'tree', 'treeView', 'renderTracker', 'renderCause', 'renderDebug', 'muiTheme'];

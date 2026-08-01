@@ -57,7 +57,7 @@
     "message": "Revoke all-sites access"
   },
   "hintAllSites": {
-    "message": "Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button. This extension only reads the page — it never sends data, stores page content, or runs remote code."
+    "message": "Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button. This extension only reads the page — it never stores page content or runs remote code, and sends nothing unless you explicitly use the optional BYOK AI audit (aggregated style values only, previewed first)."
   },
   "allSitesEnabled": {
     "message": "Enabled on all sites."
@@ -115,6 +115,69 @@
   },
   "labelAutoTheme": {
     "message": "Auto-detect MUI theme tokens"
+  },
+  "sectionAi": {
+    "message": "AI design audit (BYOK)"
+  },
+  "labelAiEnabled": {
+    "message": "Enable AI features"
+  },
+  "tipAiEnabled": {
+    "message": "Hard on/off switch for everything AI. Turn OFF for client work where no external AI may be used — all AI controls become inert. All core features work without AI."
+  },
+  "labelAiProvider": {
+    "message": "Provider"
+  },
+  "labelAiModel": {
+    "message": "Model ID"
+  },
+  "tipAiModel": {
+    "message": "Free-text model ID sent to the provider (not hardcoded). Defaults to the cheapest class; you can enter any model your key can access."
+  },
+  "labelAiKey": {
+    "message": "API key"
+  },
+  "tipAiKey": {
+    "message": "Your own key (BYOK). Stored only in this browser's local extension storage — never synced, never shown to web pages, and only sent to the provider you selected."
+  },
+  "btnAiCollect": {
+    "message": "Collect page design data & preview"
+  },
+  "hintAiPrivacy": {
+    "message": "Only aggregated style values are sent (colors, sizes, counts, token names) — never URLs, text, or page content. Nothing is sent until you press Send."
+  },
+  "labelAiPreview": {
+    "message": "Preview — exactly what will be sent"
+  },
+  "btnAiSend": {
+    "message": "Send to AI"
+  },
+  "aiGenerated": {
+    "message": "AI-generated"
+  },
+  "btnAiCopy": {
+    "message": "Copy report"
+  },
+  "aiStatusScanFail": {
+    "message": "Could not collect design data on this tab — enable the extension on this site first"
+  },
+  "aiStatusNoKey": {
+    "message": "Enter your API key first"
+  },
+  "aiStatusSending": {
+    "message": "Asking the AI…"
+  },
+  "aiStatusCap": {
+    "message": "Session limit reached ({cap} calls) — restart the browser to reset"
+  },
+  "aiStatusError": {
+    "message": "Request failed: {error}"
+  },
+  "aiStatusCopied": {
+    "message": "Report copied"
+  },
+  "aiEstimateLine": {
+    "message": "≈ {tokens} input tokens · {n}/{cap} AI calls this session · see your provider's pricing page for cost"
   },
   "tipAutoTheme": {
     "message": "ON: when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its ThemeProvider and merged into token matching — no JSON pasting needed. Pasted tokens take precedence. OFF: only pasted tokens are used."

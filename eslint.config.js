@@ -43,6 +43,10 @@ export default tseslint.config(
       'src/tokenLint.ts',
       'src/classify.ts',
       'src/overlayFormat.ts',
+      'src/designScan.ts',
+      'src/aiPrompt.ts',
+      'src/aiProviders.ts',
+      'src/aiCost.ts',
     ],
     rules: {
       'no-restricted-imports': [

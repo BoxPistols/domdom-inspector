@@ -14,10 +14,13 @@ React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeSc
 
 現状: inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優先表示**
 (`cssVars.ts` Tier1) + **Cmd/Ctrl+Click エディタジャンプ** (dev の実ソースのみ /
-minified は `isBundledSource` で抑制)) に加え、**レンダープロファイリング v2
-(Alt+Shift+R) / コンポーネントツリー (Alt+Shift+T) / Page Vitals を再配線済み**
-(issue #4/#5 解決)。designer/engineer ロールトグルは機能差ゼロのため除去済み
-(`Settings.role` 型は dormant)。詳細 `docs/ROADMAP.md`。
+minified は `isBundledSource` で抑制)) / **レンダープロファイリング v2 (Alt+Shift+R)** /
+**コンポーネントツリー (Alt+Shift+T)** / **Page Vitals** / **MUI テーマ自動取得**
+(`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換 → 手動貼り付け優先で併合) /
+**BYOK AI デザイン監査** (`designScan.ts` 集計 → popup で送信前プレビュー → background から
+OpenAI/Gemini 公式エンドポイントへ fetch)。issue #3-#9 の機能はすべて到達可能。
+designer/engineer ロールトグルは機能差ゼロのため除去済み (`Settings.role` 型は dormant)。
+詳細 `docs/ROADMAP.md`。
 
 ## アーキテクチャ(2 world 構成 — 最重要)
 
@@ -68,7 +71,10 @@ popup/ ── 設定 UI (browser.* 可)
 
 ## セキュリティ / リリース
 
-- セキュリティ: `SECURITY.md`(要点: 読むが送らない。送信/リモートコード/ページ内容保存なし)。
+- セキュリティ: `SECURITY.md`(要点: 読むが送らない。送信経路はオプトイン BYOK AI の 1 本のみ
+  (background fetch・明示操作起点・集計スタイル値のみ・プレビュー必須)。リモートコード/
+  ページ内容保存なし。**API キーは aiConfig/aiKeys 専用ストレージキー — Settings に混ぜない**
+  (settings は bridge → MAIN world へ流れるため))。
 - 配布: `PUBLISHING.md`(A=ローカル zip / B=Chrome Web Store の2通り)。`pnpm zip` → 更新は version を上げる。
 
 ## 保留バックログ(次回以降 1つずつ)

@@ -1,6 +1,12 @@
 import { DEV_MATCHES } from '../src/matches';
 import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
-import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, type UiStrings } from '../src/types';
+import {
+  BRIDGE_SOURCE,
+  DEFAULT_SETTINGS,
+  DEFAULT_STRINGS,
+  PAGE_SOURCE,
+  type UiStrings,
+} from '../src/types';
 
 /**
  * ISOLATED world ブリッジ: browser.storage の設定と background からのトグル指示を
@@ -73,6 +79,27 @@ export default defineContentScript({
       }
       if (message?.type === 'toggle-tree') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle-tree' }, '*');
+      }
+      // popup のページスキャン依頼を MAIN world へ往復中継する (AI 監査の入力収集)。
+      // Promise を返すと sendMessage の応答になる (この type のときだけ返す)
+      if (message?.type === 'design-scan') {
+        return new Promise((resolve) => {
+          const id = Math.random().toString(36).slice(2);
+          const timer = setTimeout(() => {
+            window.removeEventListener('message', onResult);
+            resolve(null);
+          }, 5000);
+          const onResult = (event: MessageEvent) => {
+            const d = event.data;
+            if (event.source !== window || !d || d.source !== PAGE_SOURCE) return;
+            if (d.type !== 'design-scan-result' || d.id !== id) return;
+            clearTimeout(timer);
+            window.removeEventListener('message', onResult);
+            resolve(d.payload ?? null);
+          };
+          window.addEventListener('message', onResult);
+          window.postMessage({ source: BRIDGE_SOURCE, type: 'design-scan', id }, '*');
+        });
       }
     });
   },

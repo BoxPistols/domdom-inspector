@@ -12,6 +12,8 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Inspect mode** (`Alt+Shift+I`, exit with `Esc`) — hover any element to see a floating badge with its computed design values: text color, background, spacing (margin/padding), border-radius, typography
 - **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
+- **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
+- **AI design audit (BYOK, optional)** — collect aggregated style values from the page, preview exactly what will be sent, and get an AI-written audit (rogue values, consolidation, next steps) using your own OpenAI / Gemini API key. Inert until you configure a key; hard-disable toggle for client work
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
 - **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
@@ -51,7 +53,7 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 2. そのままインスペクトが始まる(以後そのオリジンでは permanent。取り消しも popup から)
 3. 全サイト一括許可のトグルも popup にある(任意)
 
-ページを読むだけで、外部送信・ページ内容保存・リモートコード実行は一切ない。詳細は [`SECURITY.md`](./SECURITY.md)。
+ページを読むだけで、ページ内容保存・リモートコード実行は一切ない。外部送信はオプトインの BYOK AI 監査 (集計スタイル値のみ・送信前プレビュー必須) の 1 経路だけ。詳細は [`SECURITY.md`](./SECURITY.md)。
 
 ## Shortcuts / ショートカット
 

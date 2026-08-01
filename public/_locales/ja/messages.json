@@ -57,7 +57,7 @@
     "message": "全サイト許可を解除"
   },
   "hintAllSites": {
-    "message": "一度許可すれば以降どのサイトでも都度許可なしで使えます。解除も同じボタンから。この拡張はページを読み取るだけで、データの外部送信・ページ内容の保存・リモートコードの実行は行いません。"
+    "message": "一度許可すれば以降どのサイトでも都度許可なしで使えます。解除も同じボタンから。この拡張はページを読み取るだけで、ページ内容の保存・リモートコード実行は行わず、任意の BYOK AI 監査 (集計スタイル値のみ・送信前プレビュー必須) を明示的に使わない限り何も送信しません。"
   },
   "allSitesEnabled": {
     "message": "全サイトで有効化しました。"
@@ -115,6 +115,69 @@
   },
   "labelAutoTheme": {
     "message": "MUI テーマトークンを自動検出"
+  },
+  "sectionAi": {
+    "message": "AI デザイン監査 (BYOK)"
+  },
+  "labelAiEnabled": {
+    "message": "AI 機能を有効化"
+  },
+  "tipAiEnabled": {
+    "message": "AI 全体のハード ON/OFF。外部 AI を使えないクライアント案件では OFF にすると AI 関連 UI がすべて無効になります。コア機能は AI なしで完結します。"
+  },
+  "labelAiProvider": {
+    "message": "プロバイダ"
+  },
+  "labelAiModel": {
+    "message": "モデル ID"
+  },
+  "tipAiModel": {
+    "message": "プロバイダに送るモデル ID (ハードコードではなく自由入力の設定値)。既定は最安クラス。キーで使える任意のモデルを指定できます。"
+  },
+  "labelAiKey": {
+    "message": "API キー"
+  },
+  "tipAiKey": {
+    "message": "自分のキーを使います (BYOK)。このブラウザの拡張ローカルストレージにのみ保存 — 同期されず、Web ページからは見えず、選択したプロバイダ以外には送信されません。"
+  },
+  "btnAiCollect": {
+    "message": "ページのデザインデータを収集してプレビュー"
+  },
+  "hintAiPrivacy": {
+    "message": "送信されるのは集計済みスタイル値のみ (色・サイズ・件数・トークン名)。URL・テキスト・ページ内容は送信されません。「AI に送信」を押すまで何も送られません。"
+  },
+  "labelAiPreview": {
+    "message": "プレビュー — 送信される内容そのもの"
+  },
+  "btnAiSend": {
+    "message": "AI に送信"
+  },
+  "aiGenerated": {
+    "message": "AI 生成"
+  },
+  "btnAiCopy": {
+    "message": "レポートをコピー"
+  },
+  "aiStatusScanFail": {
+    "message": "このタブでデザインデータを収集できません — 先にこのサイトで拡張を有効化してください"
+  },
+  "aiStatusNoKey": {
+    "message": "先に API キーを入力してください"
+  },
+  "aiStatusSending": {
+    "message": "AI に問い合わせ中…"
+  },
+  "aiStatusCap": {
+    "message": "セッション上限 ({cap} 回) に達しました — ブラウザ再起動でリセットされます"
+  },
+  "aiStatusError": {
+    "message": "リクエスト失敗: {error}"
+  },
+  "aiStatusCopied": {
+    "message": "レポートをコピーしました"
+  },
+  "aiEstimateLine": {
+    "message": "概算入力 {tokens} トークン · このセッションの AI 呼び出し {n}/{cap} 回 · 費用はプロバイダの料金ページ参照"
   },
   "tipAutoTheme": {
     "message": "ON: ページが MUI を使っていれば ThemeProvider からテーマ (palette / spacing / 角丸 / フォントサイズ) を読み取り、JSON 貼り付けなしでトークン照合に併合します (貼り付けトークン優先)。OFF: 貼り付けトークンのみ使用。"

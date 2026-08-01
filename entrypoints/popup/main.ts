@@ -1,3 +1,7 @@
+import { AI_SESSION_CALL_LIMIT, estimateTokens } from '../../src/aiCost';
+import { buildAuditPrompt, type AuditPrompt } from '../../src/aiPrompt';
+import { AI_PROVIDERS, type AiProviderId } from '../../src/aiProviders';
+import type { DesignScan } from '../../src/designScan';
 import { normalizeRecordKey } from '../../src/recordKey';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
@@ -114,6 +118,180 @@ devSectionEl.addEventListener('toggle', () => {
   void browser.storage.local.set({ popupDevOpen: devSectionEl.open });
 });
 
+// ---- AI デザイン監査 (BYOK / FR-24〜27) ----------------------------------
+// 設定は Settings に混ぜず専用キーに置く: settings は bridge → MAIN world へ
+// postMessage されるため、キーはもちろんプロバイダ設定もページ側に流さない。
+const aiEnabledEl = $<HTMLInputElement>('aiEnabled');
+const aiProviderEl = $<HTMLSelectElement>('aiProvider');
+const aiModelEl = $<HTMLInputElement>('aiModel');
+const aiKeyEl = $<HTMLInputElement>('aiKey');
+const aiCollectEl = $<HTMLButtonElement>('aiCollect');
+const aiPreviewEl = $<HTMLTextAreaElement>('aiPreview');
+const aiPreviewLabelEl = $('aiPreviewLabel');
+const aiEstimateEl = $('aiEstimate');
+const aiSendEl = $<HTMLButtonElement>('aiSend');
+const aiStatusEl = $('aiStatus');
+const aiResultWrapEl = $('aiResultWrap');
+const aiResultEl = $<HTMLTextAreaElement>('aiResult');
+const aiCopyEl = $<HTMLButtonElement>('aiCopy');
+
+interface AiConfig {
+  /** ハード無効化トグル (FR-27)。false で AI 機能全体を inert にする */
+  enabled: boolean;
+  provider: AiProviderId;
+  /** モデル ID はハードコードせず設定値 (FR-24)。既定は最安クラス */
+  models: Record<AiProviderId, string>;
+}
+const DEFAULT_AI_CONFIG: AiConfig = {
+  enabled: true,
+  provider: 'openai',
+  models: {
+    openai: AI_PROVIDERS.openai.defaultModel,
+    gemini: AI_PROVIDERS.gemini.defaultModel,
+  },
+};
+let aiConfig: AiConfig = DEFAULT_AI_CONFIG;
+let aiKeys: Record<AiProviderId, string> = { openai: '', gemini: '' };
+/** 直近の「収集 → プレビュー」結果。送信はこの内容以外を送らない (FR-26) */
+let auditPrompt: AuditPrompt | null = null;
+
+function syncAiState() {
+  const on = aiConfig.enabled;
+  for (const el of [aiProviderEl, aiModelEl, aiKeyEl, aiCollectEl, aiSendEl, aiCopyEl]) {
+    el.disabled = !on;
+  }
+  aiModelEl.value = aiConfig.models[aiConfig.provider];
+  aiKeyEl.value = aiKeys[aiConfig.provider];
+}
+
+async function saveAiConfig() {
+  await browser.storage.local.set({ aiConfig, aiKeys });
+}
+
+aiEnabledEl.addEventListener('change', () => {
+  aiConfig.enabled = aiEnabledEl.checked;
+  syncAiState();
+  void saveAiConfig();
+});
+aiProviderEl.addEventListener('change', () => {
+  aiConfig.provider = aiProviderEl.value as AiProviderId;
+  syncAiState();
+  void saveAiConfig();
+});
+aiModelEl.addEventListener('change', () => {
+  aiConfig.models[aiConfig.provider] =
+    aiModelEl.value.trim() || AI_PROVIDERS[aiConfig.provider].defaultModel;
+  aiModelEl.value = aiConfig.models[aiConfig.provider];
+  void saveAiConfig();
+});
+aiKeyEl.addEventListener('change', () => {
+  aiKeys[aiConfig.provider] = aiKeyEl.value.trim();
+  void saveAiConfig();
+});
+
+async function sessionCalls(): Promise<number> {
+  try {
+    const { aiCalls } = await browser.storage.session.get('aiCalls');
+    return typeof aiCalls === 'number' ? aiCalls : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// 収集 → プレビュー (FR-26: 送信前に全文を見せる。この段階では何も送らない)
+aiCollectEl.addEventListener('click', async () => {
+  aiStatusEl.textContent = '';
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  let scan: DesignScan | null = null;
+  if (tab?.id != null) {
+    try {
+      scan = (await browser.tabs.sendMessage(tab.id, { type: 'design-scan' })) as DesignScan | null;
+    } catch {
+      scan = null;
+    }
+  }
+  if (!scan || !scan.elementCount) {
+    aiStatusEl.textContent = msg('aiStatusScanFail');
+    return;
+  }
+  const locale = browser.i18n.getUILanguage().toLowerCase().startsWith('ja') ? 'ja' : 'en';
+  auditPrompt = buildAuditPrompt(scan, locale);
+  aiPreviewEl.value = auditPrompt.user;
+  aiPreviewLabelEl.hidden = false;
+  aiPreviewEl.hidden = false;
+  aiSendEl.hidden = false;
+  const tokens = estimateTokens(auditPrompt.system + auditPrompt.user);
+  aiEstimateEl.textContent = msg('aiEstimateLine')
+    .replace('{tokens}', String(tokens))
+    .replace('{n}', String(await sessionCalls()))
+    .replace('{cap}', String(AI_SESSION_CALL_LIMIT));
+  aiEstimateEl.hidden = false;
+});
+
+// 送信 (FR-25: 明示ボタン起点のみ / FR-24: 通信は background から公式エンドポイントへ)
+aiSendEl.addEventListener('click', async () => {
+  if (!auditPrompt) return;
+  const provider = AI_PROVIDERS[aiConfig.provider];
+  const apiKey = aiKeys[aiConfig.provider];
+  if (!apiKey) {
+    aiStatusEl.textContent = msg('aiStatusNoKey');
+    return;
+  }
+  // gesture 内で最初に権限 request (前に await を挟むと権限ダイアログが無言拒否される)
+  let granted = false;
+  try {
+    granted = await browser.permissions.request({ origins: [provider.originPattern] });
+  } catch {
+    aiStatusEl.textContent = msg('permError');
+    return;
+  }
+  if (!granted) {
+    aiStatusEl.textContent = msg('permDenied');
+    return;
+  }
+  const calls = await sessionCalls();
+  if (calls >= AI_SESSION_CALL_LIMIT) {
+    aiStatusEl.textContent = msg('aiStatusCap').replace('{cap}', String(AI_SESSION_CALL_LIMIT));
+    return;
+  }
+  aiSendEl.disabled = true;
+  aiStatusEl.textContent = msg('aiStatusSending');
+  const res = (await browser.runtime
+    .sendMessage({
+      type: 'ai-review',
+      provider: aiConfig.provider,
+      model: aiConfig.models[aiConfig.provider],
+      apiKey,
+      system: auditPrompt.system,
+      user: auditPrompt.user,
+    })
+    .catch((e: unknown) => ({ ok: false as const, error: String(e) }))) as
+    | { ok: true; text: string }
+    | { ok: false; error: string };
+  aiSendEl.disabled = false;
+  if (res.ok) {
+    try {
+      await browser.storage.session.set({ aiCalls: calls + 1 });
+    } catch {
+      // storage.session 非対応環境では上限カウントを諦める (機能自体は継続)
+    }
+    aiResultEl.value = res.text;
+    aiResultWrapEl.hidden = false;
+    aiStatusEl.textContent = '';
+  } else {
+    aiStatusEl.textContent = msg('aiStatusError').replace('{error}', res.error);
+  }
+});
+
+aiCopyEl.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(aiResultEl.value);
+    aiStatusEl.textContent = msg('aiStatusCopied');
+  } catch {
+    aiStatusEl.textContent = msg('statsCopyFail');
+  }
+});
+
 async function load() {
   const stored = await browser.storage.local.get('settings');
   const settings: Settings = { ...DEFAULT_SETTINGS, ...(stored.settings ?? {}) };
@@ -136,6 +314,20 @@ async function load() {
   } else {
     tokensStatusEl.textContent = msg('tokensEmpty');
   }
+  // AI 設定 (専用キー — settings と違い bridge へは流れない)
+  const stored2 = (await browser.storage.local.get(['aiConfig', 'aiKeys'])) as {
+    aiConfig?: Partial<AiConfig>;
+    aiKeys?: Partial<Record<AiProviderId, string>>;
+  };
+  aiConfig = {
+    ...DEFAULT_AI_CONFIG,
+    ...(stored2.aiConfig ?? {}),
+    models: { ...DEFAULT_AI_CONFIG.models, ...(stored2.aiConfig?.models ?? {}) },
+  };
+  aiKeys = { openai: '', gemini: '', ...(stored2.aiKeys ?? {}) };
+  aiEnabledEl.checked = aiConfig.enabled;
+  aiProviderEl.value = aiConfig.provider;
+  syncAiState();
   void applyShortcutHints();
 }
 

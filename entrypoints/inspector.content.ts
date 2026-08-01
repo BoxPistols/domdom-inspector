@@ -1,3 +1,4 @@
+import { scanDesign } from '../src/designScan';
 import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
@@ -11,7 +12,7 @@ import {
   parseMuiTheme,
   type TokenDict,
 } from '../src/tokenDict';
-import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS } from '../src/types';
+import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, PAGE_SOURCE } from '../src/types';
 import { VitalsCollector } from '../src/vitals';
 
 /**
@@ -54,10 +55,10 @@ export default defineContentScript({
     let autoTheme = DEFAULT_SETTINGS.autoTheme;
     let lastTheme: unknown = null;
     let themeAttemptAt = 0;
+    const currentTokens = () =>
+      mergeTokenDicts(pastedTokens, autoTheme ? themeTokens : EMPTY_TOKEN_DICT);
     const pushMergedTokens = () => {
-      overlay.updateTokens(
-        mergeTokenDicts(pastedTokens, autoTheme ? themeTokens : EMPTY_TOKEN_DICT),
-      );
+      overlay.updateTokens(currentTokens());
     };
     const attemptThemeExtract = () => {
       if (!autoTheme) return;
@@ -125,6 +126,17 @@ export default defineContentScript({
       }
       if (data.type === 'toggle-render') renderDebugger.toggle();
       if (data.type === 'toggle-tree') treeView.toggle();
+      // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
+      // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
+      if (data.type === 'design-scan' && typeof data.id === 'string') {
+        const scan = scanDesign(document, currentTokens(), {
+          skip: (el) => overlay.containsTarget(el),
+        });
+        window.postMessage(
+          { source: PAGE_SOURCE, type: 'design-scan-result', id: data.id, payload: scan },
+          '*',
+        );
+      }
     });
   },
 });
