@@ -4,9 +4,12 @@ import {
   EMPTY_TOKEN_DICT,
   matchColor,
   matchSize,
+  mergeTokenDicts,
   parseColor,
+  parseMuiTheme,
   parseSizePx,
   parseTokens,
+  type TokenDict,
 } from './tokenDict';
 
 describe('parseColor', () => {
@@ -240,5 +243,105 @@ describe('annotateProp (チップ注釈)', () => {
       kind: 'miss',
       nearest: null,
     });
+  });
+});
+
+describe('parseMuiTheme (FR-14)', () => {
+  const theme = {
+    palette: {
+      mode: 'light',
+      primary: { main: '#1976d2', light: '#42a5f5' },
+      text: { primary: 'rgba(0, 0, 0, 0.87)' },
+      getContrastText: () => '#fff',
+      tonalOffset: 0.2,
+    },
+    spacing: (n: number) => `${n * 8}px`,
+    shape: { borderRadius: 4 },
+    typography: { fontSize: 14, body1: { fontSize: '1rem' }, h6: { fontSize: '1.25rem' } },
+  };
+
+  it('palette の色文字列を color トークン化する (関数・数値・非色文字列はスキップ)', () => {
+    const dict = parseMuiTheme(theme);
+    const names = dict.colors.map((c) => c.name);
+    expect(names).toContain('palette.primary.main');
+    expect(names).toContain('palette.text.primary');
+    // 'light' (mode) は色として解釈できないのでスキップされる
+    expect(names).not.toContain('palette.mode');
+    expect(dict.colors.find((c) => c.name === 'palette.primary.main')).toMatchObject({
+      r: 0x19,
+      g: 0x76,
+      b: 0xd2,
+      a: 1,
+    });
+  });
+
+  it('spacing 関数を代表倍数の space トークンに展開する', () => {
+    const dict = parseMuiTheme(theme);
+    expect(dict.sizes.find((s) => s.name === 'spacing(1)')).toMatchObject({
+      px: 8,
+      category: 'space',
+    });
+    expect(dict.sizes.find((s) => s.name === 'spacing(4)')?.px).toBe(32);
+  });
+
+  it('数値 spacing / shape.borderRadius / typography.*.fontSize も変換する', () => {
+    const dict = parseMuiTheme({ ...theme, spacing: 4 });
+    expect(dict.sizes.find((s) => s.name === 'spacing(2)')?.px).toBe(8);
+    expect(dict.sizes.find((s) => s.name === 'shape.borderRadius')).toMatchObject({
+      px: 4,
+      category: 'radius',
+    });
+    // '1rem' → 16px (rem は ×16)
+    expect(dict.sizes.find((s) => s.name === 'typography.body1.fontSize')).toMatchObject({
+      px: 16,
+      category: 'font',
+    });
+  });
+
+  it('colorSchemes (CssVarsProvider) の palette も scheme 名付きで収集する', () => {
+    const dict = parseMuiTheme({
+      colorSchemes: { light: { palette: { primary: { main: '#1976d2' } } } },
+      spacing: (n: number) => `${n * 8}px`,
+      shape: { borderRadius: 4 },
+      typography: {},
+    });
+    expect(dict.colors.map((c) => c.name)).toContain('light.palette.primary.main');
+  });
+
+  it('テーマ形でない入力は空辞書、spacing 関数の throw は spacing のみスキップ', () => {
+    expect(parseMuiTheme(null)).toEqual({ colors: [], sizes: [] });
+    expect(parseMuiTheme('not a theme')).toEqual({ colors: [], sizes: [] });
+    const dict = parseMuiTheme({
+      ...theme,
+      spacing: () => {
+        throw new Error('boom');
+      },
+    });
+    expect(dict.sizes.some((s) => s.name.startsWith('spacing('))).toBe(false);
+    expect(dict.colors.length).toBeGreaterThan(0);
+  });
+});
+
+describe('mergeTokenDicts', () => {
+  it('primary (手動貼り付け) を先頭に併合する = 同距離タイで手動が勝つ', () => {
+    const manual: TokenDict = {
+      colors: [{ name: 'manual', r: 1, g: 2, b: 3, a: 1 }],
+      sizes: [],
+    };
+    const auto: TokenDict = {
+      colors: [{ name: 'theme', r: 1, g: 2, b: 3, a: 1 }],
+      sizes: [{ name: 'spacing(1)', px: 8, category: 'space' }],
+    };
+    const merged = mergeTokenDicts(manual, auto);
+    expect(merged.colors.map((c) => c.name)).toEqual(['manual', 'theme']);
+    expect(merged.sizes).toHaveLength(1);
+    // 同 RGB のタイは配列先勝ち = 手動トークン名が hit になる
+    expect(matchColor(merged, 'rgb(1, 2, 3)')?.hit).toBe('manual');
+  });
+
+  it('片側が空なら他方をそのまま返す (参照を保ち再割当を検知しやすくする)', () => {
+    const some: TokenDict = { colors: [{ name: 'x', r: 0, g: 0, b: 0, a: 1 }], sizes: [] };
+    expect(mergeTokenDicts(EMPTY_TOKEN_DICT, some)).toBe(some);
+    expect(mergeTokenDicts(some, EMPTY_TOKEN_DICT)).toBe(some);
   });
 });

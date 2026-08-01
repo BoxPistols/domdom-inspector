@@ -113,6 +113,12 @@
   "tipShowVarNames": {
     "message": "ON: when a value is declared with a CSS variable (e.g. var(--text)), the badge shows the variable name so you can verify the UI uses your design tokens. OFF: always shows the raw value (#hex/px). Only same-origin CSS variables can be read precisely; others fall back to the raw value."
   },
+  "labelAutoTheme": {
+    "message": "Auto-detect MUI theme tokens"
+  },
+  "tipAutoTheme": {
+    "message": "ON: when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its ThemeProvider and merged into token matching — no JSON pasting needed. Pasted tokens take precedence. OFF: only pasted tokens are used."
+  },
   "tipMuiSkip": {
     "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
   },
@@ -334,6 +340,10 @@
   },
   "tokenNone": {
     "message": "≠ token"
+  },
+  "themeTokensLoaded": {
+    "message": "MUI theme detected — {colors} colors / {sizes} sizes added as tokens",
+    "description": "Toast when the MUI theme is auto-extracted (FR-14). {colors}/{sizes} are counts."
   },
   "sectionTokens": {
     "message": "Design tokens (Figma)"

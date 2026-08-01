@@ -40,7 +40,7 @@ popup/ ── 設定 UI (browser.* 可)
 2. **locale/manifest を変えたら `pnpm wxt prepare`**(i18n 型と manifest 型を再生成)。
 3. **新モード = 4点配線 + Esc**: wxt.config commands / background COMMANDS / bridge onMessage /
    inspector.content handler(+ new + Esc 中央ハンドラ)。規約 `enable/disable/toggle/onEscape/applySettings`、DI `(hookState, overlay, strings)`。
-4. **Fiber 内部は React バージョン依存**。`type Fiber = any` は fiber/renderTracker/tree/hook 内のみ許容。
+4. **Fiber 内部は React バージョン依存**。`type Fiber = any` は fiber/renderTracker/renderCause/tree/hook/muiTheme 内のみ許容。
    **production は `_debug*` 剥離** → `devMode=false` でセーフモード縮退。
 5. **dev/production 二面性**: dev=全機能 / production=ソースジャンプ・自作名・レンダー時間 不可、
    computed-style デザイン検査(M2)+野良値(M3)のみ。両方壊さない。

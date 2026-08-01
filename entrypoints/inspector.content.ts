@@ -1,10 +1,16 @@
 import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
+import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
 import { Overlay } from '../src/overlay';
 import { RenderDebugger } from '../src/renderDebug';
 import { TreeView } from '../src/treeView';
 import { DEV_MATCHES } from '../src/matches';
-import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
+import {
+  EMPTY_TOKEN_DICT,
+  mergeTokenDicts,
+  parseMuiTheme,
+  type TokenDict,
+} from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS } from '../src/types';
 import { VitalsCollector } from '../src/vitals';
 
@@ -40,6 +46,42 @@ export default defineContentScript({
     const renderDebugger = new RenderDebugger(hookState, overlay, strings, vitals);
     const treeView = new TreeView(hookState, overlay, strings);
 
+    // MUI テーマ自動取得 (FR-14 / issue #8): 手動貼り付け (pasted) とテーマ由来 (theme) の
+    // 2 辞書を持ち、併合して overlay に配る (手動優先)。テーマは commit 後に throttle 付きで
+    // 探し、参照が変わったとき (テーマ切替等) だけ再変換してトーストで知らせる。
+    let pastedTokens: TokenDict = EMPTY_TOKEN_DICT;
+    let themeTokens: TokenDict = EMPTY_TOKEN_DICT;
+    let autoTheme = DEFAULT_SETTINGS.autoTheme;
+    let lastTheme: unknown = null;
+    let themeAttemptAt = 0;
+    const pushMergedTokens = () => {
+      overlay.updateTokens(
+        mergeTokenDicts(pastedTokens, autoTheme ? themeTokens : EMPTY_TOKEN_DICT),
+      );
+    };
+    const attemptThemeExtract = () => {
+      if (!autoTheme) return;
+      const now = Date.now();
+      if (now - themeAttemptAt < 2000) return;
+      themeAttemptAt = now;
+      const theme = findMuiTheme(hookState.roots) ?? findMuiThemeFromDom();
+      if (!theme || theme === lastTheme) return;
+      lastTheme = theme;
+      const dict = parseMuiTheme(theme);
+      if (!dict.colors.length && !dict.sizes.length) return;
+      themeTokens = dict;
+      pushMergedTokens();
+      overlay.toast(
+        strings.themeTokensLoaded
+          .replace('{colors}', String(dict.colors.length))
+          .replace('{sizes}', String(dict.sizes.length)),
+      );
+    };
+    hookState.onCommit(() => attemptThemeExtract());
+    // mid-page 注入 (production の「現在のサイトで有効化」) では commit が来ないことが
+    // あるため、注入直後にも一度 DOM 経由で試す
+    setTimeout(attemptThemeExtract, 1000);
+
     // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化 → ツリーの順に
     // 1 度で 1 つだけ閉じる。複数モード同時 ON でも競合しない。
     window.addEventListener(
@@ -63,18 +105,24 @@ export default defineContentScript({
         overlay.updateSettings(data.payload);
         renderDebugger.applySettings(data.payload.recordKey);
         treeView.applySettings(data.payload);
+        autoTheme = data.payload.autoTheme !== false;
+        pushMergedTokens();
+        attemptThemeExtract();
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
       if (data.type === 'tokens') {
         // payload の shape を検証 (同一 window の任意ページからの postMessage を素通しにしない)。
         // colors/sizes 配列を欠く不正 payload は EMPTY にフォールバックしバッジ描画を守る。
         const p = data.payload;
-        overlay.updateTokens(
-          p && Array.isArray(p.colors) && Array.isArray(p.sizes) ? p : EMPTY_TOKEN_DICT,
-        );
+        pastedTokens =
+          p && Array.isArray(p.colors) && Array.isArray(p.sizes) ? p : EMPTY_TOKEN_DICT;
+        pushMergedTokens();
       }
       if (data.type === 'toggle') inspector.toggle();
-      if (data.type === 'inspect-on') inspector.enableOnly();
+      if (data.type === 'inspect-on') {
+        inspector.enableOnly();
+        attemptThemeExtract();
+      }
       if (data.type === 'toggle-render') renderDebugger.toggle();
       if (data.type === 'toggle-tree') treeView.toggle();
     });

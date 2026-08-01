@@ -93,6 +93,11 @@ export interface Settings {
    * chrome://extensions/shortcuts から任意再設定できるため、ここには含めない。
    */
   recordKey: string;
+  /**
+   * MUI テーマ自動取得 (FR-14)。ThemeProvider の context からテーマトークンを抽出し、
+   * 手動貼り付けトークンと併合して照合に使う (手動優先)。false で抽出・併合を停止。
+   */
+  autoTheme: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -110,6 +115,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   pathMappings: [],
   recordKey: 'r',
+  autoTheme: true,
 };
 
 /**
@@ -195,6 +201,8 @@ export interface UiStrings {
   /** デザイントークン照合 (Figma)。miss 時のチップ注釈。{name}=最近傍トークン名 */
   tokenNear: string;
   tokenNone: string;
+  /** MUI テーマ自動取得 (FR-14) 成功時のトースト。{colors}/{sizes} = 抽出件数 */
+  themeTokensLoaded: string;
 }
 
 export const DEFAULT_STRINGS: UiStrings = {
@@ -261,6 +269,7 @@ export const DEFAULT_STRINGS: UiStrings = {
   offGridWarn: '{label} {values}px (not on the {grid}px grid)',
   tokenNear: '≠ token · near {name}',
   tokenNone: '≠ token',
+  themeTokensLoaded: 'MUI theme detected — {colors} colors / {sizes} sizes added as tokens',
 };
 
 /** page (MAIN world) と bridge (ISOLATED) 間の postMessage 識別子 */

@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 const DESIGN_PATH = ['designStyle', 'cssVars', 'tokenDict', 'tokenLint', 'classify', 'overlayFormat'];
 
 /** design 経路から import 禁止の Fiber 結合モジュール (source は純パス処理なので除外) */
-const FORBIDDEN = ['fiber', 'hook', 'tree', 'treeView', 'renderTracker', 'renderCause', 'renderDebug'];
+const FORBIDDEN = ['fiber', 'hook', 'tree', 'treeView', 'renderTracker', 'renderCause', 'renderDebug', 'muiTheme'];
 
 describe('境界契約: design 経路は Fiber 結合モジュールを import しない', () => {
   for (const mod of DESIGN_PATH) {

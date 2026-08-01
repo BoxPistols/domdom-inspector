@@ -171,6 +171,94 @@ function addLeaf(dict: TokenDict, name: string, rawValue: unknown, type: string)
   }
 }
 
+/** MUI テーマの spacing ラダー (spacing(k) を space トークン化する代表倍数) */
+const MUI_SPACING_STEPS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12];
+/** テーマ由来の色トークン上限 (異常に巨大なカスタムテーマでの暴走防止) */
+const MUI_MAX_COLORS = 300;
+
+/**
+ * MUI テーマオブジェクト (ThemeProvider の context 値) を照合辞書に変換する (FR-14)。
+ * Fiber からの「発見」は muiTheme.ts が担い、ここは plain object → TokenDict の純関数。
+ * - palette (または colorSchemes.<scheme>.palette) の色文字列 → color トークン
+ * - spacing (関数 or 数値基準) → 代表倍数の space トークン (spacing(2) = 16px 等)
+ * - shape.borderRadius → radius トークン
+ * - typography.<variant>.fontSize → font トークン (rem は ×16)
+ * 解釈できない値は黙ってスキップし、テーマ形でない入力は空辞書を返す。
+ */
+export function parseMuiTheme(theme: unknown): TokenDict {
+  const dict: TokenDict = { colors: [], sizes: [] };
+  if (!theme || typeof theme !== 'object') return dict;
+  const t = theme as Record<string, unknown>;
+
+  const collectColors = (node: unknown, path: string[], depth: number) => {
+    if (depth > 3 || node === null || typeof node !== 'object') return;
+    for (const [key, v] of Object.entries(node as Record<string, unknown>)) {
+      if (dict.colors.length >= MUI_MAX_COLORS) return;
+      if (typeof v === 'string') {
+        const c = parseColor(v);
+        if (c) dict.colors.push({ name: [...path, key].join('.'), ...c });
+      } else if (v !== null && typeof v === 'object') {
+        collectColors(v, [...path, key], depth + 1);
+      }
+    }
+  };
+  collectColors(t.palette, ['palette'], 0);
+  if (t.colorSchemes !== null && typeof t.colorSchemes === 'object') {
+    for (const [scheme, node] of Object.entries(t.colorSchemes as Record<string, unknown>)) {
+      if (node !== null && typeof node === 'object') {
+        collectColors((node as Record<string, unknown>).palette, [scheme, 'palette'], 0);
+      }
+    }
+  }
+
+  // spacing: v5 は関数 (spacing(1) → "8px")、数値なら単位 px として倍数展開
+  const spacing = t.spacing;
+  for (const k of MUI_SPACING_STEPS) {
+    let px: number | null = null;
+    if (typeof spacing === 'function') {
+      try {
+        px = parseSizePx((spacing as (n: number) => unknown)(k));
+      } catch {
+        px = null;
+      }
+    } else if (typeof spacing === 'number' && Number.isFinite(spacing)) {
+      px = spacing * k;
+    }
+    if (px !== null && px > 0) dict.sizes.push({ name: `spacing(${k})`, px, category: 'space' });
+  }
+
+  if (t.shape !== null && typeof t.shape === 'object') {
+    const radius = parseSizePx((t.shape as Record<string, unknown>).borderRadius);
+    if (radius !== null && radius > 0) {
+      dict.sizes.push({ name: 'shape.borderRadius', px: radius, category: 'radius' });
+    }
+  }
+
+  if (t.typography !== null && typeof t.typography === 'object') {
+    for (const [variant, node] of Object.entries(t.typography as Record<string, unknown>)) {
+      if (node === null || typeof node !== 'object') continue;
+      const px = parseSizePx((node as Record<string, unknown>).fontSize);
+      if (px !== null && px > 0) {
+        dict.sizes.push({ name: `typography.${variant}.fontSize`, px, category: 'font' });
+      }
+    }
+  }
+  return dict;
+}
+
+/**
+ * 手動貼り付け (primary) とテーマ由来 (secondary) の辞書を併合する。
+ * 照合は「同距離なら配列で先のものが勝つ」ため、primary を先頭に置く = 手動優先。
+ */
+export function mergeTokenDicts(primary: TokenDict, secondary: TokenDict): TokenDict {
+  if (!secondary.colors.length && !secondary.sizes.length) return primary;
+  if (!primary.colors.length && !primary.sizes.length) return secondary;
+  return {
+    colors: [...primary.colors, ...secondary.colors],
+    sizes: [...primary.sizes, ...secondary.sizes],
+  };
+}
+
 /** RGB ユークリッド距離 (0..441)。アルファ差が大きい場合は不一致扱いに寄せる */
 function colorDistance(
   a: { r: number; g: number; b: number; a: number },

@@ -31,7 +31,7 @@ export default tseslint.config(
   },
   {
     // Fiber 内部は React バージョン依存で any 許容 (CLAUDE.md 地雷4)
-    files: ['src/fiber.ts', 'src/tree.ts', 'src/renderTracker.ts', 'src/renderCause.ts', 'src/hook.ts'],
+    files: ['src/fiber.ts', 'src/tree.ts', 'src/renderTracker.ts', 'src/renderCause.ts', 'src/hook.ts', 'src/muiTheme.ts'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },
   {
@@ -58,6 +58,7 @@ export default tseslint.config(
                 './renderTracker',
                 './renderCause',
                 './renderDebug',
+                './muiTheme',
               ],
               message: 'design 経路は Fiber 結合を import しない (境界契約 = 今回のバグ類型の構造的予防)',
             },

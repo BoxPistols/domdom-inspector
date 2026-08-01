@@ -31,6 +31,7 @@ function applyI18n() {
 // (Settings.role 型は dormant で温存)。render/tree は issue #4/#5 で再配線済み。
 const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
 const showVarNamesEl = $<HTMLInputElement>('showVarNames');
+const autoThemeEl = $<HTMLInputElement>('autoTheme');
 const editorEl = $<HTMLSelectElement>('editor');
 const recordKeyEl = $<HTMLInputElement>('recordKey');
 
@@ -120,6 +121,7 @@ async function load() {
   devSectionEl.open = popupDevOpen === true;
   badgeDetailEl.value = settings.badgeDetail;
   showVarNamesEl.checked = settings.showVarNames;
+  autoThemeEl.checked = settings.autoTheme;
   editorEl.value = settings.editor;
   recordKeyEl.value = settings.recordKey;
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
@@ -142,6 +144,7 @@ async function save() {
     ...DEFAULT_SETTINGS,
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
     showVarNames: showVarNamesEl.checked,
+    autoTheme: autoThemeEl.checked,
     editor: editorEl.value as Settings['editor'],
     // 単一キーのみ (空・複数は既定へフォールバック)
     recordKey: normalizeRecordKey(recordKeyEl.value, DEFAULT_SETTINGS.recordKey),
@@ -150,7 +153,7 @@ async function save() {
   void applyShortcutHints();
 }
 
-for (const el of [badgeDetailEl, showVarNamesEl, editorEl, recordKeyEl]) {
+for (const el of [badgeDetailEl, showVarNamesEl, autoThemeEl, editorEl, recordKeyEl]) {
   el.addEventListener('change', () => {
     void save();
   });
