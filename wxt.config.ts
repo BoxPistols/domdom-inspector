@@ -10,11 +10,18 @@ export default defineConfig({
     permissions: ['storage', 'activeTab', 'scripting'],
     // 任意オリジン (公開/デプロイ済み App) はユーザー明示許可でのみ有効化 (権限最小化)
     optional_host_permissions: ['*://*/*'],
-    // 初回リリースはデザイン計測 (inspect) のみ。render/tree コマンドは issue #4-#9 で将来化
     commands: {
       'toggle-inspect': {
         suggested_key: { default: 'Alt+Shift+I' },
         description: '__MSG_cmdToggleInspect__',
+      },
+      'toggle-render': {
+        suggested_key: { default: 'Alt+Shift+R' },
+        description: '__MSG_cmdToggleRender__',
+      },
+      'toggle-tree': {
+        suggested_key: { default: 'Alt+Shift+T' },
+        description: '__MSG_cmdToggleTree__',
       },
     },
   },

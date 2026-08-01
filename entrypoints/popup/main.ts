@@ -1,3 +1,4 @@
+import { normalizeRecordKey } from '../../src/recordKey';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
@@ -26,13 +27,12 @@ function applyI18n() {
   document.documentElement.lang = ja ? 'ja' : 'en';
 }
 
-// 職域スイッチ (designer/engineer) は v0.2.0 では機能差が無い (render/tree/editor が配線外し)
-// ため popup から除去し単一モード化。Settings.role 型は dormant で温存 (Phase 1 で機能復活時に再導入)。
-// エディタ連携 (editor/customUrlTemplate/muiSkip/openEditorOnClick/pathMappings) の
-// 設定 UI も初回リリース非搭載 (issue #6)。Settings 型と既定値は温存
+// 職域スイッチ (designer/engineer) は機能差が無いため除去済みの単一モード
+// (Settings.role 型は dormant で温存)。render/tree は issue #4/#5 で再配線済み。
 const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
 const showVarNamesEl = $<HTMLInputElement>('showVarNames');
 const editorEl = $<HTMLSelectElement>('editor');
+const recordKeyEl = $<HTMLInputElement>('recordKey');
 
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
@@ -46,6 +46,14 @@ async function applyShortcutHints() {
     '{key}',
     shortcutOf('toggle-inspect'),
   );
+  $('hintTree').textContent = t('popupToggleTreeHint').replace(
+    '{key}',
+    shortcutOf('toggle-tree'),
+  );
+  const rec = (recordKeyEl.value || 'r').toUpperCase();
+  $('hintRender').textContent = t('popupToggleRenderHint')
+    .replace('{key}', shortcutOf('toggle-render'))
+    .replace('{rec}', rec);
 }
 
 // デザイントークン (Figma) の貼り付け → 解析 → storage 保存。
@@ -113,6 +121,7 @@ async function load() {
   badgeDetailEl.value = settings.badgeDetail;
   showVarNamesEl.checked = settings.showVarNames;
   editorEl.value = settings.editor;
+  recordKeyEl.value = settings.recordKey;
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
   const { tokenJson, tokenDict } = (await browser.storage.local.get([
     'tokenJson',
@@ -134,12 +143,14 @@ async function save() {
     badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
     showVarNames: showVarNamesEl.checked,
     editor: editorEl.value as Settings['editor'],
+    // 単一キーのみ (空・複数は既定へフォールバック)
+    recordKey: normalizeRecordKey(recordKeyEl.value, DEFAULT_SETTINGS.recordKey),
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
 }
 
-for (const el of [badgeDetailEl, showVarNamesEl, editorEl]) {
+for (const el of [badgeDetailEl, showVarNamesEl, editorEl, recordKeyEl]) {
   el.addEventListener('change', () => {
     void save();
   });
@@ -154,6 +165,8 @@ async function sendToActiveTab(type: string) {
 }
 
 $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
+$('toggleTree').addEventListener('click', () => void sendToActiveTab('toggle-tree'));
+$('toggleRender').addEventListener('click', () => void sendToActiveTab('toggle-render'));
 
 // 任意オリジン (デプロイ済み App) をユーザー明示許可で有効化 (M1)。
 // 重要: permissions.request はユーザー操作直後 (await を挟まず) に呼ぶ必要があるため、

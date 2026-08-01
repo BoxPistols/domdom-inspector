@@ -18,7 +18,7 @@ published: false
 - React DevTools が使っている判定基準は `fiber.flags & PerformedWork` — **これは production ビルドでも立つ**
 - alternate(前コミットの Fiber)との差分走査で bailout サブツリーを丸ごとスキップすると、走査コストは「実際に変化した部分」に比例する
 - hook 連結リストを alternate と並走比較すると「**どの useState が変わったから再レンダーしたのか**」まで特定できる
-- これらを組み込んだ Chrome 拡張(MUI Design Inspector)で、記録 → 原因分類 → AI に貼れる Markdown レポートまでを 1 フローにした
+- これらを組み込んだ Chrome 拡張([DomDom Inspector](https://github.com/BoxPistols/domdom-inspector))で、記録 → 原因分類 → AI に貼れる Markdown レポートまでを 1 フローにした
 
 ## モチベーション: 「光る」だけでは直せない
 
@@ -188,8 +188,9 @@ CLS だけは仕様どおり session window(直近入力 500ms 除外・間隔 1
 - hook 連結リストの並走比較で「**どの useState のせいか**」まで特定できる
 - 「参照は変わったが浅い比較で同値」= **React.memo で止められた無駄レンダー**の機械的検出
 
-実装は Chrome 拡張「MUI Design Inspector」(WXT + TypeScript, MV3)に組み込んでいます。
-<!-- TODO: 公開時にリポジトリ URL / ストアリンクを追記 -->
+実装は Chrome 拡張「DomDom Inspector」(WXT + TypeScript, MV3)に組み込んでいます。
+リポジトリ: https://github.com/BoxPistols/domdom-inspector
+<!-- TODO: Chrome Web Store 公開後にストアリンクを追記 -->
 
 ## 参考
 

@@ -18,7 +18,8 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
 - **Bilingual** — English / Japanese UI, switches with the browser locale
 
-将来機能(レンダープロファイリング / コンポーネントツリー / MUI テーマ自動取得 / AI レポート)は [issue #4-#9](https://github.com/BoxPistols/domdom-inspector/issues) で管理。実装は同梱済みだが初回リリースでは到達不能化してある。
+- **Component tree** (`Alt+Shift+T`) — React Fiber ツリーをパネル表示。ノード hover で実 DOM をハイライト、click でエディタジャンプ(dev のみ)
+- **Render profiling** (`Alt+Shift+R`) — React DevTools と同一基準 (`PerformedWork`) の再レンダー計測。ヒートマップ明滅 + 記録 (`R`) → 原因分類 (state/props/parent/memo 候補) + Page Vitals (LCP/CLS/INP) + AI に貼れる Markdown レポート。production ビルドでも回数・原因は正確(時間計測のみ dev ビルド)
 
 ## Setup / セットアップ
 
@@ -55,8 +56,10 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 ## Shortcuts / ショートカット
 
 - `Alt+Shift+I` — インスペクトモード切替(popup の「切替ショートカットを変更」から `chrome://extensions/shortcuts` で再割当可能)
+- `Alt+Shift+T` — コンポーネントツリー切替
+- `Alt+Shift+R` — レンダー可視化切替(モード中 `R` で記録開始/停止、キーは popup で変更可)
 - `↑` / `↓` — 親子要素へ選択移動
-- `Esc` — モード解除
+- `Esc` — モード解除(インスペクタ → レンダー → ツリーの順に 1 度で 1 つ閉じる)
 
 popup のショートカット表示は `chrome.commands.getAll()` の実バインドを OS 表記で出す(Mac は ⌥⇧I)。
 
