@@ -44,3 +44,16 @@ test('popup が開き主要 UI が描画される', async () => {
   expect(label.length).toBeGreaterThan(0);
   expect(label).not.toContain('popupToggleInspect');
 });
+
+test('未有効化のページではモード切替と測定が disabled になる', async () => {
+  // 「押せるのに何も起きない」を防ぐ設計 (動かない機能は disabled + 理由を表示)。
+  // popup 単体で開くと対象タブが http(s) でないため、判定は notInspectable 側に落ちる。
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  await expect(page.locator('#toggle')).toBeDisabled();
+  await expect(page.locator('#coverageMeasure')).toBeDisabled();
+  const notice = page.locator('#modeUnavailable');
+  await expect(notice).toBeVisible();
+  expect((await notice.textContent())?.trim().length ?? 0).toBeGreaterThan(0);
+  await page.close();
+});

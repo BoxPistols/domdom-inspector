@@ -1,6 +1,6 @@
 import { AI_SESSION_CALL_LIMIT, estimateTokens } from '../../src/aiCost';
 import { buildAuditPrompt, type AuditPrompt } from '../../src/aiPrompt';
-import { AI_PROVIDERS, type AiProviderId } from '../../src/aiProviders';
+import { AI_PROVIDERS, migrateModelId, type AiProviderId } from '../../src/aiProviders';
 import { formatCoverageMarkdown, LOW_SAMPLE_THRESHOLD, ratePercent } from '../../src/coverage';
 import type { DesignScan } from '../../src/designScan';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
@@ -552,6 +552,17 @@ async function load() {
   };
   // 破損値で AI セクションが静かに壊れないよう既知の provider に丸める
   if (!(aiConfig.provider in AI_PROVIDERS)) aiConfig.provider = DEFAULT_AI_CONFIG.provider;
+  // 旧既定のまま保存されているモデル ID を現在の既定へ移行する。
+  // これが無いと、既定を差し替えても一度でも AI 設定を触った利用者には反映されない。
+  let migrated = false;
+  for (const id of Object.keys(AI_PROVIDERS) as AiProviderId[]) {
+    const next = migrateModelId(id, aiConfig.models[id]);
+    if (next !== aiConfig.models[id]) {
+      aiConfig.models[id] = next;
+      migrated = true;
+    }
+  }
+  if (migrated) void saveAiConfig();
   aiKeys = { openai: '', gemini: '', ...(stored2.aiKeys ?? {}) };
   aiEnabledEl.checked = aiConfig.enabled;
   aiProviderEl.value = aiConfig.provider;
@@ -606,6 +617,46 @@ function canInjectUrl(urlStr: string): boolean {
   return false;
 }
 
+/**
+ * このタブで機能が動く条件が揃っているかを反映する。
+ * **動かない機能は disabled にし、理由を書く** — 押せるのに何も起きないのが一番わかりにくい。
+ * 判定材料: http(s) のページか / localhost か (静的注入) / このオリジンが許可済みか。
+ */
+async function applyAvailability(origin: string | null) {
+  const notice = $('modeUnavailable');
+  const toggleBtn = $<HTMLButtonElement>('toggle');
+  const measureBtn = $<HTMLButtonElement>('coverageMeasure');
+
+  let available = false;
+  let reason: 'ok' | 'notEnabled' | 'notInspectable' = 'notInspectable';
+  if (origin) {
+    // localhost / 127.0.0.1 は静的 content script の対象なので許可不要
+    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    if (isLocal) {
+      available = true;
+      reason = 'ok';
+    } else {
+      let granted = allSitesGranted;
+      if (!granted) {
+        try {
+          granted = await browser.permissions.contains({ origins: [`${origin}/*`] });
+        } catch {
+          granted = false;
+        }
+      }
+      available = granted;
+      reason = granted ? 'ok' : 'notEnabled';
+    }
+  }
+
+  toggleBtn.disabled = !available;
+  measureBtn.disabled = !available;
+  notice.hidden = available;
+  if (!available) {
+    notice.textContent = msg(reason === 'notEnabled' ? 'modeNotEnabledHere' : 'modeNotInspectable');
+  }
+}
+
 async function detectSite() {
   const status = $('siteStatus');
   const btn = $<HTMLButtonElement>('enableSite');
@@ -647,6 +698,7 @@ async function detectSite() {
     btn.disabled = false;
     status.textContent = msg('siteTarget').replace('{origin}', siteOrigin);
   }
+  await applyAvailability(siteOrigin);
 }
 
 async function enableCurrentSite() {

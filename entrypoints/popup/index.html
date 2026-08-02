@@ -198,6 +198,7 @@
       <h2 data-i18n="sectionModes">Modes</h2>
       <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
       <div class="hint" id="hintInspect">Shortcut: Alt+Shift+I / Exit: Esc</div>
+      <div class="hint" id="modeUnavailable" hidden></div>
     </section>
 
     <!-- ③ デザイントークン (Figma): デザイナーの中核機能。両ロールで表示 -->
@@ -318,6 +319,9 @@
         <option value="antigravity">Antigravity IDE</option>
         <option value="webstorm">WebStorm</option>
       </select>
+      <div class="hint" data-i18n="hintEditorUsage">
+        While inspecting, ⌘/Ctrl+Click an element to open its source. Development builds only — production builds carry no source location, so nothing happens there.
+      </div>
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">
         Change toggle shortcuts…

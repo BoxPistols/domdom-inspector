@@ -12,10 +12,14 @@ export interface AiProviderDef {
   label: string;
   /** optional host permission の origin パターン (公式エンドポイントのみ) */
   originPattern: string;
-  /** 最安クラスの既定モデル (設定で変更可能) */
+  /** 既定モデル (設定で変更可能) */
   defaultModel: string;
-  /** 次点モデル (品質寄り) */
-  altModel: string;
+  /**
+   * 過去に既定だったモデル ID。既定を差し替えたとき、**保存済み設定が古い既定のままだと
+   * 新しい既定が反映されない**ため、これに一致する保存値は新既定へ移行する
+   * (ユーザーが自分で入力した値は移行しない)。
+   */
+  supersededDefaults: string[];
 }
 
 export const AI_PROVIDERS: Record<AiProviderId, AiProviderDef> = {
@@ -24,14 +28,14 @@ export const AI_PROVIDERS: Record<AiProviderId, AiProviderDef> = {
     label: 'OpenAI',
     originPattern: 'https://api.openai.com/*',
     defaultModel: 'gpt-5.6-luna',
-    altModel: 'gpt-5-mini',
+    supersededDefaults: ['gpt-5-nano'],
   },
   gemini: {
     id: 'gemini',
     label: 'Google Gemini',
     originPattern: 'https://generativelanguage.googleapis.com/*',
     defaultModel: 'gemini-2.5-flash-lite',
-    altModel: 'gemini-2.5-flash',
+    supersededDefaults: [],
   },
 };
 
@@ -113,4 +117,14 @@ export function parseAiError(json: unknown): string | null {
     if (typeof msg === 'string' && msg) return msg;
   }
   return null;
+}
+
+/**
+ * 保存済みモデル ID を現在の既定へ移行する純関数。
+ * 旧既定のまま保存されている場合だけ差し替え、ユーザーが自分で入れた値は尊重する。
+ */
+export function migrateModelId(provider: AiProviderId, stored: string | undefined): string {
+  const def = AI_PROVIDERS[provider];
+  if (!stored) return def.defaultModel;
+  return def.supersededDefaults.includes(stored) ? def.defaultModel : stored;
 }

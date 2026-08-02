@@ -210,7 +210,7 @@
     "message": "Change toggle shortcuts…"
   },
   "hintConfigureShortcuts": {
-    "message": "Opens chrome://extensions/shortcuts, where you can assign or change the keys for each mode. Chrome leaves a shortcut unassigned when another extension already uses the same keys."
+    "message": "Opens chrome://extensions/shortcuts, where you can assign or change the key for inspect mode. Chrome leaves a shortcut unassigned when another extension already uses the same keys."
   },
   "labelRecordKey": {
     "message": "Record key (in render mode)"
@@ -536,5 +536,14 @@
   },
   "treeUnavailableProd": {
     "message": "Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work."
+  },
+  "hintEditorUsage": {
+    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source. Development builds only — production builds carry no source location, so nothing happens there."
+  },
+  "modeNotEnabledHere": {
+    "message": "Not enabled on this site yet — use \"Enable on current site…\" above first. (localhost works without this.)"
+  },
+  "modeNotInspectable": {
+    "message": "This page can't be inspected (not an http/https page)."
   }
 }

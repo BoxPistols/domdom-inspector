@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAiRequest, parseAiError, parseAiResponse } from './aiProviders';
+import { buildAiRequest, migrateModelId, parseAiError, parseAiResponse } from './aiProviders';
 
 describe('buildAiRequest', () => {
   it('OpenAI: chat/completions に system/user メッセージとキーを載せる', () => {
@@ -60,5 +60,22 @@ describe('parseAiError', () => {
     expect(parseAiError({ error: 'rate limited' })).toBe('rate limited');
     expect(parseAiError({})).toBeNull();
     expect(parseAiError(null)).toBeNull();
+  });
+});
+
+describe('migrateModelId — 既定の差し替えを保存済み設定に反映する', () => {
+  it('旧既定のまま保存されていれば現在の既定へ移行する', () => {
+    // 既定を変えても、一度でも AI 設定を触った利用者には反映されない問題への対処
+    expect(migrateModelId('openai', 'gpt-5-nano')).toBe('gpt-5.6-luna');
+  });
+
+  it('ユーザーが自分で入れた値は尊重して移行しない', () => {
+    expect(migrateModelId('openai', 'o4-mini')).toBe('o4-mini');
+    expect(migrateModelId('gemini', 'gemini-3-pro')).toBe('gemini-3-pro');
+  });
+
+  it('未設定なら現在の既定', () => {
+    expect(migrateModelId('openai', undefined)).toBe('gpt-5.6-luna');
+    expect(migrateModelId('gemini', '')).toBe('gemini-2.5-flash-lite');
   });
 });
