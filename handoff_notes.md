@@ -53,6 +53,18 @@
      Zenn 記事の名称修正 + リポジトリ URL 追記(published: false のまま)。
 - **回帰防止体制**: `src/boundaries.test.ts` + ESLint(design 経路 10 ファイル ↛ Fiber 8
   モジュール)/ framework マトリクステスト / e2e 8 本 / CI lint・e2e ジョブ。
+- **セルフレビュー実施済み**(commit 399a9b5): 25 エージェント並列 + 敵対的検証で 14 件の
+  実バグを修正。この作業で学んだ「このコードベースで踏みやすい罠」:
+  1. **`browser.runtime.onMessage` から Promise を返しても Chrome では応答にならない**
+     (polyfill 非導入 = ネイティブ API)。非同期応答は必ず `sendResponse` + `return true`。
+  2. **`tabs.sendMessage` は全フレームに配信される**。iframe に content script が入るため、
+     ページ単位の問い合わせは `{ frameId: 0 }` 必須(先に応答した iframe が勝ってしまう)。
+  3. **ドロップ型 throttle は「窓を消費した失敗」で機能を永久に殺す**。document_start では
+     まだ何も無いので初回試行は必ず失敗する → trailing 再試行を必ず付ける。
+  4. **Fiber の return チェーン遡上には上限を付ける**(循環でページがハングする。
+     旧コードでテストがタイムアウトすることで実証済み)。
+  5. **React オブジェクトの同一性を参照比較しない**。`createTheme()` を render 内に書く
+     アプリでは毎 commit で新参照になる → 内容署名で比較する。
 
 ## 残っている道(ユーザー手動のみ — エージェント可能分は完遂済み)
 
