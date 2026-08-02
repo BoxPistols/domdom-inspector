@@ -2,7 +2,13 @@ import { isColorValue } from './designStyle';
 import { buildEditorUrl } from './editor';
 import { isBundledSource } from './source';
 import { el } from './overlayDom';
-import { colorFor, designLabel, heatColor, visibleProps } from './overlayFormat';
+import {
+  clampBadgePosition,
+  colorFor,
+  designLabel,
+  heatColor,
+  visibleProps,
+} from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
 import type { RenderSnapshot, RenderStat } from './renderTracker';
 import { annotateProp, EMPTY_TOKEN_DICT, type TokenDict } from './tokenDict';
@@ -246,13 +252,19 @@ export class Overlay {
     }
   }
 
-  /** 複数行で高さが可変になるため、実測してからバッジの上下配置を決める */
+  /** 複数行で高さも幅も可変になるため、実測してからビューポート内に収める */
   private positionBadge(rect: DOMRect) {
     this.badge.style.display = 'block';
-    this.badge.style.left = `${Math.max(4, rect.left)}px`;
+    // 実測のため一旦左上に置く (max-width は CSS 側なので幅も測ってから決める)
+    this.badge.style.left = '0px';
     this.badge.style.top = '0px';
-    const badgeHeight = this.badge.getBoundingClientRect().height;
-    const top = rect.top > badgeHeight + 8 ? rect.top - badgeHeight - 4 : rect.bottom + 6;
+    const box = this.badge.getBoundingClientRect();
+    const { left, top } = clampBadgePosition(
+      { left: rect.left, top: rect.top, bottom: rect.bottom },
+      { width: box.width, height: box.height },
+      { width: window.innerWidth, height: window.innerHeight },
+    );
+    this.badge.style.left = `${left}px`;
     this.badge.style.top = `${top}px`;
   }
 

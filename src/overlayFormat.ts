@@ -44,3 +44,47 @@ export function designLabel(label: string, strings: UiStrings): string {
 export function visibleProps<T>(entries: T[], detail: 'compact' | 'normal' | 'detailed'): T[] {
   return detail === 'compact' ? [] : detail === 'detailed' ? entries : entries.slice(0, 4);
 }
+
+/** バッジ配置の計算に使う矩形 (DOMRect の必要な部分だけ) */
+export interface BadgeAnchor {
+  left: number;
+  top: number;
+  bottom: number;
+}
+
+export interface BadgeSize {
+  width: number;
+  height: number;
+}
+
+export interface Viewport {
+  width: number;
+  height: number;
+}
+
+/** バッジとビューポート端の最小間隔 */
+const BADGE_MARGIN = 4;
+
+/**
+ * ホバー要素に対するバッジの配置を決める純関数。
+ * 縦は「上に置けるなら上、置けなければ下」。横は要素の左端に揃える。
+ * どちらも**ビューポート内に収まるようクランプする** — クランプが無いと、右端や下端に近い
+ * 要素をホバーしたときにバッジが画面外へ出て内容が読めなくなる (position: fixed のため
+ * スクロールでも追えない)。バッジがビューポートより大きい場合は左上を優先して表示する。
+ */
+export function clampBadgePosition(
+  anchor: BadgeAnchor,
+  badge: BadgeSize,
+  viewport: Viewport,
+): { left: number; top: number } {
+  const maxLeft = viewport.width - badge.width - BADGE_MARGIN;
+  const left = Math.max(BADGE_MARGIN, Math.min(anchor.left, maxLeft));
+
+  // 上に十分な余白があれば要素の上、無ければ下に置く
+  const preferAbove = anchor.top > badge.height + 8;
+  const rawTop = preferAbove ? anchor.top - badge.height - 4 : anchor.bottom + 6;
+  const maxTop = viewport.height - badge.height - BADGE_MARGIN;
+  const top = Math.max(BADGE_MARGIN, Math.min(rawTop, maxTop));
+
+  return { left, top };
+}
