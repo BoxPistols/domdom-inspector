@@ -84,7 +84,7 @@ entrypoints/
   inspector.content.ts  MAIN world / document_start. Establishes the hook + inspector core
   bridge.content.ts     ISOLATED world. Relays settings/tokens/toggle commands + injects i18n
   background.ts         Keyboard shortcuts → toggle commands to tabs
-  popup/                Role switch, site enablement, token pasting, display settings, help
+  popup/                Site enablement, token pasting, display settings, AI audit, help
 src/
   hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ shim (installed before React loads)
   fiber.ts       Element info resolution (3-tier fallback: design-only / safe / dev)

@@ -53,23 +53,53 @@ export default defineContentScript({
     let pastedTokens: TokenDict = EMPTY_TOKEN_DICT;
     let themeTokens: TokenDict = EMPTY_TOKEN_DICT;
     let autoTheme = DEFAULT_SETTINGS.autoTheme;
-    let lastTheme: unknown = null;
+    /** 直近に採用したテーマの内容署名。参照比較だと render 内 createTheme で毎回変わる */
+    let themeSignature = '';
     let themeAttemptAt = 0;
+    let themeRetryTimer: ReturnType<typeof setTimeout> | undefined;
+    const THEME_THROTTLE_MS = 2000;
     const currentTokens = () =>
       mergeTokenDicts(pastedTokens, autoTheme ? themeTokens : EMPTY_TOKEN_DICT);
     const pushMergedTokens = () => {
       overlay.updateTokens(currentTokens());
     };
+    /** 辞書の内容署名 (件数 + 先頭数件の名前)。同内容の再取得でトーストを繰り返さないため */
+    const signatureOf = (dict: TokenDict) =>
+      [
+        dict.colors.length,
+        dict.sizes.length,
+        dict.colors.slice(0, 3).map((c) => `${c.name}:${c.r},${c.g},${c.b},${c.a}`).join('|'),
+        dict.sizes.slice(0, 3).map((s) => `${s.name}:${s.px}`).join('|'),
+      ].join('#');
     const attemptThemeExtract = () => {
       if (!autoTheme) return;
       const now = Date.now();
-      if (now - themeAttemptAt < 2000) return;
+      // throttle 中の呼び出しは捨てず窓明けに 1 度だけ再試行する (trailing)。
+      // 捨てるだけだと「document_start の失敗が窓を消費 → 初回 commit が窓内 →
+      // 以後 commit の来ない静的ページでは永久に取得できない」が起きる。
+      if (now - themeAttemptAt < THEME_THROTTLE_MS) {
+        if (themeRetryTimer === undefined) {
+          themeRetryTimer = setTimeout(() => {
+            themeRetryTimer = undefined;
+            attemptThemeExtract();
+          }, THEME_THROTTLE_MS - (now - themeAttemptAt));
+        }
+        return;
+      }
       themeAttemptAt = now;
-      const theme = findMuiTheme(hookState.roots) ?? findMuiThemeFromDom();
-      if (!theme || theme === lastTheme) return;
-      lastTheme = theme;
-      const dict = parseMuiTheme(theme);
+      let dict: TokenDict;
+      try {
+        const theme = findMuiTheme(hookState.roots) ?? findMuiThemeFromDom();
+        if (!theme) return;
+        dict = parseMuiTheme(theme);
+      } catch {
+        // 壊れた Fiber / getter が throw するテーマでも抽出を恒久停止させない
+        return;
+      }
       if (!dict.colors.length && !dict.sizes.length) return;
+      const signature = signatureOf(dict);
+      if (signature === themeSignature) return;
+      themeSignature = signature;
       themeTokens = dict;
       pushMergedTokens();
       overlay.toast(
@@ -119,7 +149,10 @@ export default defineContentScript({
           p && Array.isArray(p.colors) && Array.isArray(p.sizes) ? p : EMPTY_TOKEN_DICT;
         pushMergedTokens();
       }
-      if (data.type === 'toggle') inspector.toggle();
+      if (data.type === 'toggle') {
+        inspector.toggle();
+        attemptThemeExtract();
+      }
       if (data.type === 'inspect-on') {
         inspector.enableOnly();
         attemptThemeExtract();

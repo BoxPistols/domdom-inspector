@@ -28,6 +28,8 @@ export function isMuiThemeLike(value: unknown): boolean {
 
 /** 下り走査のノード上限 (Provider はルート近傍にあるのが通例。巨大アプリでの暴走防止) */
 const MAX_VISITS = 5000;
+/** return チェーン遡上の上限 (循環した Fiber でハングしないための保険) */
+const MAX_ANCESTORS = 1000;
 
 /** start 以下を DFS し、context Provider の value がテーマ形なら返す */
 function searchDown(start: Fiber): unknown | null {
@@ -79,18 +81,27 @@ function ownFiber(el: Element): Fiber | null {
 export function findMuiThemeFromDom(doc: Document = document): unknown | null {
   const body = doc.body;
   if (!body) return null;
-  const els = [body, ...Array.from(body.querySelectorAll('*')).slice(0, 200)];
+  // 全要素の配列を作らずに先頭 200 要素だけ見る (巨大ページでの確保コストを避ける)
+  const els: Element[] = [body];
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_ELEMENT);
+  while (els.length <= 200 && walker.nextNode()) els.push(walker.currentNode as Element);
+  // 同じ React ルートに属する要素が続くのが通例なので、下り走査は根ごとに 1 回だけ行う
+  const searchedTops = new Set<Fiber>();
   for (const el of els) {
     const fiber = ownFiber(el);
     if (!fiber) continue;
     let node: Fiber = fiber;
     let top: Fiber = fiber;
-    while (node) {
+    let hops = 0;
+    while (node && hops < MAX_ANCESTORS) {
       const value = node.memoizedProps?.value;
       if (isMuiThemeLike(value)) return value;
       top = node;
       node = node.return;
+      hops += 1;
     }
+    if (searchedTops.has(top)) continue;
+    searchedTops.add(top);
     const found = searchDown(top);
     if (found) return found;
   }

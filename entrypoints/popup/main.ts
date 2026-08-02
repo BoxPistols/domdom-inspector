@@ -184,17 +184,42 @@ aiModelEl.addEventListener('change', () => {
   aiModelEl.value = aiConfig.models[aiConfig.provider];
   void saveAiConfig();
 });
-aiKeyEl.addEventListener('change', () => {
+// change (blur) だけだと、キーを貼り付けてフォーカスを残したまま popup を閉じた時に
+// 保存されず入力が消える (トークン欄と同じ対策のデバウンス保存)
+let aiKeySaveTimer: ReturnType<typeof setTimeout> | undefined;
+const saveAiKey = () => {
   aiKeys[aiConfig.provider] = aiKeyEl.value.trim();
   void saveAiConfig();
+};
+aiKeyEl.addEventListener('input', () => {
+  clearTimeout(aiKeySaveTimer);
+  aiKeySaveTimer = setTimeout(saveAiKey, 400);
 });
+aiKeyEl.addEventListener('change', () => {
+  clearTimeout(aiKeySaveTimer);
+  saveAiKey();
+});
+
+// storage.session が使えない環境でも上限が無言で無効化されないよう、
+// popup のライフタイム内のカウントを保持してフォールバックにする
+let localCallCount = 0;
 
 async function sessionCalls(): Promise<number> {
   try {
     const { aiCalls } = await browser.storage.session.get('aiCalls');
-    return typeof aiCalls === 'number' ? aiCalls : 0;
+    return Math.max(typeof aiCalls === 'number' ? aiCalls : 0, localCallCount);
   } catch {
-    return 0;
+    return localCallCount;
+  }
+}
+
+/** 上限カウントは送信の成否によらず消費する (失敗連打で上限を回避させない) */
+async function countCall(current: number): Promise<void> {
+  localCallCount = current + 1;
+  try {
+    await browser.storage.session.set({ aiCalls: localCallCount });
+  } catch {
+    // storage.session 非対応環境では localCallCount のみで運用する
   }
 }
 
@@ -205,18 +230,34 @@ aiCollectEl.addEventListener('click', async () => {
   let scan: DesignScan | null = null;
   if (tab?.id != null) {
     try {
-      scan = (await browser.tabs.sendMessage(tab.id, { type: 'design-scan' })) as DesignScan | null;
+      // frameId: 0 = トップフレームのみ。指定しないと全フレームに配信され、
+      // 先に応答した iframe のスキャン結果が本文ページの結果を置き換えてしまう
+      scan = (await browser.tabs.sendMessage(
+        tab.id,
+        { type: 'design-scan' },
+        { frameId: 0 },
+      )) as DesignScan | null;
     } catch {
       scan = null;
     }
   }
-  if (!scan || !scan.elementCount) {
+  // MAIN world からの戻りは shape を検証してから使う (不正 payload で throw させない)
+  if (
+    !scan ||
+    typeof scan.elementCount !== 'number' ||
+    !scan.elementCount ||
+    typeof scan.stats !== 'object' ||
+    scan.stats === null ||
+    typeof scan.tokenCounts !== 'object' ||
+    scan.tokenCounts === null
+  ) {
     aiStatusEl.textContent = msg('aiStatusScanFail');
     return;
   }
   const locale = browser.i18n.getUILanguage().toLowerCase().startsWith('ja') ? 'ja' : 'en';
   auditPrompt = buildAuditPrompt(scan, locale);
-  aiPreviewEl.value = auditPrompt.user;
+  // プレビュー = 実際に送信する全文 (system + user)。ページ由来データは user 側のみ
+  aiPreviewEl.value = `[system]\n${auditPrompt.system}\n\n[user]\n${auditPrompt.user}`;
   aiPreviewLabelEl.hidden = false;
   aiPreviewEl.hidden = false;
   aiSendEl.hidden = false;
@@ -256,6 +297,7 @@ aiSendEl.addEventListener('click', async () => {
   }
   aiSendEl.disabled = true;
   aiStatusEl.textContent = msg('aiStatusSending');
+  await countCall(calls); // 送信を試みた時点で消費 (失敗連打での上限回避を防ぐ)
   const res = (await browser.runtime
     .sendMessage({
       type: 'ai-review',
@@ -267,19 +309,19 @@ aiSendEl.addEventListener('click', async () => {
     })
     .catch((e: unknown) => ({ ok: false as const, error: String(e) }))) as
     | { ok: true; text: string }
-    | { ok: false; error: string };
+    | { ok: false; error: string }
+    | undefined;
   aiSendEl.disabled = false;
-  if (res.ok) {
-    try {
-      await browser.storage.session.set({ aiCalls: calls + 1 });
-    } catch {
-      // storage.session 非対応環境では上限カウントを諦める (機能自体は継続)
-    }
+  if (res?.ok && typeof res.text === 'string') {
     aiResultEl.value = res.text;
     aiResultWrapEl.hidden = false;
     aiStatusEl.textContent = '';
   } else {
-    aiStatusEl.textContent = msg('aiStatusError').replace('{error}', res.error);
+    // 応答自体が届かない (SW 未応答) 場合も含めて定型エラーにする
+    aiStatusEl.textContent = msg('aiStatusError').replace(
+      '{error}',
+      res && !res.ok ? res.error : 'no response',
+    );
   }
 });
 
@@ -324,6 +366,8 @@ async function load() {
     ...(stored2.aiConfig ?? {}),
     models: { ...DEFAULT_AI_CONFIG.models, ...(stored2.aiConfig?.models ?? {}) },
   };
+  // 破損値で AI セクションが静かに壊れないよう既知の provider に丸める
+  if (!(aiConfig.provider in AI_PROVIDERS)) aiConfig.provider = DEFAULT_AI_CONFIG.provider;
   aiKeys = { openai: '', gemini: '', ...(stored2.aiKeys ?? {}) };
   aiEnabledEl.checked = aiConfig.enabled;
   aiProviderEl.value = aiConfig.provider;

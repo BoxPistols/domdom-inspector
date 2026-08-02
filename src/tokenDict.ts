@@ -172,8 +172,15 @@ function addLeaf(dict: TokenDict, name: string, rawValue: unknown, type: string)
   }
 }
 
-/** MUI テーマの spacing ラダー (spacing(k) を space トークン化する代表倍数) */
-const MUI_SPACING_STEPS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12];
+/**
+ * MUI テーマの spacing ラダー (spacing(k) を space トークン化する倍数)。
+ * 0.25 刻み 3 段 + 0.5 刻み 1〜12 を並べる。飛びがあると spacing(3.5) のような
+ * 正当な API 使用が「トークン近傍の野良値」と誤警告されるため、隙間を作らない。
+ */
+const MUI_SPACING_STEPS = [
+  0.25, 0.5, 0.75,
+  ...Array.from({ length: 23 }, (_, i) => 1 + i * 0.5),
+];
 /** テーマ由来の色トークン上限 (異常に巨大なカスタムテーマでの暴走防止) */
 const MUI_MAX_COLORS = 300;
 
@@ -236,9 +243,18 @@ export function parseMuiTheme(theme: unknown): TokenDict {
   }
 
   if (t.typography !== null && typeof t.typography === 'object') {
-    for (const [variant, node] of Object.entries(t.typography as Record<string, unknown>)) {
+    const typo = t.typography as Record<string, unknown>;
+    // rem 基準は theme.typography.htmlFontSize (既定 16)。html { font-size } を
+    // 変えているアプリでは 1rem ≠ 16px になるため、テーマの申告値に従う。
+    const htmlFontSize =
+      typeof typo.htmlFontSize === 'number' && typo.htmlFontSize > 0 ? typo.htmlFontSize : 16;
+    for (const [variant, node] of Object.entries(typo)) {
       if (node === null || typeof node !== 'object') continue;
-      const px = parseSizePx((node as Record<string, unknown>).fontSize);
+      const raw = (node as Record<string, unknown>).fontSize;
+      let px = parseSizePx(raw);
+      if (px !== null && typeof raw === 'string' && /rem\s*$/i.test(raw)) {
+        px = (px / 16) * htmlFontSize; // parseSizePx は 16 固定で換算するため基準を補正
+      }
       if (px !== null && px > 0) {
         dict.sizes.push({ name: `typography.${variant}.fontSize`, px, category: 'font' });
       }

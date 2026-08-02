@@ -374,3 +374,30 @@ describe('負値 (負マージン等) の照合 (issue #3 保留項目)', () => 
     expect(annotateProp({ label: 'margin', value: '8px -6px' }, DICT)).toBeNull();
   });
 });
+
+describe('parseMuiTheme の照合精度 (レビュー指摘の回帰防止)', () => {
+  const theme = {
+    palette: { primary: { main: '#1976d2' } },
+    spacing: (n: number) => `${n * 8}px`,
+    shape: { borderRadius: 4 },
+    typography: { htmlFontSize: 10, body1: { fontSize: '1.6rem' } },
+  };
+
+  it('spacing ラダーに隙間が無く、spacing(3.5)=28px を野良値と誤警告しない', () => {
+    const dict = parseMuiTheme(theme);
+    expect(annotateProp({ label: 'padding', value: '28px' }, dict)).toEqual({
+      kind: 'hit',
+      names: ['spacing(3.5)'],
+    });
+    expect(annotateProp({ label: 'padding', value: '36px' }, dict)).toEqual({
+      kind: 'hit',
+      names: ['spacing(4.5)'],
+    });
+  });
+
+  it('rem→px は theme.typography.htmlFontSize を基準にする (1rem=16px 固定にしない)', () => {
+    const dict = parseMuiTheme(theme);
+    // htmlFontSize=10 なので 1.6rem = 16px
+    expect(dict.sizes.find((s) => s.name === 'typography.body1.fontSize')?.px).toBe(16);
+  });
+});

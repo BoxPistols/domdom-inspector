@@ -94,3 +94,49 @@ describe('findMuiThemeFromDom (mid-page 注入の後備)', () => {
     expect(findMuiThemeFromDom(document)).toBeNull();
   });
 });
+
+describe('走査の暴走・循環に対する堅牢性 (レビュー指摘の回帰防止)', () => {
+  it('return チェーンが循環していてもハングしない', () => {
+    const a = fiber({ memoizedProps: {} });
+    const b = fiber({ memoizedProps: {}, return: a });
+    a.return = b; // 循環
+    const leaf = document.createElement('i');
+    document.body.appendChild(leaf);
+    (leaf as unknown as Record<string, unknown>)['__reactFiber$test'] = a;
+    expect(findMuiThemeFromDom(document)).toBeNull();
+    leaf.remove();
+  });
+
+  it('同一ルート配下の多数要素でも下り走査は根ごとに 1 回 (再走査しない)', () => {
+    // 根の子を 50 ノードのチェーンにし、下り走査 1 回あたり 50 回アクセスさせる。
+    // 重複排除が無いと 30 要素 × 50 = 1500 回に膨らむ。
+    let visits = 0;
+    const countAccess = (f: MockFiber) => {
+      Object.defineProperty(f, 'memoizedProps', {
+        get() {
+          visits += 1;
+          return {};
+        },
+      });
+      return f;
+    };
+    const top = fiber();
+    let cursor = top;
+    for (let i = 0; i < 50; i += 1) {
+      const next = countAccess(fiber({ return: cursor }));
+      cursor.child = next;
+      cursor = next;
+    }
+    // DOM 要素はすべて同じ根 (top) の直下ノードを指す
+    for (let i = 0; i < 30; i += 1) {
+      const el = document.createElement('span');
+      document.body.appendChild(el);
+      (el as unknown as Record<string, unknown>)['__reactFiber$test'] = top.child;
+    }
+    findMuiThemeFromDom(document);
+    document.body.innerHTML = '';
+    // 遡上 (30 要素 × 2 ノード) + 下り 1 回 (50 ノード) 程度に収まる
+    expect(visits).toBeGreaterThan(0);
+    expect(visits).toBeLessThan(200);
+  });
+});

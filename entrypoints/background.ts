@@ -58,9 +58,11 @@ export default defineBackground(() => {
     }
   });
 
-  browser.runtime.onMessage.addListener((message) => {
-    if (message?.type === 'ai-review') {
-      return handleAiReview(message as AiReviewMessage);
-    }
+  // 非同期応答は sendResponse + return true で返す (Chrome ネイティブ API では
+  // リスナから Promise を返しても応答にならない。polyfill 非導入のため必須)
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== 'ai-review') return false;
+    void handleAiReview(message as AiReviewMessage).then(sendResponse);
+    return true;
   });
 });

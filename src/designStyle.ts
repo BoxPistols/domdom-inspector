@@ -34,8 +34,9 @@ function shorten(v: string): string {
 
 /**
  * スウォッチ描画できる色値か。色パースの真実は tokenDict.parseColor に一本化しつつ、
- * rgb() 系だけは中身を見ずに許容する (スウォッチは style.background に生値を渡すだけ
- * なので、`rgb(var(--x))` のような合成値でもブラウザ側で描画できるため)。
+ * rgb() 系は中身の数値まで見ずに許容する (スウォッチは style.background に生値を渡すだけ
+ * なので、パーセント表記等の合成値でもブラウザ側で描画できるため)。
+ * ただし括弧を含む入れ子 (`rgb(var(--x))`) と box-shadow の複合値は全文アンカーで弾く。
  */
 export function isColorValue(v: string): boolean {
   const t = v.trim();

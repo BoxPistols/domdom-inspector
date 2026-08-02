@@ -24,7 +24,7 @@ not do with your data.
 
 | Data | Where | Purpose |
 |------|-------|---------|
-| Settings (display options, popup role) | `chrome.storage.local` on your device | Remember your preferences |
+| Settings (display options, badge detail, editor, record key) | `chrome.storage.local` on your device | Remember your preferences |
 | Design tokens you paste (JSON) | `chrome.storage.local` on your device | Annotate measured values with token names |
 | AI settings and your API key (only if you use the AI feature) | `chrome.storage.local` on your device | Call the AI provider you configured. Never synced; never exposed to web pages |
 
@@ -54,7 +54,9 @@ AI audit below.
   "Send to AI".
 
 The extension does not fetch or execute any remote code, and reads the page only to render
-the on-screen overlay — page content is never stored or transmitted, on any origin.
+the on-screen overlay — page content is never stored, and never transmitted, on any origin.
+The only outbound request the extension can make is the opt-in AI audit described below,
+which sends aggregated style values (never page content) after you preview and confirm them.
 
 ## Optional AI design audit (BYOK — off unless you configure it)
 
@@ -104,7 +106,7 @@ DomDom Inspector(以下「本拡張機能」)は、ページ上の要素のデ�
 
 | データ | 保存先 | 目的 |
 |------|--------|------|
-| 設定(表示オプション・ポップアップの職域) | 端末の `chrome.storage.local` | 設定の記憶 |
+| 設定(表示オプション・バッジ詳細度・エディタ・記録キー) | 端末の `chrome.storage.local` | 設定の記憶 |
 | 貼り付けたデザイントークン(JSON) | 端末の `chrome.storage.local` | 計測値へのトークン名注釈 |
 | AI 設定と API キー(AI 機能を使う場合のみ) | 端末の `chrome.storage.local` | あなたが設定したプロバイダの呼び出し。同期されず、Web ページからも見えません |
 
@@ -132,7 +134,8 @@ React を使用している場合は、コンポーネント名の補足表示�
   「AI に送信」を初めて押した時のみ要求します。
 
 リモートコードの取得・実行は行いません。ページの読み取りは画面オーバーレイの描画のためだけに行い、
-ページ内容はどのオリジンでも保存・送信しません。
+ページ内容はどのオリジンでも保存・送信しません。本拡張が行い得る唯一の外部リクエストは、下記の
+オプトイン AI 監査(あなたがプレビューして確認した集計スタイル値のみ。ページ内容は含みません)です。
 
 ## 任意の AI デザイン監査(BYOK — 設定しない限り無効)
 
