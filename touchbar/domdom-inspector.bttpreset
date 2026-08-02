@@ -1,0 +1,143 @@
+{
+  "BTTPresetName": "DomDom Inspector Touch Bar",
+  "BTTPresetColor": "22.000000, 104.000000, 212.000000, 255.000000",
+  "BTTPresetUUID": "3E91A34D-CD45-4383-BD7E-F541D76BBA1A",
+  "BTTPresetContent": [
+    {
+      "BTTAppBundleIdentifier": "com.google.Chrome",
+      "BTTAppName": "Google Chrome",
+      "BTTAppAutoInvertIcon": 1,
+      "BTTAppSpecificSettings": {
+        "BTTDisableGlobalTriggers": false
+      },
+      "BTTTriggers": [
+        {
+          "BTTTriggerType": 629,
+          "BTTTriggerTypeDescription": "🔍 Inspect",
+          "BTTTriggerTypeDescriptionReadOnly": "Touch Barボタン",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "880DD574-F7AD-4DF9-A8D5-3D39C229B221",
+          "BTTPredefinedActionType": 264,
+          "BTTPredefinedActionName": "Send Keyboard Shortcut",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 0,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTTouchBarButtonName": "🔍 Inspect",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonColor": "22.000000, 104.000000, 212.000000, 255.000000",
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarFreeSpaceAfterButton": 4
+          },
+          "BTTShortcutToSend": "59,34"
+        },
+        {
+          "BTTTriggerType": 629,
+          "BTTTriggerTypeDescription": "🌳 Tree",
+          "BTTTriggerTypeDescriptionReadOnly": "Touch Barボタン",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "EBF75677-4663-4DC0-B405-D06ED391C18C",
+          "BTTPredefinedActionType": 264,
+          "BTTPredefinedActionName": "Send Keyboard Shortcut",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 1,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTTouchBarButtonName": "🌳 Tree",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonColor": "76.000000, 175.000000, 80.000000, 255.000000",
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarFreeSpaceAfterButton": 4
+          },
+          "BTTShortcutToSend": "59,17"
+        },
+        {
+          "BTTTriggerType": 629,
+          "BTTTriggerTypeDescription": "⚡︎ Render",
+          "BTTTriggerTypeDescriptionReadOnly": "Touch Barボタン",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "BE83974D-2EB4-428B-8B44-82AD6023E5AC",
+          "BTTPredefinedActionType": 264,
+          "BTTPredefinedActionName": "Send Keyboard Shortcut",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 2,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTTouchBarButtonName": "⚡︎ Render",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonColor": "224.000000, 123.000000, 57.000000, 255.000000",
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarFreeSpaceAfterButton": 4
+          },
+          "BTTShortcutToSend": "59,14"
+        },
+        {
+          "BTTTriggerType": 629,
+          "BTTTriggerTypeDescription": "▲ 親",
+          "BTTTriggerTypeDescriptionReadOnly": "Touch Barボタン",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "92800F33-8B6C-484B-AC41-E2C72D1F2048",
+          "BTTPredefinedActionType": 264,
+          "BTTPredefinedActionName": "Send Keyboard Shortcut",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 3,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTTouchBarButtonName": "▲ 親",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonColor": "74.000000, 81.000000, 99.000000, 255.000000",
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarFreeSpaceAfterButton": 4
+          },
+          "BTTShortcutToSend": "126"
+        },
+        {
+          "BTTTriggerType": 629,
+          "BTTTriggerTypeDescription": "▼ 子",
+          "BTTTriggerTypeDescriptionReadOnly": "Touch Barボタン",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "C830079B-3BE1-4C45-87C1-ADCDEC77922F",
+          "BTTPredefinedActionType": 264,
+          "BTTPredefinedActionName": "Send Keyboard Shortcut",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 4,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTTouchBarButtonName": "▼ 子",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonColor": "74.000000, 81.000000, 99.000000, 255.000000",
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarFreeSpaceAfterButton": 4
+          },
+          "BTTShortcutToSend": "125"
+        },
+        {
+          "BTTTriggerType": 629,
+          "BTTTriggerTypeDescription": "esc",
+          "BTTTriggerTypeDescriptionReadOnly": "Touch Barボタン",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "CFF51E10-4EDB-440A-BA9B-3D20F8862C19",
+          "BTTPredefinedActionType": 189,
+          "BTTPredefinedActionName": "ESC Key",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 5,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTTouchBarButtonName": "esc",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonColor": "74.000000, 81.000000, 99.000000, 255.000000",
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarFreeSpaceAfterButton": 4
+          }
+        }
+      ]
+    }
+  ],
+  "BTTPresetSnapAreas": []
+}
