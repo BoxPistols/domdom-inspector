@@ -533,5 +533,8 @@
   },
   "hintRenderWhat": {
     "message": "Flashes components as they re-render, so you can see what redraws when you interact. Press R to record, then R again to get a ranking of what re-rendered most and why. For finding performance problems in React apps."
+  },
+  "treeUnavailableProd": {
+    "message": "Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work."
   }
 }

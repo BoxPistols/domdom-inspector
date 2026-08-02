@@ -45,14 +45,18 @@ export class TreeView {
   }
 
   private enable() {
+    // production ビルドでは React が名前を minify するため、ツリーは "0e" "je" "Anonymous" が
+    // 1000 行並ぶだけで判読不能になる。役に立たないものを開いて時間を使わせるより、
+    // 開かずに理由を言う方が誠実 (実機フィードバックによる判断)。
+    if (!this.hookState.devMode) {
+      this.overlay.toast(this.strings.treeUnavailableProd, 5000);
+      return;
+    }
     this.enabled = true;
     this.refresh();
     this.unsubscribe = this.hookState.onCommit(this.scheduleRefresh);
     window.addEventListener('pointermove', this.onDomHover, true);
-    this.overlay.toast(
-      this.hookState.devMode ? this.strings.treeOn : this.strings.treeOnSafe,
-      4000,
-    );
+    this.overlay.toast(this.strings.treeOn, 4000);
   }
 
   private disable() {
@@ -77,7 +81,8 @@ export class TreeView {
   }
 
   private refresh() {
-    const filtered = filterTree(buildTree(this.hookState), { hideHostComponents: false });
+    // div/span 等の host 要素を隠す。含めると 1000 ノード超になり判読できない (FR-06)
+    const filtered = filterTree(buildTree(this.hookState), { hideHostComponents: true });
     this.nodeMap = buildNodeElementMap(filtered);
     this.overlay.showTree(filtered, {
       title: this.strings.treeTitle,

@@ -159,6 +159,8 @@ export interface UiStrings {
   inspectPillClose: string;
   treeOn: string;
   treeOnSafe: string;
+  /** production ビルドで名前が minify されツリーが判読不能なときの説明 */
+  treeUnavailableProd: string;
   treeOff: string;
   treeTitle: string;
   statsTitle: string;
@@ -238,6 +240,8 @@ export const DEFAULT_STRINGS: UiStrings = {
   inspectPillClose: 'Exit inspect mode',
   treeOn: 'Component tree ON — hover a row to highlight, hover the page to locate it. Esc to close',
   treeOnSafe: 'Component tree ON — no dev build detected, names are estimated',
+  treeUnavailableProd:
+    'Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work.',
   treeOff: 'Component tree OFF',
   treeTitle: 'Component tree',
   statsTitle: 'Re-render ranking ({n} screen updates)',
