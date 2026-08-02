@@ -185,9 +185,11 @@ export class Overlay {
       this.badge.append(fileEl);
     }
 
-    // デザイン情報 (computed style): compact 以外は常に表示 (デザイナーの主価値なので既定で出す)。
-    // production では Fiber が取れずソースジャンプ不可なので、代わりにこれが主情報になる。
-    if ((detail !== 'compact' || !info.devMode) && info.design.length) {
+    // デザイン情報 (computed style): compact 以外で表示。
+    // 以前は production のとき compact を無視していたが、設定を選んでも何も変わらないため
+    // 「効いていない」と見える不具合になっていた。設定は常に効かせ、代わりに選択肢の
+    // 文言で「少なめ = デザイン値を出さない」と明示する。
+    if (detail !== 'compact' && info.design.length) {
       const designEl = el('div', 'design');
       // トークン注釈を先に計算 (トークン一致したラベルはグリッド警告を抑制するため)
       const annotations = new Map(

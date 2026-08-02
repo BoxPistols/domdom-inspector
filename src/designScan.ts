@@ -31,6 +31,14 @@ export interface ScanLabelTotals {
   occurrences: number;
 }
 
+/**
+ * スタイルの供給元。CSS-in-JS (emotion / styled-components) は **生成される CSS が常に
+ * リテラル**になるため、来歴 (var か literal か) から「ハードコードかどうか」を判定できない。
+ * MUI の sx={{ p: 2 }} は theme 由来だが出力は padding: 16px になる — これを
+ * 「ベタ書き = トークン変更に追従しない」と報告するのは誤り。検出したら来歴の主張を止める。
+ */
+export type StyleSource = 'css-in-js' | 'stylesheet';
+
 export interface DesignScan {
   /** 実際に計測した要素数 (可視のみ) */
   elementCount: number;
@@ -40,6 +48,8 @@ export interface DesignScan {
   truncated: boolean;
   /** 来歴 (var/literal) を判定できたか。false なら来歴の率を出してはいけない */
   originAvailable: boolean;
+  /** スタイルの供給元。'css-in-js' のとき来歴からハードコードを判定してはいけない */
+  styleSource: StyleSource;
   /** 照合に使ったトークン辞書の規模 (0 なら未設定 = グリッド検査のみ) */
   tokenCounts: { colors: number; sizes: number };
   /** label → 使用値の頻度順リスト (上位 MAX_VALUES_PER_LABEL 件のサンプル) */
@@ -56,6 +66,21 @@ const MAX_VALUES_PER_LABEL = 20;
 const MAX_ELEMENTS = 2000;
 /** 来歴収集 (CSSOM 走査) に使ってよい時間。超えたら来歴だけ諦める */
 const ORIGIN_BUDGET_MS = 1500;
+/**
+ * CSS-in-JS を検出する。emotion / styled-components はランタイムで <style> を挿入し、
+ * その要素に固有の data 属性を付ける。存在すれば「CSS 出力は常にリテラル」と分かる。
+ */
+export function detectStyleSource(doc: Document): StyleSource {
+  try {
+    const marked = doc.querySelector(
+      'style[data-emotion], style[data-styled], style[data-styled-components], style[data-goober], style[data-linaria]',
+    );
+    return marked ? 'css-in-js' : 'stylesheet';
+  } catch {
+    return 'stylesheet';
+  }
+}
+
 /** スキャン対象のラベル (shadow/weight/lh は監査ノイズが多いので除外) */
 const SCAN_LABELS = new Set(['color', 'bg', 'font', 'padding', 'margin', 'gap', 'radius']);
 
@@ -155,6 +180,9 @@ export function scanDesign(
     candidateCount,
     truncated: elementCount >= MAX_ELEMENTS && candidateCount > elementCount,
     originAvailable,
+    styleSource: detectStyleSource(
+      (root as Document).querySelectorAll ? ((root as Document).ownerDocument ?? (root as Document)) : document,
+    ),
     tokenCounts: { colors: dict.colors.length, sizes: dict.sizes.length },
     stats,
     statsTotals,

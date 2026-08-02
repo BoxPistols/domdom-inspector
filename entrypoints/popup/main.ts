@@ -216,7 +216,11 @@ function renderCoverage(scan: DesignScan) {
 
   // 来歴 (ハードコード検出の本体)。判定できなければ率を出さず理由を書く
   coverageOriginEl.replaceChildren();
-  if (!scan.originAvailable || cov.originKnown === 0) {
+  if (scan.styleSource === 'css-in-js') {
+    // MUI の sx={{ p: 2 }} は theme 由来でも出力は padding: 16px になる。
+    // これを「ベタ書き = トークン変更に追従しない」と報告するのは誤りなので主張を止める。
+    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginCssInJs')));
+  } else if (!scan.originAvailable || cov.originKnown === 0) {
     coverageOriginEl.append(el('div', 'hint', msg('coverageOriginUnavailable')));
   } else {
     coverageOriginEl.append(el('div', 'hint', msg('coverageOriginTitle')));

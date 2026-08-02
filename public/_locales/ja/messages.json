@@ -30,19 +30,19 @@
     "message": "このタブでインスペクトモード切替"
   },
   "popupToggleTree": {
-    "message": "このタブでコンポーネントツリー切替"
+    "message": "コンポーネントツリー (React のみ)"
   },
   "popupToggleTreeHint": {
     "message": "ショートカット: {key} / 解除: Esc"
   },
   "optBadgeCompact": {
-    "message": "少なめ(名前と場所)"
+    "message": "少なめ — 要素名と場所だけ"
   },
   "optBadgeNormal": {
-    "message": "標準(+色・余白)"
+    "message": "標準 — + デザイン値 (色・余白・角丸・タイポグラフィ)"
   },
   "optBadgeDetailed": {
-    "message": "詳細(すべての情報)"
+    "message": "詳細 — + React の props (開発ビルドのみ)"
   },
   "btnEnableSite": {
     "message": "現在のサイトで有効化…"
@@ -57,7 +57,7 @@
     "message": "全サイト許可を解除"
   },
   "hintAllSites": {
-    "message": "一度許可すれば、以降はどのサイトでも都度許可なしで使えます(新しいタブでも、ブラウザ再起動後でも有効)。すでに開いているタブでは 1 回リロードが必要です。解除も同じボタンから。この拡張はページを読み取るだけで、ページ内容の保存・リモートコード実行は行わず、任意の BYOK AI 監査 (集計スタイル値のみ・送信前プレビュー必須) を明示的に使わない限り何も送信しません。"
+    "message": "いろいろなサイトを次々に検査するとき用の省力オプションです。Chrome は「すべてのサイトを読み取れる」と警告します — 任意のページを検査する以上これは避けられません。抵抗があるなら都度「現在のサイトで有効化」で構いません (機能差はありません)。解除は同じボタンから。すでに開いているタブは 1 回リロードが必要です。"
   },
   "allSitesEnabled": {
     "message": "全サイトで有効化しました。"
@@ -87,7 +87,7 @@
     "message": "ショートカット: {key} / 解除: Esc"
   },
   "popupToggleRender": {
-    "message": "再描画の可視化モード切替"
+    "message": "再描画の可視化 (React のみ)"
   },
   "popupToggleRenderHint": {
     "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc"
@@ -412,7 +412,7 @@
     "message": "トークン JSON を貼り付け (Figma Variables / W3C / Tokens Studio)"
   },
   "hintTokens": {
-    "message": "Figma Variables のエクスポート(または任意のデザイントークン JSON)をここに貼り付けてください。インスペクト中、色・余白チップに一致トークン名が表示され、外れた値は野良値として最近傍トークン付きで警告されます。本番サイトでも動作します。"
+    "message": "ページが MUI なら不要です — テーマを自動検出します。それ以外の場合は、Figma Variables からエクスポートしたデザイントークン JSON (W3C / Tokens Studio 形式でも可) を貼り付けてください。一致した値にはトークン名が表示され、外れた値は最近傍トークン付きで野良値として警告されます。"
   },
   "tokensStatus": {
     "message": "読込済み: 色 {colors} 件 / サイズ {sizes} 件"
@@ -524,5 +524,14 @@
   },
   "coverageDetailsSummary": {
     "message": "内訳"
+  },
+  "coverageOriginCssInJs": {
+    "message": "このページは CSS-in-JS (emotion / styled-components) を使っています。ソースがテーマから読んでいても出力は必ずリテラルになるため、来歴からハードコードかテーマ由来かは判定できません。よってここでは判定しません。上の一致率には影響しません。"
+  },
+  "hintTreeWhat": {
+    "message": "このページを構成している React コンポーネントを木構造で一覧します。行にホバーすると該当コンポーネントがページ上で光ります。React のサイトでのみ意味があり、コンポーネント名が読めるのは開発ビルドだけです。"
+  },
+  "hintRenderWhat": {
+    "message": "再描画されたコンポーネントを明滅させ、操作したときに何が描き直されているかを見ます。R を押すと記録が始まり、もう一度 R で「何が何回・なぜ再描画されたか」のランキングが出ます。React アプリの表示が重い原因を探すための機能です。"
   }
 }

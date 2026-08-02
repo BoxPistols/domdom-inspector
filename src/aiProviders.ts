@@ -23,7 +23,7 @@ export const AI_PROVIDERS: Record<AiProviderId, AiProviderDef> = {
     id: 'openai',
     label: 'OpenAI',
     originPattern: 'https://api.openai.com/*',
-    defaultModel: 'gpt-5-nano',
+    defaultModel: 'gpt-5.6-luna',
     altModel: 'gpt-5-mini',
   },
   gemini: {
