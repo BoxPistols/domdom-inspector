@@ -10,18 +10,13 @@ export default defineConfig({
     permissions: ['storage', 'activeTab', 'scripting'],
     // 任意オリジン (公開/デプロイ済み App) はユーザー明示許可でのみ有効化 (権限最小化)
     optional_host_permissions: ['*://*/*'],
+    // v1 はデザイン計測 (inspect) のみ。コンポーネントツリー / レンダー可視化は
+    // 本番ビルドで原理的に機能せず (React が名前を minify)、dev でも React DevTools が
+    // 優れるため配線から外した。実装は温存 (issue #4/#5)。復活は CLAUDE.md 地雷3 の 4 点配線。
     commands: {
       'toggle-inspect': {
         suggested_key: { default: 'Alt+Shift+I' },
         description: '__MSG_cmdToggleInspect__',
-      },
-      'toggle-render': {
-        suggested_key: { default: 'Alt+Shift+R' },
-        description: '__MSG_cmdToggleRender__',
-      },
-      'toggle-tree': {
-        suggested_key: { default: 'Alt+Shift+T' },
-        description: '__MSG_cmdToggleTree__',
       },
     },
   },

@@ -31,10 +31,10 @@ test('popup が開き主要 UI が描画される', async () => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
-  // モード切替: inspect / tree / render の 3 ボタン (issue #4/#5 で再配線)
+  // モード切替: inspect のみ (tree/render は v1 の配線から外した)
   await expect(page.locator('#toggle')).toBeVisible();
-  await expect(page.locator('#toggleTree')).toBeVisible();
-  await expect(page.locator('#toggleRender')).toBeVisible();
+  await expect(page.locator('#toggleTree')).toHaveCount(0);
+  await expect(page.locator('#toggleRender')).toHaveCount(0);
 
   // デザイントークン貼り付け欄 (中核機能) が存在する
   await expect(page.locator('#tokensJson')).toBeVisible();

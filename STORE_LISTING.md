@@ -4,11 +4,18 @@
 このファイルは CWS デベロッパーダッシュボードに貼り付ける下書きです。
 
 > ⚠️ **2026-08-03 改稿 — 提出前に要ユーザーレビュー(対外文面のため)。**
-> ツリー/レンダープロファイリング/エディタジャンプ/MUI テーマ自動取得/BYOK AI 監査の
-> 搭載に合わせて下書きを更新した。
+> **v1 の掲載範囲を「デザイン計測 + トークン照合」に絞った。** コンポーネントツリーと
+> レンダープロファイリングは v1 の配線から外した(実装は温存)ため、掲載文からも
+> 単一目的からも落としている。理由: production ビルドでは React がコンポーネント名を
+> minify するため原理的に判読不能 / dev ビルドなら React DevTools が優れる /
+> レンダー可視化は react-scan の拡張が同じ土俵にいる / 「React 開発者向け」を名乗ると
+> 単一目的の説明が広がり審査リスクが上がる。
 > **「Single purpose」と「Data usage disclosure」は決着済み**(下記が確定文言)。
 > `PUBLISHING.md` §4-2 / `PRIVACY.md` と三者同一の内容になっていること。文言を直す場合は
 > 3 ファイルすべてを同時に直す。
+> ⚠️ **未同期**: `PUBLISHING.md` §4-2 の単一目的要旨は改稿前(ツリー/レンダーを含む広い
+> 目的)のまま。提出前に本ファイルの Single purpose に合わせること
+> (`SECURITY.md` の「単一目的」は改稿後と同義で既に整合)。
 
 ---
 
@@ -24,9 +31,9 @@ Hover any element to see its design values — colors, spacing, radius, typograp
 **Detailed description:**
 ```
 DomDom Inspector inspects how a web page's UI is implemented: it measures the
-design values on screen, matches them against your design tokens, and shows the
-components and re-renders behind them. Zero config, any website — MUI, Tailwind,
-CSS Modules, or plain CSS.
+design values on screen and matches them against your own design tokens — on
+deployed production sites, not just localhost. Zero config, any website — MUI,
+Tailwind, CSS Modules, or plain CSS.
 
 INSPECT DESIGN VALUES (Alt+Shift+I)
 - Turn on inspect mode and hover any element.
@@ -35,6 +42,8 @@ INSPECT DESIGN VALUES (Alt+Shift+I)
 - Rogue-value detection: spacing that falls outside a 4/8px grid is flagged,
   so design-system drift is visible at a glance.
 - ↑/↓ move the selection to the parent / child element.
+- Open in editor: Cmd/Ctrl+Click an element to jump to its source
+  (React dev builds only).
 
 MATCH AGAINST YOUR DESIGN TOKENS
 - Paste your design token JSON (Figma Variables export, W3C Design Tokens,
@@ -48,15 +57,6 @@ MUI THEME AUTO-DETECTION
 - When the page uses MUI, the theme (palette / spacing / border radius /
   font sizes) is read from its ThemeProvider and merged into token matching
   automatically — no JSON pasting needed. Pasted tokens take precedence.
-
-FOR REACT DEVELOPERS
-- Component tree (Alt+Shift+T): browse the React component hierarchy;
-  hover a node to highlight it on the page.
-- Render profiling (Alt+Shift+R): accurate re-render counts and causes
-  (state / props / wasted parent re-renders) using the same criterion as
-  React DevTools — works on production builds too.
-- Open in editor: Cmd/Ctrl+Click an element to jump to its source
-  (dev builds only).
 
 OPTIONAL AI DESIGN AUDIT (BYOK)
 - Bring your own OpenAI or Gemini API key and get an AI-written audit of the
@@ -94,14 +94,15 @@ PRIVACY
   aggregated style values only, previewed before sending, to the official endpoint
   of the provider the user configured with their own key.
 
-**Single purpose:** Inspect how a web page's UI is implemented — measure the design values
-of page elements (colors, spacing, border-radius, typography), match them against the
-user's own design tokens, and visualize the component structure and render behavior that
-produce those values. Every feature serves that one purpose: the component tree and render
-profiling explain *which component* produced a measured value and *how often* it is
-re-rendered; "open in editor" jumps to the source of the inspected element; the optional
-AI audit comments on the aggregated measurements. All inspection is local and read-only;
-the only outbound data is the user-initiated AI commentary, sent with the user's own key.
+**Single purpose:** Measure the design values of a web page's UI and check them against the
+user's own design system — read the values of page elements (colors, spacing, border-radius,
+typography) and match them against the user's design tokens, element by element or
+aggregated for the whole page. Every feature serves that one purpose: MUI theme
+auto-detection builds the token dictionary from the page itself so nothing has to be pasted;
+"open in editor" opens the source of the element being measured (React dev builds only);
+the optional AI audit comments on the aggregated measurements. All inspection is local and
+read-only; the only outbound data is the user-initiated AI commentary, sent with the user's
+own key.
 
 **Data usage disclosure (CWS form):** — v0.4.0 は BYOK AI で端末外送信と API キー保存を
 行う。**「収集なし」と申告してはならない**(虚偽申告)。以下をそのまま選択・記入する。
@@ -138,9 +139,9 @@ the only outbound data is the user-initiated AI commentary, sent with the user's
 **詳細説明:**
 ```
 DomDom Inspector は、web ページの UI 実装を検査するツールです。画面上のデザイン値を
-計測し、あなたのデザイントークンと照合し、それを生むコンポーネントと再レンダーまで
-見せます。ゼロ設定でどんなサイトでも動作し、MUI / Tailwind / CSS Modules / 素の CSS を
-問いません。
+計測し、あなたのデザイントークンと照合します。localhost だけでなくデプロイ済みの本番
+サイトでも動作。ゼロ設定でどんなサイトでも動作し、MUI / Tailwind / CSS Modules /
+素の CSS を問いません。
 
 デザイン値のインスペクト (Alt+Shift+I)
 - インスペクトモードを ON にして要素にホバー。
@@ -149,6 +150,8 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 - 野良値検出: 4/8px グリッドから外れた spacing に警告が付き、
   デザインシステムからの逸脱がひと目でわかります。
 - ↑/↓ で親・子要素へ選択を移動。
+- エディタで開く: Cmd/Ctrl+クリックで要素のソースへジャンプ
+  (React の開発ビルドのみ)。
 
 デザイントークンとの照合
 - Figma Variables のエクスポート / W3C Design Tokens / Tokens Studio の

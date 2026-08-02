@@ -44,37 +44,6 @@
         },
         {
           "BTTTriggerType": 642,
-          "BTTTriggerTypeDescription": "🌳 Tree",
-          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
-          "BTTUUID": "E15A4A8B-8A25-462D-88AC-588E838A840C",
-          "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
-          "BTTNotes": "domdom-touchbar",
-          "BTTOrder": 101,
-          "BTTMergeIntoTouchBarGroups": 0,
-          "BTTActionsToExecute": [
-            {
-              "BTTTriggerParentUUID": "E15A4A8B-8A25-462D-88AC-588E838A840C",
-              "BTTIsPureAction": true,
-              "BTTUUID": "58145F3C-1FAC-4008-8631-460F2876EAB1",
-              "BTTPredefinedActionType": 264,
-              "BTTShortcutToSend": "58,56,17",
-              "BTTOrder": 0
-            }
-          ],
-          "BTTWidgetName": "🌳 Tree",
-          "BTTTriggerConfig": {
-            "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarItemPlacement": 0,
-            "BTTTouchBarShellScriptString": "b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.Chrome*) printf '{\"text\":\"🌳 Tree\",\"background_color\":\"76,175,80,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
-            "BTTTouchBarAlwaysShowButton": false,
-            "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 90,
-            "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 2
-          }
-        },
-        {
-          "BTTTriggerType": 642,
           "BTTTriggerTypeDescription": "▲",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
           "BTTUUID": "506DB1CA-6B72-40A4-B0E0-3CDB79197F79",

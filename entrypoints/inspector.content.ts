@@ -3,8 +3,6 @@ import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
 import { Overlay } from '../src/overlay';
-import { RenderDebugger } from '../src/renderDebug';
-import { TreeView } from '../src/treeView';
 import { DEV_MATCHES } from '../src/matches';
 import {
   EMPTY_TOKEN_DICT,
@@ -13,7 +11,6 @@ import {
   type TokenDict,
 } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, PAGE_SOURCE } from '../src/types';
-import { VitalsCollector } from '../src/vitals';
 
 /**
  * MAIN world / document_start: React 読み込み前に DevTools フックを確立し、
@@ -40,12 +37,9 @@ export default defineContentScript({
     const strings = { ...DEFAULT_STRINGS };
     const overlay = new Overlay(DEFAULT_SETTINGS, strings);
     const inspector = new Inspector(hookState, overlay, strings);
-    // Page vitals は document_start から常時観測 (buffered observer で初期エントリも遡取)。
-    // 観測のみで DOM/描画には触れず、レポート生成時に snapshot を読む。
-    const vitals = new VitalsCollector();
-    vitals.start();
-    const renderDebugger = new RenderDebugger(hookState, overlay, strings, vitals);
-    const treeView = new TreeView(hookState, overlay, strings);
+    // v1 はデザイン計測 (inspect) のみ。コンポーネントツリー / レンダー可視化 / vitals は
+    // 実装を温存したまま配線から外している (本番ビルドでは React が名前を minify するため
+    // 原理的に判読不能で、dev でも React DevTools が優れるため)。復活は地雷3 の 4 点配線。
 
     // MUI テーマ自動取得 (FR-14 / issue #8): 手動貼り付け (pasted) とテーマ由来 (theme) の
     // 2 辞書を持ち、併合して overlay に配る (手動優先)。テーマは commit 後に throttle 付きで
@@ -113,13 +107,12 @@ export default defineContentScript({
     // あるため、注入直後にも一度 DOM 経由で試す
     setTimeout(attemptThemeExtract, 1000);
 
-    // Esc は中央で所有し、インスペクタ (パネル > モード) → レンダー可視化 → ツリーの順に
-    // 1 度で 1 つだけ閉じる。複数モード同時 ON でも競合しない。
+    // Esc は中央で所有する (単一モードでも将来のモード追加時に競合しない構え)
     window.addEventListener(
       'keydown',
       (event) => {
         if (event.key !== 'Escape') return;
-        if (inspector.onEscape() || renderDebugger.onEscape() || treeView.onEscape()) {
+        if (inspector.onEscape()) {
           event.preventDefault();
           event.stopImmediatePropagation();
         }
@@ -134,8 +127,6 @@ export default defineContentScript({
       if (data.type === 'settings') {
         inspector.applySettings(data.payload);
         overlay.updateSettings(data.payload);
-        renderDebugger.applySettings(data.payload.recordKey);
-        treeView.applySettings(data.payload);
         autoTheme = data.payload.autoTheme !== false;
         pushMergedTokens();
         attemptThemeExtract();
@@ -157,8 +148,6 @@ export default defineContentScript({
         inspector.enableOnly();
         attemptThemeExtract();
       }
-      if (data.type === 'toggle-render') renderDebugger.toggle();
-      if (data.type === 'toggle-tree') treeView.toggle();
       // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
       // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
       if (data.type === 'design-scan' && typeof data.id === 'string') {
