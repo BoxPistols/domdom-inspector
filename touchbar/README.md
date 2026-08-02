@@ -7,9 +7,15 @@ Chrome が最前面のときだけボタンが出る。
 > 生成とスキーマ検証は済んでいるが、**実機での import・動作確認は未実施**。
 > 下の「import 前にやること」を先に片付ける必要がある。
 >
-> さらに、この `.bttpreset` は**素キー (↑ / ↓) を送る旧方式**のまま。
-> [`DESIGN.md`](./DESIGN.md) で「素キー全廃 / 全操作を manifest command に昇格」という
-> 方針が確定したので、拡張側にコマンドを追加したうえでプリセットを作り直す予定。
+> このプリセットは**実機の Chrome 実バインドに一致**させてある
+> (Inspect=⌃I / Tree=⌥⇧T / ⚙=⌃D)。`toggle-render` は未割当のため収録していない。
+> 素キー (↑ / ↓) はまだ残っており、[`DESIGN.md`](./DESIGN.md) の
+> 「素キー全廃 / 全操作を manifest command に昇格」は拡張側の対応後に反映する。
+>
+> **import が唯一のアプリ限定手段**: AppleScript (`add_new_trigger` / `update_trigger`) では
+> アプリ限定を設定できないことを実測で確認した (トリガー JSON に `BTTBelongsToApp` を入れる /
+> アプリコンテナごと渡す / 後から `update_trigger` する、の 3 方法すべて Global になる)。
+> Chrome 限定にしたい場合は、この preset を import するか BTT UI で手動移動するしかない。
 
 ## 収録ボタン
 
