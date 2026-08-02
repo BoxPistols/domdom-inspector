@@ -1,11 +1,12 @@
 # Privacy Policy — DomDom Inspector
 
-_Last updated: 2026-08-02_
+_Last updated: 2026-08-03_
 
-DomDom Inspector ("the extension") is a design measurement tool that displays the design
-values (colors, spacing, border-radius, typography) of page elements and matches them
-against the user's design tokens. This policy explains what the extension does and does
-not do with your data.
+DomDom Inspector ("the extension") is an inspector for how a web page's UI is implemented:
+it measures the design values (colors, spacing, border-radius, typography) of page elements,
+matches them against the user's design tokens, and — on React pages — visualizes the
+component structure and render behavior that produce them. This policy explains what the
+extension does and does not do with your data.
 
 ## Summary
 
@@ -18,7 +19,8 @@ not do with your data.
   feature) your API key are stored only in your browser via `chrome.storage.local`.
 - **Localhost works out of the box; other sites are opt-in.** The extension activates
   automatically on `localhost` / `127.0.0.1`. Any other site is inspected only after you
-  explicitly enable it, and even then it only reads the page — never sending or storing it.
+  explicitly enable it, and even then it only reads the page — page content is never
+  stored, and nothing is sent beyond the opt-in AI audit noted above.
 
 ## Data the extension stores
 
@@ -35,10 +37,22 @@ information is used only to render the on-screen overlay and is **not stored, an
 transmitted** — except the aggregated style summary you explicitly send in the optional
 AI audit below.
 
+**Render report you copy yourself.** On React pages, the render-profiling panel has a
+"Copy AI report" button. The Markdown report it writes to **your clipboard** includes the
+current page's URL and title (alongside component names and measured numbers) so that the
+report identifies what was measured. It is never transmitted by the extension — it goes to
+your clipboard only, and where you paste it is entirely your choice. This is separate from
+the AI audit below, whose payload never contains URLs or page titles.
+
 ## Data the extension does NOT collect
 
 - No page content, DOM, text, form input, or screenshots are stored or sent anywhere.
-- No personal information, credentials, or browsing history.
+- No personal information and no browsing history.
+- **Credentials of the sites you visit are never read.** The extension does not read login
+  forms, passwords, cookies, or session tokens of any page it inspects. The only
+  authentication information it ever stores is the AI provider API key that **you** paste
+  yourself for the optional AI audit — kept locally on your device and used solely as the
+  authentication header of your own API calls.
 - No analytics or crash reporting.
 
 ## Permissions
@@ -73,6 +87,10 @@ actions: **Collect** (builds a preview) and **Send**.
   authentication header of your own API calls.
 - **Controls**: a hard on/off switch disables all AI features (for client work), and calls
   are capped per browser session. AI output is labeled "AI-generated".
+- **Limited Use (Google APIs)**: if you choose Google Gemini as the provider, the
+  extension's use of information received from Google APIs adheres to the
+  [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
+  including the Limited Use requirements.
 - The provider's own privacy terms apply to data you send them.
 
 ## Contact
@@ -83,10 +101,11 @@ Questions or requests: open an issue at the project's repository, or email the d
 
 # プライバシーポリシー — DomDom Inspector
 
-_最終更新: 2026-08-02_
+_最終更新: 2026-08-03_
 
-DomDom Inspector(以下「本拡張機能」)は、ページ上の要素のデザイン値(色・余白・角丸・
-タイポグラフィ)を表示し、利用者のデザイントークンと照合するデザイン計測ツールです。
+DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を検査するツールです。
+ページ上の要素のデザイン値(色・余白・角丸・タイポグラフィ)を計測し、利用者のデザイン
+トークンと照合し、React ページではそれを生むコンポーネント構造とレンダー挙動を可視化します。
 本ポリシーは、本拡張機能がデータをどう扱うか(扱わないか)を説明します。
 
 ## 要約
@@ -100,7 +119,8 @@ DomDom Inspector(以下「本拡張機能」)は、ページ上の要素のデ�
   場合の) API キーは `chrome.storage.local` にのみ保存します。
 - **localhost は自動、その他のサイトはオプトインです。** `localhost` / `127.0.0.1` では自動で
   有効化されます。その他のサイトはあなたが明示的に「有効化」した時のみ検査対象になり、その場合も
-  ページを読むだけで、送信・保存は行いません。
+  ページを読むだけです。ページ内容を保存することはなく、上記のオプトイン AI 監査以外に送信も
+  行いません。
 
 ## 本拡張機能が保存するデータ
 
@@ -116,10 +136,22 @@ React を使用している場合は、コンポーネント名の補足表示�
 画面オーバーレイの描画にのみ使用し、**保存しません。送信もしません** — 唯一の例外は、下記の
 任意 AI 監査であなたが明示的に送信する集計済みスタイル要約です。
 
+**あなた自身がコピーするレンダーレポート**: React ページでは、レンダープロファイリング
+パネルに「AI レポートをコピー」ボタンがあります。ここで**あなたのクリップボード**へ書き出す
+Markdown レポートには、計測対象を特定できるよう、現在のページの URL とタイトルが含まれます
+(コンポーネント名・計測数値も同様)。本拡張機能がこれを送信することはありません — 出力先は
+クリップボードのみで、どこに貼るかは完全にあなたの判断です。後述の AI 監査とは別経路であり、
+AI 監査の送信内容に URL やページタイトルが含まれることはありません。
+
 ## 収集しないもの
 
 - ページの内容・DOM・テキスト・入力値・スクリーンショットの保存/送信は一切行いません。
-- 個人情報・認証情報・閲覧履歴を扱いません。
+- 個人情報・閲覧履歴を扱いません。
+- **訪問先サイトのログイン情報や Cookie は読みません。** 検査対象ページのログインフォーム・
+  パスワード・Cookie・セッショントークンを読み取ることはありません。本拡張機能が保存する
+  唯一の認証情報は、任意の AI 監査のために **あなた自身が貼り付けた** AI プロバイダの API
+  キーだけです。これは端末内にのみ保存し、あなた自身の API 呼び出しの認証ヘッダとしてのみ
+  使用します。
 - 分析やクラッシュレポートを行いません。
 
 ## 権限
@@ -152,6 +184,10 @@ React を使用している場合は、コンポーネント名の補足表示�
   認証ヘッダとしてのみ送信します。
 - **制御**: AI 全体のハード OFF スイッチ(クライアント案件向け)と、セッションごとの呼び出し
   上限があります。AI 出力には「AI 生成」バッジが付きます。
+- **Limited Use(Google API)**: プロバイダに Google Gemini を選んだ場合、本拡張機能による
+  Google API から受け取った情報の利用は、
+  [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy)
+  の Limited Use 要件を含め、同ポリシーに準拠します。
 - 送信したデータには、当該プロバイダのプライバシー条件が適用されます。
 
 ## お問い合わせ

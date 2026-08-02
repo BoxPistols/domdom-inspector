@@ -408,3 +408,95 @@ export function annotateProp(prop: DesignProp, dict: TokenDict): ChipToken {
   if (hasFar) return null;
   return names.length ? { kind: 'hit', names } : null;
 }
+
+/**
+ * カバレッジ集計用の判定結果。**`noDict` (該当トークンが 0 件) と `far` (遠い値) を
+ * 決して同じ値にしない** — この 2 つを混同すると「率を出してよいか」の判断が壊れる。
+ * annotateProp はバッジ用に「遠い値は沈黙」とチューニング済みなので、集計はこちらを使う。
+ */
+export type AtomOutcome = 'hit' | 'near' | 'far' | 'noDict' | 'unmeasurable';
+
+export interface AtomVerdict {
+  outcome: AtomOutcome;
+  token: string | null;
+  nearest: string | null;
+}
+
+const UNMEASURABLE: AtomVerdict = { outcome: 'unmeasurable', token: null, nearest: null };
+const NO_DICT: AtomVerdict = { outcome: 'noDict', token: null, nearest: null };
+
+/** 色 atom 1 件を判定する (値は #hex / rgb() 形式) */
+export function classifyColorAtom(dict: TokenDict, cssValue: string): AtomVerdict {
+  if (!dict.colors.length) return NO_DICT;
+  const c = parseColor(cssValue);
+  // パース不能 (color-mix/oklch 等) と完全透明は「測れない」であって「外れ」ではない
+  if (!c || c.a === 0) return UNMEASURABLE;
+  let best: TokenColor | null = null;
+  let bestD = Infinity;
+  for (const t of dict.colors) {
+    const d = colorDistance(c, t);
+    if (d < bestD) {
+      bestD = d;
+      best = t;
+    }
+  }
+  if (!best) return UNMEASURABLE;
+  if (bestD <= COLOR_HIT) return { outcome: 'hit', token: best.name, nearest: null };
+  if (bestD <= COLOR_NEAR) return { outcome: 'near', token: null, nearest: best.name };
+  return { outcome: 'far', token: null, nearest: null };
+}
+
+/** サイズ atom 1 件 (px 数値) を判定する。負値は near にしない (annotateProp の方針を踏襲) */
+export function classifySizeAtom(dict: TokenDict, px: number, category: SizeCategory): AtomVerdict {
+  if (!dict.sizes.some((t) => t.category === category)) return NO_DICT;
+  if (!Number.isFinite(px) || px === 0) return UNMEASURABLE;
+  if (px < 0) {
+    const neg = matchSize(dict, px, category);
+    const abs = matchSize(dict, Math.abs(px), category);
+    const hit = neg?.hit ?? abs?.hit ?? null;
+    return hit
+      ? { outcome: 'hit', token: hit, nearest: null }
+      : { outcome: 'far', token: null, nearest: null };
+  }
+  const m = matchSize(dict, px, category);
+  if (!m) return NO_DICT;
+  if (m.hit) return { outcome: 'hit', token: m.hit, nearest: null };
+  if (m.nearest) return { outcome: 'near', token: null, nearest: m.nearest };
+  return { outcome: 'far', token: null, nearest: null };
+}
+
+/**
+ * 1 宣言 (label + value) を判定する。値が複数 px を含む shorthand は atom に分解し、
+ * **全 hit なら hit / 1 つでも near なら near / 判定可能なら far** に畳む。
+ * 判定可能な atom が 1 つも無ければ noDict または unmeasurable を返す。
+ */
+export function classifyDeclaration(prop: DesignProp, dict: TokenDict): AtomVerdict {
+  if (COLOR_LABELS.has(prop.label)) return classifyColorAtom(dict, prop.value);
+  const category = LABEL_SIZE_CATEGORY[prop.label];
+  if (!category) return UNMEASURABLE;
+  const pxs = extractPxValues(prop.value).filter((px) => px !== 0);
+  if (!pxs.length) return UNMEASURABLE;
+  const verdicts = pxs.map((px) => classifySizeAtom(dict, px, category));
+  if (verdicts.every((v) => v.outcome === 'noDict')) return NO_DICT;
+  const judged = verdicts.filter((v) => v.outcome !== 'noDict' && v.outcome !== 'unmeasurable');
+  if (!judged.length) return UNMEASURABLE;
+  const near = judged.find((v) => v.outcome === 'near');
+  if (near) return { outcome: 'near', token: null, nearest: near.nearest };
+  if (judged.every((v) => v.outcome === 'hit')) {
+    const names = [...new Set(judged.map((v) => v.token).filter((n): n is string => !!n))];
+    return { outcome: 'hit', token: names.join(', '), nearest: null };
+  }
+  return { outcome: 'far', token: null, nearest: null };
+}
+
+/** ラベル → ファミリ (表示単位)。色系と余白系はまとめ、角丸と文字サイズは独立させる */
+export type Family = 'color' | 'spacing' | 'radius' | 'font';
+export const LABEL_FAMILY: Record<string, Family | undefined> = {
+  color: 'color',
+  bg: 'color',
+  padding: 'spacing',
+  margin: 'spacing',
+  gap: 'spacing',
+  radius: 'radius',
+  font: 'font',
+};

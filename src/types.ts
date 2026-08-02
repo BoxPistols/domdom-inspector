@@ -25,6 +25,13 @@ export interface DesignProp {
   varNames?: string[];
   /** 変数が単一に絞れない (padding: var(--a) var(--b) 等) */
   ambiguous?: boolean;
+  /**
+   * 値の来歴 (cssVars.ValueOrigin)。'var' = 変数経由 / 'literal' = この要素でのベタ書き /
+   * 'inherited' = 継承値・UA 既定 / 'unknown' = CSSOM を読めず判定不能。
+   * トークン一致 (今の正しさ) とは直交する軸で、ハードコード検出の主材料。
+   * バッジ表示では使わないため省略可 (ページ全体スキャン時のみ付与)。
+   */
+  origin?: 'var' | 'literal' | 'inherited' | 'unknown';
 }
 
 /** ホバー中の要素について収集した情報 */

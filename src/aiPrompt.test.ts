@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { buildAuditPrompt, formatScanForPrompt } from './aiPrompt';
+import { buildCoverage } from './coverage';
 import type { DesignScan } from './designScan';
 
 const SCAN: DesignScan = {
   elementCount: 120,
+  candidateCount: 120,
+  truncated: false,
+  originAvailable: true,
+  statsTotals: {
+    color: { uniqueValues: 2, shown: 2, occurrences: 43 },
+    padding: { uniqueValues: 1, shown: 1, occurrences: 7 },
+  },
+  coverage: buildCoverage(
+    [
+      { label: 'color', value: '#1668d4', count: 40, origin: 'var' },
+      { label: 'color', value: '#1a6cd8', count: 3, origin: 'literal' },
+      { label: 'padding', value: '10px', count: 7, origin: 'literal' },
+    ],
+    { colors: [{ name: 'primary', r: 0x16, g: 0x68, b: 0xd4, a: 1 }], sizes: [] },
+  ),
   tokenCounts: { colors: 5, sizes: 8 },
   stats: {
     color: [

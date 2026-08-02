@@ -3,10 +3,12 @@
 配信形態: **Unlisted(限定公開)** — 検索非掲載・リンク共有のみ。
 このファイルは CWS デベロッパーダッシュボードに貼り付ける下書きです。
 
-> ⚠️ **2026-08-02 v0.4.0 ドラフト改稿 — 提出前に要ユーザーレビュー。**
+> ⚠️ **2026-08-03 改稿 — 提出前に要ユーザーレビュー(対外文面のため)。**
 > ツリー/レンダープロファイリング/エディタジャンプ/MUI テーマ自動取得/BYOK AI 監査の
-> 搭載に合わせて下書きを更新した。対外文面のため、CWS 提出前に必ず内容を確認すること。
-> 特に「Data usage disclosure」は BYOK AI の申告方針 (下記の注記) の判断が必要。
+> 搭載に合わせて下書きを更新した。
+> **「Single purpose」と「Data usage disclosure」は決着済み**(下記が確定文言)。
+> `PUBLISHING.md` §4-2 / `PRIVACY.md` と三者同一の内容になっていること。文言を直す場合は
+> 3 ファイルすべてを同時に直す。
 
 ---
 
@@ -21,8 +23,10 @@ Hover any element to see its design values — colors, spacing, radius, typograp
 
 **Detailed description:**
 ```
-DomDom Inspector is a zero-config design measurement tool for any website —
-MUI, Tailwind, CSS Modules, or plain CSS.
+DomDom Inspector inspects how a web page's UI is implemented: it measures the
+design values on screen, matches them against your design tokens, and shows the
+components and re-renders behind them. Zero config, any website — MUI, Tailwind,
+CSS Modules, or plain CSS.
 
 INSPECT DESIGN VALUES (Alt+Shift+I)
 - Turn on inspect mode and hover any element.
@@ -90,19 +94,35 @@ PRIVACY
   aggregated style values only, previewed before sending, to the official endpoint
   of the provider the user configured with their own key.
 
-**Single purpose:** Measure and display the design values (colors, spacing,
-border-radius, typography) of page elements, and match them against the user's
-design tokens — locally, read-only (with an optional, user-initiated AI commentary
-on those aggregated measurements via the user's own API key).
+**Single purpose:** Inspect how a web page's UI is implemented — measure the design values
+of page elements (colors, spacing, border-radius, typography), match them against the
+user's own design tokens, and visualize the component structure and render behavior that
+produce those values. Every feature serves that one purpose: the component tree and render
+profiling explain *which component* produced a measured value and *how often* it is
+re-rendered; "open in editor" jumps to the source of the inspected element; the optional
+AI audit comments on the aggregated measurements. All inspection is local and read-only;
+the only outbound data is the user-initiated AI commentary, sent with the user's own key.
 
-**Data usage disclosure (CWS form):**
-> ⚠️ 要ユーザー判断: BYOK AI 搭載後の申告方針。推奨は「Website content を収集
-> (= aggregated style values をユーザー設定のプロバイダへ送信) + Authentication
-> information (ユーザー自身の API キーをローカル保存し、本人の API 呼び出しにのみ使用)」
-> を正直に申告し、"not sold / not for unrelated purposes" を選択。PUBLISHING.md
-> §6 のとおり、データ送信を伴う版は独立リリースとして審査を受ける。
+**Data usage disclosure (CWS form):** — v0.4.0 は BYOK AI で端末外送信と API キー保存を
+行う。**「収集なし」と申告してはならない**(虚偽申告)。以下をそのまま選択・記入する。
+
+- **Website content — YES (collected).** The optional BYOK AI audit sends *aggregated
+  style values* derived from the page (computed style values, usage counts, matched token
+  names) to the AI provider the user configured. Sent only after two explicit user actions
+  (Collect → Send), and only exactly what the preview shows. Never URLs, page text, DOM,
+  class names, form input, or screenshots.
+- **Authentication information — YES (collected).** The user's own AI provider API key is
+  stored locally in `chrome.storage.local` and used only as the authentication header of
+  that user's own API calls. Never synced, never sent anywhere else, never exposed to web
+  pages. Credentials (logins, cookies, session tokens) of visited sites are never read.
+- All other categories — **No**: personally identifiable information, health information,
+  financial and payment information, personal communications, location, web history,
+  user activity.
 - Sold to third parties? No. Used for unrelated purposes? No. Used for creditworthiness? No.
-- Privacy policy URL: _(host PRIVACY.md at a public URL and paste it here)_
+- Data is used only for the disclosed single purpose, and is transferred to no one other
+  than the AI provider the user themselves selected.
+- Privacy policy URL: _(host PRIVACY.md at a public URL and paste it here — see
+  `PUBLISHING.md` §2)_
 
 ---
 
@@ -117,8 +137,10 @@ on those aggregated measurements via the user's own API key).
 
 **詳細説明:**
 ```
-DomDom Inspector は、どんなサイトでも動くゼロ設定のデザイン計測ツールです。
-MUI / Tailwind / CSS Modules / 素の CSS を問いません。
+DomDom Inspector は、web ページの UI 実装を検査するツールです。画面上のデザイン値を
+計測し、あなたのデザイントークンと照合し、それを生むコンポーネントと再レンダーまで
+見せます。ゼロ設定でどんなサイトでも動作し、MUI / Tailwind / CSS Modules / 素の CSS を
+問いません。
 
 デザイン値のインスペクト (Alt+Shift+I)
 - インスペクトモードを ON にして要素にホバー。
@@ -169,6 +191,22 @@ React 開発者向け
   リモートコード実行は行いません。外部送信は任意の BYOK AI 監査 (集計スタイル値
   のみ・送信前プレビュー必須) を明示的に使った時だけです。
 ```
+
+**単一目的 (Single purpose — 上記英文の対訳。CWS への入力は英文):**
+web ページの UI 実装を検査する — ページ要素のデザイン値 (色 / 余白 / 角丸 / タイポグラフィ)
+を計測し、利用者自身のデザイントークンと照合し、それを生むコンポーネント構造とレンダー挙動を
+可視化する。全機能がこの単一目的に奉仕する: コンポーネントツリーとレンダープロファイリングは
+「計測値を生んだのはどのコンポーネントか」「それが何回再レンダーされているか」を説明し、
+エディタジャンプは検査中の要素のソースを開き、任意の AI 監査は集計済み計測値に講評を付ける。
+検査はすべてローカルの読み取り専用で、外部送信は利用者が起動する AI 講評 (利用者自身のキー)
+のみ。
+
+**データ利用の申告 (対訳):** Website content = **収集する** (BYOK AI 監査で集計スタイル値を
+利用者設定のプロバイダへ送信。2 段の明示操作 + プレビュー必須。URL・テキスト・DOM・
+クラス名・スクリーンショットは送らない)。Authentication information = **収集する**
+(利用者自身の API キーを端末内保存し、本人の API 呼び出しの認証ヘッダにのみ使用。
+訪問先サイトの認証情報は読まない)。その他のカテゴリはすべて「なし」。
+「販売しない / 無関係な用途に使わない / 信用調査に使わない」の 3 つにチェック。
 
 ---
 

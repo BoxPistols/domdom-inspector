@@ -135,6 +135,26 @@
         text-transform: uppercase; letter-spacing: 0.04em;
       }
       #aiPreview, #aiResult { height: 120px; }
+      /* カバレッジ: 率だけでなく必ず実数を併記し、色だけに意味を載せない */
+      .cov-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; }
+      .cov-name { width: 68px; flex: none; color: var(--muted); }
+      .cov-rate { width: 92px; flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .cov-bar { flex: 1; display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+      .cov-bar i { display: block; height: 100%; }
+      .cov-hit { background: var(--hc-green); }
+      .cov-near { background: var(--hc-yellow); }
+      .cov-far { background: var(--hc-red); }
+      .cov-none { color: var(--muted); font-weight: 400; }
+      .cov-quad { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+      .cov-cell {
+        padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+        background: var(--surface); font-size: 11px;
+      }
+      .cov-cell b { display: block; font-size: 13px; font-variant-numeric: tabular-nums; }
+      .cov-cell.bad { border-color: var(--hc-red); }
+      .cov-cell.warn { border-color: var(--hc-yellow); }
+      .cov-cell.good { border-color: var(--hc-green); }
+      #coverageTop div { margin-top: 6px; font-size: 11px; font-family: ui-monospace, monospace; }
       /* ヘルプの視認性: 本文はテーマトークンで両テーマ対応 */
       .help { margin-top: 8px; font-size: 11.5px; line-height: 1.7; color: var(--text); }
       .help p { margin: 8px 0; }
@@ -209,6 +229,34 @@
         Export your Figma Variables (or any design-tokens JSON) and paste it here. While
         inspecting, each color/spacing chip shows the matching token name — or flags it as a
         stray value with the nearest token. Works on production sites.
+      </div>
+    </section>
+
+    <!-- ③-2 トークンカバレッジ: 貼り付けたトークンの「見返り」を真下に出す。
+         overlay ではなく popup なので 4 点配線は不要 (既存の design-scan にただ乗り) -->
+    <section class="section" id="coverageSection">
+      <h2><span data-i18n="sectionCoverage">Token coverage</span><span class="q" tabindex="0" data-i18n-title="tipCoverage">ⓘ</span></h2>
+      <button id="coverageMeasure" data-i18n="btnCoverageMeasure">Measure this screen</button>
+      <div class="hint" id="coverageStatus" role="status" aria-live="polite"></div>
+
+      <div id="coverageResult" hidden>
+        <div class="hint" id="coverageScope"></div>
+        <div class="hint" id="coverageTruncated" hidden></div>
+        <div id="coverageFamilies"></div>
+        <div class="hint" id="coverageOverall"></div>
+        <div class="hint" id="coverageMeasurable"></div>
+
+        <details id="coverageDetails">
+          <summary data-i18n="coverageDetailsSummary">Breakdown</summary>
+          <div id="coverageOrigin"></div>
+          <div class="hint" id="coverageOffGrid"></div>
+          <div id="coverageTop"></div>
+        </details>
+
+        <div class="hint" data-i18n="coverageScopeNote">
+          A snapshot of this screen as it is right now. iframes, shadow DOM and hidden elements are not included. Nothing is saved or sent.
+        </div>
+        <button id="coverageCopy" class="secondary" data-i18n="btnCoverageCopy">Copy measurement</button>
       </div>
     </section>
 

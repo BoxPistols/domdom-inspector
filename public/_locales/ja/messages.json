@@ -425,5 +425,104 @@
   },
   "btnTokensClear": {
     "message": "トークンを削除"
+  },
+  "sectionCoverage": {
+    "message": "トークンカバレッジ"
+  },
+  "tipCoverage": {
+    "message": "トークンと同じ値なら書き方に関わらず「一致」とみなします。CSS 変数を経由しているかどうかは「壊れにくさ」として別に測ります。"
+  },
+  "btnCoverageMeasure": {
+    "message": "この画面を測定"
+  },
+  "coverageMeasuring": {
+    "message": "この画面を測定中…"
+  },
+  "coverageScope": {
+    "message": "{elements} 要素を測定 · トークン: 色 {colors} 件 / サイズ {sizes} 件"
+  },
+  "coverageTruncated": {
+    "message": "先頭 {shown} / 全 {total} 要素を測定しました。件数はその範囲では正確ですが、ページ全体の値ではありません。"
+  },
+  "coverageFamilyColor": {
+    "message": "色"
+  },
+  "coverageFamilySpacing": {
+    "message": "余白"
+  },
+  "coverageFamilyRadius": {
+    "message": "角丸"
+  },
+  "coverageFamilyFont": {
+    "message": "文字サイズ"
+  },
+  "coverageNoDict": {
+    "message": "該当トークンなし"
+  },
+  "coverageLowSample": {
+    "message": "サンプル僅少"
+  },
+  "coverageOverall": {
+    "message": "全宣言ベース: {rate}% ({hit}/{judged})"
+  },
+  "coverageOverallNote": {
+    "message": "文字色と文字サイズは全要素に出るため、この数値はその 2 つに偏ります。まず上の行を見てください。"
+  },
+  "coverageMeasurable": {
+    "message": "判定できたのは {total} 件中 {judged} 件 ({rate}%)。残りは同種のトークンが無いか、解析できない値です。"
+  },
+  "coverageOriginTitle": {
+    "message": "値の来歴"
+  },
+  "coverageOriginVarHit": {
+    "message": "変数 + 一致"
+  },
+  "coverageOriginVarMiss": {
+    "message": "変数だがトークン外"
+  },
+  "coverageOriginLiteralHit": {
+    "message": "ベタ書きだが一致"
+  },
+  "coverageOriginLiteralMiss": {
+    "message": "ベタ書きの野良値"
+  },
+  "coverageOriginNote": {
+    "message": "{n} 件は値としては合っていますがベタ書きです。次のトークン変更に追従しません。"
+  },
+  "coverageOriginExcluded": {
+    "message": "{n} 件は対象外: 継承値 / ブラウザ既定 / スタイルシートを読めない。"
+  },
+  "coverageOriginUnavailable": {
+    "message": "このページでは変数かベタ書きかを判定できません (スタイルシートを読めないため)。上の一致率には影響しません。"
+  },
+  "coverageVarRate": {
+    "message": "CSS 変数経由: {rate}% ({vars}/{known})"
+  },
+  "coverageOffGrid": {
+    "message": "{grid}px グリッド外: {rate}% (余白 {total} 件中 {off} 件)"
+  },
+  "coverageTopTitle": {
+    "message": "まず直すと効く値"
+  },
+  "coverageTopLine": {
+    "message": "{value} ×{count} · 近い: {token}"
+  },
+  "coverageTopLineFar": {
+    "message": "{value} ×{count} · 近いトークンなし"
+  },
+  "coverageEmptyDict": {
+    "message": "トークン未読込のため準拠率は測れません。ここで % を出しても意味がないので表示しません。上でトークンを貼り付けるか、MUI 自動検出を ON にしてください。下のチェックはトークン無しでも動きます。"
+  },
+  "coverageStale": {
+    "message": "トークンを変更しました — もう一度測定してください。"
+  },
+  "coverageScopeNote": {
+    "message": "今この画面に出ている状態のスナップショットです。iframe / shadow DOM / 非表示要素は含みません。保存も送信もしません。"
+  },
+  "btnCoverageCopy": {
+    "message": "測定結果をコピー"
+  },
+  "coverageDetailsSummary": {
+    "message": "内訳"
   }
 }

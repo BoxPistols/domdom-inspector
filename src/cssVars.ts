@@ -168,12 +168,31 @@ function winningValue(element: Element, cssProps: string[]): { value: string; im
 }
 
 /**
- * 要素の各デザインプロパティについて「宣言された CSS 変数名」を回収する。
- * 返り値は designStyle の label をキーにした Map。CSSOM 走査全体を try/catch で包み、
- * 失敗しても呼び元 (extractDesignStyle) は computed のみで縮退する。
+ * 値の来歴。「トークンと一致しているか」(今の正しさ) とは直交する軸で、
+ * 「トークンを変えたとき追従するか」(これからも正しくあり続けるか) を表す。
+ * - var       : cascade 勝者の宣言が定義済みの var(--x) を含む
+ * - literal   : 勝者宣言はあるが var を含まない = **この要素で書かれたハードコード**
+ * - inherited : この要素にマッチする宣言が無い (継承値 / UA 既定)。literal と混ぜてはいけない
+ * - unknown   : CSSOM を読めなかった (クロスオリジン CSS・例外・時間予算切れ)
  */
-export function collectAuthoredVars(element: Element): Map<string, VarMatch> {
-  const out = new Map<string, VarMatch>();
+export type ValueOrigin = 'var' | 'literal' | 'inherited' | 'unknown';
+
+export interface AuthoredInfo {
+  origin: ValueOrigin;
+  /** origin === 'var' のときのみ非 null */
+  varMatch: VarMatch | null;
+}
+
+/**
+ * 要素の各デザインプロパティについて、宣言された変数名と**来歴**を回収する。
+ * CSSOM 走査全体を try/catch で包み、失敗しても呼び元は computed のみで縮退する。
+ *
+ * 継承値 (inherited) を literal と分けるのが要点。文字色は body に 1 回宣言して数千要素が
+ * 継承するのが普通なので、混ぜると「継承した文字色が全部ハードコード」という壊れた
+ * 集計になる。
+ */
+export function collectAuthoredInfo(element: Element): Map<string, AuthoredInfo> {
+  const out = new Map<string, AuthoredInfo>();
   let cs: CSSStyleDeclaration | null = null;
   try {
     cs = getComputedStyle(element);
@@ -183,21 +202,51 @@ export function collectAuthoredVars(element: Element): Map<string, VarMatch> {
   for (const { prop, label } of PROPS) {
     const props = AUTHORED_PROPS[label] ?? [prop];
     let winner: { value: string; important: boolean } | null = null;
+    let failed = false;
     try {
       winner = winningValue(element, props);
     } catch {
-      winner = null;
+      failed = true;
     }
-    if (!winner) continue;
+    if (failed) {
+      out.set(label, { origin: 'unknown', varMatch: null });
+      continue;
+    }
+    if (!winner) {
+      // この要素にマッチする宣言が無い = 継承値 or UA 既定
+      out.set(label, { origin: 'inherited', varMatch: null });
+      continue;
+    }
     const parsed = parseVarNames(winner.value);
-    if (!parsed) continue;
+    if (!parsed) {
+      out.set(label, { origin: 'literal', varMatch: null });
+      continue;
+    }
     // 実際に定義されている変数のみ採用 (var(--undefined, fallback) の未定義名を弾く)
-    const computed = cs;
-    const defined = computed
-      ? parsed.names.filter((n) => computed.getPropertyValue(n).trim() !== '')
+    const defined = cs
+      ? parsed.names.filter((n) => cs.getPropertyValue(n).trim() !== '')
       : parsed.names;
-    if (!defined.length) continue;
-    out.set(label, { name: defined[0], names: defined, ambiguous: defined.length > 1 });
+    if (!defined.length) {
+      // var は書かれているが未定義 → 実際に効いているのはフォールバックのリテラル
+      out.set(label, { origin: 'literal', varMatch: null });
+      continue;
+    }
+    out.set(label, {
+      origin: 'var',
+      varMatch: { name: defined[0], names: defined, ambiguous: defined.length > 1 },
+    });
+  }
+  return out;
+}
+
+/**
+ * 要素の各デザインプロパティについて「宣言された CSS 変数名」を回収する。
+ * collectAuthoredInfo の var 分だけを取り出す薄いラッパ (バッジ表示の既存経路)。
+ */
+export function collectAuthoredVars(element: Element): Map<string, VarMatch> {
+  const out = new Map<string, VarMatch>();
+  for (const [label, info] of collectAuthoredInfo(element)) {
+    if (info.varMatch) out.set(label, info.varMatch);
   }
   return out;
 }

@@ -1,6 +1,7 @@
 import { AI_SESSION_CALL_LIMIT, estimateTokens } from '../../src/aiCost';
 import { buildAuditPrompt, type AuditPrompt } from '../../src/aiPrompt';
 import { AI_PROVIDERS, type AiProviderId } from '../../src/aiProviders';
+import { formatCoverageMarkdown, LOW_SAMPLE_THRESHOLD, ratePercent } from '../../src/coverage';
 import type { DesignScan } from '../../src/designScan';
 import { normalizeRecordKey } from '../../src/recordKey';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
@@ -110,6 +111,217 @@ tokensClearEl.addEventListener('click', () => {
   clearTimeout(tokensSaveTimer);
   tokensEl.value = '';
   void saveTokens();
+});
+
+// ---- トークンカバレッジ (決定論・AI 不要) ----------------------------------
+const coverageMeasureEl = $<HTMLButtonElement>('coverageMeasure');
+const coverageStatusEl = $('coverageStatus');
+const coverageResultEl = $('coverageResult');
+const coverageScopeEl = $('coverageScope');
+const coverageTruncatedEl = $('coverageTruncated');
+const coverageFamiliesEl = $('coverageFamilies');
+const coverageOverallEl = $('coverageOverall');
+const coverageMeasurableEl = $('coverageMeasurable');
+const coverageOriginEl = $('coverageOrigin');
+const coverageOffGridEl = $('coverageOffGrid');
+const coverageTopEl = $('coverageTop');
+const coverageCopyEl = $<HTMLButtonElement>('coverageCopy');
+
+const FAMILY_LABEL: Record<string, string> = {
+  color: 'coverageFamilyColor',
+  spacing: 'coverageFamilySpacing',
+  radius: 'coverageFamilyRadius',
+  font: 'coverageFamilyFont',
+};
+
+/** 直近のスキャン結果。AI セクションと共有して二重スキャンを避ける */
+let lastScan: DesignScan | null = null;
+
+function fillTemplate(key: Parameters<typeof msg>[0], vars: Record<string, string | number>): string {
+  let s = msg(key);
+  for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
+  return s;
+}
+
+function el(tag: string, cls?: string, text?: string): HTMLElement {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function renderCoverage(scan: DesignScan) {
+  const cov = scan.coverage;
+  coverageResultEl.hidden = false;
+
+  coverageScopeEl.textContent = fillTemplate('coverageScope', {
+    elements: scan.elementCount,
+    colors: scan.tokenCounts.colors,
+    sizes: scan.tokenCounts.sizes,
+  });
+  coverageTruncatedEl.hidden = !scan.truncated;
+  if (scan.truncated) {
+    coverageTruncatedEl.textContent = fillTemplate('coverageTruncated', {
+      shown: scan.elementCount,
+      total: scan.candidateCount,
+    });
+  }
+
+  // 辞書が空なら率を一切出さない (0% は「何にも準拠していない」と誤読される)
+  const dictEmpty = scan.tokenCounts.colors === 0 && scan.tokenCounts.sizes === 0;
+  coverageFamiliesEl.replaceChildren();
+  if (dictEmpty) {
+    coverageFamiliesEl.append(el('div', 'hint', msg('coverageEmptyDict')));
+    coverageOverallEl.textContent = '';
+    coverageMeasurableEl.textContent = '';
+  } else {
+    for (const f of cov.families) {
+      const row = el('div', 'cov-row');
+      row.append(el('span', 'cov-name', msg(FAMILY_LABEL[f.family] as Parameters<typeof msg>[0])));
+      const rate = ratePercent(f.hit, f.judged);
+      if (rate === null) {
+        row.append(el('span', 'cov-rate cov-none', msg('coverageNoDict')));
+      } else {
+        const low = f.judged < LOW_SAMPLE_THRESHOLD ? ` (${msg('coverageLowSample')})` : '';
+        row.append(el('span', 'cov-rate', `${rate}% (${f.hit}/${f.judged})${low}`));
+        const bar = el('div', 'cov-bar');
+        bar.title = `${f.hit} / ${f.near} / ${f.far}`;
+        for (const [cls, n] of [['cov-hit', f.hit], ['cov-near', f.near], ['cov-far', f.far]] as const) {
+          if (n > 0) {
+            const seg = el('i', cls);
+            seg.style.width = `${(n / f.judged) * 100}%`;
+            bar.append(seg);
+          }
+        }
+        row.append(bar);
+      }
+      row.setAttribute('aria-label', `${f.family}: ${f.hit}/${f.judged}`);
+      coverageFamiliesEl.append(row);
+    }
+    const overall = ratePercent(cov.overall.hit, cov.overall.judged);
+    coverageOverallEl.textContent =
+      overall === null
+        ? ''
+        : `${fillTemplate('coverageOverall', { rate: overall, hit: cov.overall.hit, judged: cov.overall.judged })} ${msg('coverageOverallNote')}`;
+    const mRate = ratePercent(cov.measurable.judged, cov.measurable.total);
+    coverageMeasurableEl.textContent =
+      mRate === null
+        ? ''
+        : fillTemplate('coverageMeasurable', {
+            judged: cov.measurable.judged,
+            total: cov.measurable.total,
+            rate: mRate,
+          });
+  }
+
+  // 来歴 (ハードコード検出の本体)。判定できなければ率を出さず理由を書く
+  coverageOriginEl.replaceChildren();
+  if (!scan.originAvailable || cov.originKnown === 0) {
+    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginUnavailable')));
+  } else {
+    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginTitle')));
+    const grid = el('div', 'cov-quad');
+    const cells: [string, string, number][] = [
+      ['good', 'coverageOriginVarHit', cov.matrix.varHit],
+      ['warn', 'coverageOriginVarMiss', cov.matrix.varMiss],
+      ['warn', 'coverageOriginLiteralHit', cov.matrix.literalHit],
+      ['bad', 'coverageOriginLiteralMiss', cov.matrix.literalMiss],
+    ];
+    for (const [tone, key, n] of cells) {
+      const cell = el('div', `cov-cell ${tone}`);
+      cell.append(el('b', undefined, String(n)));
+      cell.append(document.createTextNode(msg(key as Parameters<typeof msg>[0])));
+      grid.append(cell);
+    }
+    coverageOriginEl.append(grid);
+    if (cov.matrix.literalHit > 0) {
+      coverageOriginEl.append(
+        el('div', 'hint', fillTemplate('coverageOriginNote', { n: cov.matrix.literalHit })),
+      );
+    }
+    if (cov.matrix.excluded > 0) {
+      coverageOriginEl.append(
+        el('div', 'hint', fillTemplate('coverageOriginExcluded', { n: cov.matrix.excluded })),
+      );
+    }
+    const varRate = ratePercent(cov.originVar, cov.originKnown);
+    if (varRate !== null) {
+      coverageOriginEl.append(
+        el('div', 'hint', fillTemplate('coverageVarRate', {
+          rate: varRate, vars: cov.originVar, known: cov.originKnown,
+        })),
+      );
+    }
+  }
+
+  const offRate = ratePercent(cov.offGrid.off, cov.offGrid.total);
+  coverageOffGridEl.textContent =
+    offRate === null
+      ? ''
+      : fillTemplate('coverageOffGrid', {
+          grid: 4, rate: offRate, off: cov.offGrid.off, total: cov.offGrid.total,
+        });
+
+  coverageTopEl.replaceChildren();
+  if (cov.top.length) {
+    coverageTopEl.append(el('div', 'hint', msg('coverageTopTitle')));
+    for (const t of cov.top) {
+      coverageTopEl.append(
+        el('div', undefined, t.nearest
+          ? fillTemplate('coverageTopLine', { value: t.value, count: t.count, token: t.nearest })
+          : fillTemplate('coverageTopLineFar', { value: t.value, count: t.count })),
+      );
+    }
+  }
+}
+
+/** design-scan を投げて結果を取る。shape を検証してから返す (不正 payload で popup を壊さない) */
+async function requestScan(): Promise<DesignScan | null> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id == null) return null;
+  let scan: unknown = null;
+  try {
+    // frameId: 0 = トップフレームのみ (指定しないと iframe の結果が本文を置き換える)
+    scan = await browser.tabs.sendMessage(tab.id, { type: 'design-scan' }, { frameId: 0 });
+  } catch {
+    return null;
+  }
+  const s = scan as DesignScan | null;
+  if (!s || typeof s.elementCount !== 'number' || !s.elementCount) return null;
+  if (!s.coverage || !Array.isArray(s.coverage.families)) return null;
+  if (typeof s.stats !== 'object' || s.stats === null) return null;
+  return s;
+}
+
+coverageMeasureEl.addEventListener('click', async () => {
+  coverageMeasureEl.disabled = true;
+  coverageStatusEl.textContent = msg('coverageMeasuring');
+  const scan = await requestScan();
+  coverageMeasureEl.disabled = false;
+  if (!scan) {
+    coverageStatusEl.textContent = msg('aiStatusScanFail');
+    return;
+  }
+  lastScan = scan;
+  coverageStatusEl.textContent = '';
+  coverageMeasureEl.className = 'secondary';
+  renderCoverage(scan);
+});
+
+coverageCopyEl.addEventListener('click', async () => {
+  if (!lastScan) return;
+  const md = formatCoverageMarkdown(lastScan.coverage, {
+    elementCount: lastScan.elementCount,
+    candidateCount: lastScan.candidateCount,
+    truncated: lastScan.truncated,
+    originAvailable: lastScan.originAvailable,
+  });
+  try {
+    await navigator.clipboard.writeText(md);
+    coverageStatusEl.textContent = msg('aiStatusCopied');
+  } catch {
+    coverageStatusEl.textContent = msg('statsCopyFail');
+  }
 });
 
 // 「開発者向け」折りたたみの開閉状態を保持 (エンジニアは開きっぱなしにできる)
@@ -226,34 +438,13 @@ async function countCall(current: number): Promise<void> {
 // 収集 → プレビュー (FR-26: 送信前に全文を見せる。この段階では何も送らない)
 aiCollectEl.addEventListener('click', async () => {
   aiStatusEl.textContent = '';
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  let scan: DesignScan | null = null;
-  if (tab?.id != null) {
-    try {
-      // frameId: 0 = トップフレームのみ。指定しないと全フレームに配信され、
-      // 先に応答した iframe のスキャン結果が本文ページの結果を置き換えてしまう
-      scan = (await browser.tabs.sendMessage(
-        tab.id,
-        { type: 'design-scan' },
-        { frameId: 0 },
-      )) as DesignScan | null;
-    } catch {
-      scan = null;
-    }
-  }
-  // MAIN world からの戻りは shape を検証してから使う (不正 payload で throw させない)
-  if (
-    !scan ||
-    typeof scan.elementCount !== 'number' ||
-    !scan.elementCount ||
-    typeof scan.stats !== 'object' ||
-    scan.stats === null ||
-    typeof scan.tokenCounts !== 'object' ||
-    scan.tokenCounts === null
-  ) {
+  // 既に測定済みならその結果を使い、重いスキャンを 2 回走らせない
+  const scan = lastScan ?? (await requestScan());
+  if (!scan) {
     aiStatusEl.textContent = msg('aiStatusScanFail');
     return;
   }
+  lastScan = scan;
   const locale = browser.i18n.getUILanguage().toLowerCase().startsWith('ja') ? 'ja' : 'en';
   auditPrompt = buildAuditPrompt(scan, locale);
   // プレビュー = 実際に送信する全文 (system + user)。ページ由来データは user 側のみ

@@ -425,5 +425,104 @@
   },
   "btnTokensClear": {
     "message": "Clear tokens"
+  },
+  "sectionCoverage": {
+    "message": "Token coverage"
+  },
+  "tipCoverage": {
+    "message": "A value counts as compliant when it equals one of your tokens, no matter how it is written. Whether it goes through a CSS variable is measured separately, as durability."
+  },
+  "btnCoverageMeasure": {
+    "message": "Measure this screen"
+  },
+  "coverageMeasuring": {
+    "message": "Measuring this screen…"
+  },
+  "coverageScope": {
+    "message": "{elements} elements measured · tokens: {colors} colors / {sizes} sizes"
+  },
+  "coverageTruncated": {
+    "message": "Measured the first {shown} of {total} elements — counts are exact for that part, not for the whole page."
+  },
+  "coverageFamilyColor": {
+    "message": "Color"
+  },
+  "coverageFamilySpacing": {
+    "message": "Spacing"
+  },
+  "coverageFamilyRadius": {
+    "message": "Radius"
+  },
+  "coverageFamilyFont": {
+    "message": "Font size"
+  },
+  "coverageNoDict": {
+    "message": "no tokens for this"
+  },
+  "coverageLowSample": {
+    "message": "few samples"
+  },
+  "coverageOverall": {
+    "message": "All declarations: {rate}% ({hit}/{judged})"
+  },
+  "coverageOverallNote": {
+    "message": "Text color and font size exist on every element, so this single number leans on those two. Read the rows above first."
+  },
+  "coverageMeasurable": {
+    "message": "Judged {judged} of {total} values ({rate}%). The rest had no token of that kind, or a value that can't be parsed."
+  },
+  "coverageOriginTitle": {
+    "message": "Where the value comes from"
+  },
+  "coverageOriginVarHit": {
+    "message": "Variable + token"
+  },
+  "coverageOriginVarMiss": {
+    "message": "Variable, off token"
+  },
+  "coverageOriginLiteralHit": {
+    "message": "Written value, matches token"
+  },
+  "coverageOriginLiteralMiss": {
+    "message": "Written value, off token"
+  },
+  "coverageOriginNote": {
+    "message": "{n} values are right today but written as literals — they won't follow the next token change."
+  },
+  "coverageOriginExcluded": {
+    "message": "{n} values excluded: inherited, browser default, or the stylesheet can't be read."
+  },
+  "coverageOriginUnavailable": {
+    "message": "Can't tell variable from literal on this page (its stylesheets can't be read). The match rate above is unaffected."
+  },
+  "coverageVarRate": {
+    "message": "Via CSS variables: {rate}% ({vars}/{known})"
+  },
+  "coverageOffGrid": {
+    "message": "Off the {grid}px grid: {rate}% ({off}/{total} spacing values)"
+  },
+  "coverageTopTitle": {
+    "message": "Fix these first"
+  },
+  "coverageTopLine": {
+    "message": "{value} ×{count} · nearest {token}"
+  },
+  "coverageTopLineFar": {
+    "message": "{value} ×{count} · no token nearby"
+  },
+  "coverageEmptyDict": {
+    "message": "No tokens loaded, so compliance can't be measured — a percentage here would be meaningless. Paste your tokens above, or turn on MUI auto-detect. The checks below work without tokens."
+  },
+  "coverageStale": {
+    "message": "Tokens changed — measure again."
+  },
+  "coverageScopeNote": {
+    "message": "A snapshot of this screen as it is right now. iframes, shadow DOM and hidden elements are not included. Nothing is saved or sent."
+  },
+  "btnCoverageCopy": {
+    "message": "Copy measurement"
+  },
+  "coverageDetailsSummary": {
+    "message": "Breakdown"
   }
 }

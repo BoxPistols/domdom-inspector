@@ -1,4 +1,4 @@
-import { collectAuthoredVars, type VarMatch } from './cssVars';
+import { collectAuthoredInfo, type VarMatch } from './cssVars';
 import { parseColor } from './tokenDict';
 import type { DesignProp } from './types';
 
@@ -61,6 +61,7 @@ export function toHex(v: string): string {
 export function pickDesignStyle(
   get: (prop: string) => string,
   getVar?: (label: string) => VarMatch | null,
+  getOrigin?: (label: string) => DesignProp['origin'],
 ): DesignProp[] {
   const out: DesignProp[] = [];
   for (const { prop, label, skip } of PROPS) {
@@ -78,6 +79,8 @@ export function pickDesignStyle(
         dp.varNames = v.names;
       }
     }
+    const o = getOrigin?.(label);
+    if (o) dp.origin = o;
     out.push(dp);
   }
   return out;
@@ -88,16 +91,23 @@ export function pickDesignStyle(
  * 併せて「宣言された CSS 変数名」(Tier1 authored) を回収し添える。CSSOM 走査が
  * 失敗しても computed のみで縮退する (production/クロスオリジンで壊さない)。
  */
-export function extractDesignStyle(element: Element): DesignProp[] {
+export function extractDesignStyle(
+  element: Element,
+  opts: { withOrigin?: boolean } = {},
+): DesignProp[] {
   const cs = getComputedStyle(element);
-  let vars: Map<string, VarMatch> | null = null;
+  let info: Map<string, { origin: DesignProp['origin']; varMatch: VarMatch | null }> | null = null;
   try {
-    vars = collectAuthoredVars(element);
+    info = collectAuthoredInfo(element);
   } catch {
-    vars = null;
+    info = null;
   }
   return pickDesignStyle(
     (prop) => cs.getPropertyValue(prop),
-    vars ? (label) => vars.get(label) ?? null : undefined,
+    info ? (label) => info.get(label)?.varMatch ?? null : undefined,
+    // 来歴はページ全体スキャンでのみ使う。バッジ表示では不要なので既定では付けない
+    opts.withOrigin
+      ? (label) => info?.get(label)?.origin ?? 'unknown'
+      : undefined,
   );
 }
