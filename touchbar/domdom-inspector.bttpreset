@@ -91,7 +91,9 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTouchBarItemPlacement": 0,
             "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarFreeSpaceAfterButton": 4
+            "BTTTouchBarFreeSpaceAfterButton": 4,
+            "BTTTouchBarButtonUseFixedWidth": 1,
+            "BTTTouchBarButtonWidth": 62
           },
           "BTTShortcutToSend": "126"
         },
@@ -112,7 +114,9 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTouchBarItemPlacement": 0,
             "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarFreeSpaceAfterButton": 4
+            "BTTTouchBarFreeSpaceAfterButton": 4,
+            "BTTTouchBarButtonUseFixedWidth": 1,
+            "BTTTouchBarButtonWidth": 62
           },
           "BTTShortcutToSend": "125"
         },
@@ -133,7 +137,9 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTouchBarItemPlacement": 0,
             "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarFreeSpaceAfterButton": 4
+            "BTTTouchBarFreeSpaceAfterButton": 4,
+            "BTTTouchBarButtonUseFixedWidth": 1,
+            "BTTTouchBarButtonWidth": 62
           }
         }
       ]
