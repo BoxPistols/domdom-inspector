@@ -3,7 +3,7 @@
     "message": "DomDom Inspector"
   },
   "extDescription": {
-    "message": "Inspect any React app: identify components on hover, jump to source, visualize re-renders. MUI-aware, any styling."
+    "message": "See any page's design values and check them against your design tokens — on production sites, not just localhost."
   },
   "cmdToggleInspect": {
     "message": "Toggle inspect mode"

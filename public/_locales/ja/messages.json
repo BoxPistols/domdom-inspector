@@ -3,7 +3,7 @@
     "message": "DomDom Inspector"
   },
   "extDescription": {
-    "message": "あらゆる React アプリを検査: ホバーで識別・ソースへジャンプ・再描画を可視化。MUI 判別対応、任意のスタイルで動作。"
+    "message": "どのページでも色・余白・角丸・文字サイズを計測し、あなたのデザイントークンと照合。localhost だけでなく本番サイトでも動きます。"
   },
   "cmdToggleInspect": {
     "message": "インスペクトモードの切替"
