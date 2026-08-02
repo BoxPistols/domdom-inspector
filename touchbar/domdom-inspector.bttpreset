@@ -39,7 +39,7 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTBWidgetWidth": 104,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 1
+            "BTTTouchBarScriptUpdateInterval": 2
           }
         },
         {
@@ -70,7 +70,7 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTBWidgetWidth": 90,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 1
+            "BTTTouchBarScriptUpdateInterval": 2
           }
         },
         {
@@ -101,7 +101,7 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTBWidgetWidth": 62,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 1
+            "BTTTouchBarScriptUpdateInterval": 2
           }
         },
         {
@@ -132,7 +132,7 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTBWidgetWidth": 62,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 1
+            "BTTTouchBarScriptUpdateInterval": 2
           }
         },
         {
@@ -154,7 +154,7 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTBWidgetWidth": 62,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 1
+            "BTTTouchBarScriptUpdateInterval": 2
           }
         },
         {
@@ -185,7 +185,7 @@
             "BTTTouchBarButtonFontSize": 12,
             "BTTTBWidgetWidth": 62,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 1
+            "BTTTouchBarScriptUpdateInterval": 2
           }
         }
       ]

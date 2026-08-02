@@ -34,7 +34,7 @@ Touch Bar から domdom-inspector を操作するための BTT ウィジェッ�
 3 方法すべて `Global` になる)。
 
 そこで **type 642 (シェルスクリプトウィジェット) の自前判定**を使っている。各ウィジェットは
-1 秒ごとに次のインラインスクリプトを実行し、Chrome が最前面でなければ自分を隠す:
+2 秒ごとに次のインラインスクリプトを実行し、Chrome が最前面でなければ自分を隠す:
 
 ```bash
 b=$(lsappinfo info -only bundleID "$(lsappinfo front)" 2>/dev/null)
@@ -50,9 +50,13 @@ esac
 
 - **判定は更新間隔ぶん遅れる。** ボタンが見えている状態で Cmd+Tab して押すと、
   Chrome 向けのキーが新しい最前面アプリに飛ぶ。常時居座りは消えるが誤爆の完全な解ではない
-- **CPU を食う。** `lsappinfo` の 2 回起動で 1 回 15ms。6 個 × 1 秒 = 90ms/s ≒ コアの 9%。
+- **CPU を食う。** `lsappinfo` の 2 回起動で 1 回 15ms。6 個 × 2 秒間隔で 45ms/s ≒ コアの 4.5%。
   インタプリタを挟むと桁が変わる (`python3 -c pass` だけで 47.5ms) ので、**判定は必ず
-  インラインの bash に留める**こと
+  インラインの bash に留める**こと。表示制御にしか使わないので間隔は 2 秒で十分
+- **ネイティブの条件付き表示は使えない。** BTT には条件用の変数
+  (`BTTActiveAppBundleIdentifier` 等) とトリガー側のキー (`BTTTriggerConditions*`) が実在するが、
+  AppleScript から書いても保存されない (アプリ限定と同じ挙動)。「変数が真のときだけ表示」は
+  `BTTMenuItemVisibleIfVariableIsTrue` = **Floating Menu 専用**で、Touch Bar に同等品は無い
 
 ## 手順
 
