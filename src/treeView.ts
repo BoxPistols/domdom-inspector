@@ -22,6 +22,10 @@ export class TreeView {
   private enabled = false;
   private settings: Settings = DEFAULT_SETTINGS;
   private nodeMap: NodeElementMap | null = null;
+  /** フィルタ前の全ノード (DOM → 行 の解決に使う) */
+  private allById = new Map<number, TreeNode>();
+  /** 表示中の (フィルタ後の) ノード id */
+  private visibleIds = new Set<number>();
   private unsubscribe: (() => void) | null = null;
   private refreshRaf = 0;
   private hoverRaf = 0;
@@ -81,9 +85,14 @@ export class TreeView {
   }
 
   private refresh() {
-    // div/span 等の host 要素を隠す。含めると 1000 ノード超になり判読できない (FR-06)
-    const filtered = filterTree(buildTree(this.hookState), { hideHostComponents: true });
-    this.nodeMap = buildNodeElementMap(filtered);
+    // div/span 等の host 要素は「表示から」隠す。含めると 1000 ノード超で判読できない (FR-06)。
+    // ただし要素対応マップは **フィルタ前の全ノード** から作る — host ノードだけが
+    // hostElement を持つため、フィルタ後から作ると対応が空になり双方向連動が死ぬ。
+    const all = buildTree(this.hookState);
+    const filtered = filterTree(all, { hideHostComponents: true });
+    this.nodeMap = buildNodeElementMap(all);
+    this.allById = new Map(all.map((n) => [n.id, n]));
+    this.visibleIds = new Set(filtered.map((n) => n.id));
     this.overlay.showTree(filtered, {
       title: this.strings.treeTitle,
       onHoverNode: (node) => this.highlightNode(node),
@@ -121,6 +130,16 @@ export class TreeView {
     if (info?.jumpTarget) this.overlay.openEditor(info.jumpTarget);
   }
 
+  /** 非表示ノードに解決されたとき、表示されている最近傍の祖先 id へ繰り上げる */
+  private nearestVisible(id: number | null): number | null {
+    let cur = id;
+    while (cur !== null) {
+      if (this.visibleIds.has(cur)) return cur;
+      cur = this.allById.get(cur)?.parentId ?? null;
+    }
+    return null;
+  }
+
   /** 実 DOM hover → 最近傍ノードを解決し、ツリーの該当行へスクロール&強調 (逆方向) */
   private onDomHover = (event: PointerEvent) => {
     if (this.overlay.containsTarget(event.target)) return; // ツリーパネル上は無視
@@ -129,7 +148,9 @@ export class TreeView {
       const el = document.elementFromPoint(event.clientX, event.clientY);
       if (!el || !this.nodeMap) return;
       const id = resolveNodeIdFromElement(el, this.nodeMap.elementToNode);
-      if (id !== null) this.overlay.scrollTreeTo(id);
+      // 解決先が host ノード等で非表示なら、表示されている最近傍の祖先まで繰り上げる
+      const visible = this.nearestVisible(id);
+      if (visible !== null) this.overlay.scrollTreeTo(visible);
     });
   };
 }

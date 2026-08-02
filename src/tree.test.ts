@@ -229,3 +229,43 @@ describe('buildNodeElementMap / resolveNodeIdFromElement', () => {
     expect(resolveNodeIdFromElement(document.createElement('p'), elementToNode)).toBeNull();
   });
 });
+
+describe('host を隠したツリーと要素対応の関係 (回帰防止)', () => {
+  // hostElement を持つのは host ノードだけ。したがって filterTree で host を隠した結果から
+  // buildNodeElementMap を作ると対応が空になり、ツリー ⇔ DOM の双方向連動が死ぬ。
+  // treeView は「表示はフィルタ後 / 対応はフィルタ前」で作る必要がある。
+  const host = document.createElement('div');
+
+  const nodes = [
+    { id: 0, fiberTag: 1, name: 'App', classification: 'custom' as const,
+      hostElement: null, depth: 0, parentId: null, childIds: [1] },
+    { id: 1, fiberTag: 5, name: 'div', classification: 'third-party' as const,
+      hostElement: host, depth: 1, parentId: 0, childIds: [] },
+  ];
+
+  it('フィルタ後から対応を作ると空になる (これをやってはいけない)', () => {
+    const filtered = filterTree(nodes, { hideHostComponents: true });
+    expect(filtered.some((n) => n.hostElement)).toBe(false);
+    const map = buildNodeElementMap(filtered);
+    expect(map.elementToNode.size).toBe(0);
+    expect(map.nodeToElement.size).toBe(0);
+  });
+
+  it('フィルタ前から作れば、host を隠しても composite に代表要素が割り当たる', () => {
+    const map = buildNodeElementMap(nodes);
+    expect(map.elementToNode.get(host)).toBe(1);
+    // App (composite) は子孫 host を代表として持つ → 行 hover でハイライトできる
+    expect(map.nodeToElement.get(0)).toBe(host);
+  });
+
+  it('DOM から解決した id が非表示でも、親を辿れば表示ノードに行き着く', () => {
+    const filtered = filterTree(nodes, { hideHostComponents: true });
+    const visible = new Set(filtered.map((n) => n.id));
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    let id: number | null = resolveNodeIdFromElement(host, buildNodeElementMap(nodes).elementToNode);
+    expect(id).toBe(1);
+    expect(visible.has(id!)).toBe(false); // host は非表示
+    while (id !== null && !visible.has(id)) id = byId.get(id)?.parentId ?? null;
+    expect(id).toBe(0); // App まで繰り上がる
+  });
+});
