@@ -163,12 +163,12 @@
       <h2 data-i18n="sectionSite">Use on this site</h2>
       <button id="enableSite" data-i18n="btnEnableSite">Enable on current site…</button>
       <div class="hint" data-i18n="hintEnableSite">
-        For deployed/production sites (not just localhost). Grants access to this site and starts inspecting right away — no reload needed.
+        For deployed/production sites, not just localhost. Grants access and starts inspecting this page immediately. Component tree and render visualization need one page reload.
       </div>
       <button id="enableAll" class="secondary" data-i18n="btnAllSitesOn">Enable on all sites (once)</button>
       <div class="hint" data-i18n="hintAllSites">
-        Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button.
-        This extension only reads the page — it never sends data, stores page content, or runs remote code.
+        Grant once and every site works from then on — no per-site prompts, including new tabs and after a
+        browser restart. Tabs that are already open need one reload. Revoke anytime with the same button.
       </div>
       <div class="hint" id="siteStatus" role="status" aria-live="polite"></div>
     </section>
@@ -304,8 +304,10 @@
       -->
       <div class="help" data-help="en">
         <p><b>Setup</b>: on a deployed site, click "Enable on current site…" once — inspecting
-        starts right away, no reload needed. On localhost dev servers it works out of the box:
-        turn inspect mode ON with the button above or Alt+Shift+I.</p>
+        starts right away on that page. The component tree and render visualization need one
+        page reload, because they hook into React before the app boots. On localhost dev
+        servers everything works out of the box: turn inspect mode ON with the button above
+        or its keyboard shortcut.</p>
         <p><b>Hover</b>: an outline and badge appear. Outline color is
         <span class="legend lg-mui">blue = MUI</span> /
         <span class="legend lg-custom">green = your code</span> /
@@ -325,8 +327,9 @@
 
       <div class="help" data-help="ja" hidden>
         <p><b>準備</b>: デプロイ済みサイトなら「現在のサイトで有効化…」を一度押すだけで、
-        リロード不要でそのままインスペクトが始まります。localhost の開発サーバでは最初から
-        使えます (上のボタンか Alt+Shift+I で ON)。</p>
+        そのページのインスペクトがすぐ始まります。コンポーネントツリーと再描画の可視化は、
+        アプリ起動前に React へフックする必要があるため 1 回リロードしてください。
+        localhost の開発サーバでは最初から全部使えます (上のボタンかショートカットで ON)。</p>
         <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
         <span class="legend lg-mui">青 = MUI</span> /
         <span class="legend lg-custom">緑 = 自作</span> /

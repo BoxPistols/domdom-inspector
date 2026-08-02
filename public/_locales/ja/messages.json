@@ -48,7 +48,7 @@
     "message": "現在のサイトで有効化…"
   },
   "hintEnableSite": {
-    "message": "デプロイ済み/本番サイト用(localhost 以外)。このサイトへのアクセスを許可し、その場でインスペクトが始まります(リロード不要)。"
+    "message": "デプロイ済み/本番サイト用(localhost 以外)。許可すると、このページですぐインスペクトを開始します。コンポーネントツリーと再描画の可視化は、1 回リロードすると使えます。"
   },
   "btnAllSitesOn": {
     "message": "全サイトで許可(一度だけ)"
@@ -57,7 +57,7 @@
     "message": "全サイト許可を解除"
   },
   "hintAllSites": {
-    "message": "一度許可すれば以降どのサイトでも都度許可なしで使えます。解除も同じボタンから。この拡張はページを読み取るだけで、ページ内容の保存・リモートコード実行は行わず、任意の BYOK AI 監査 (集計スタイル値のみ・送信前プレビュー必須) を明示的に使わない限り何も送信しません。"
+    "message": "一度許可すれば、以降はどのサイトでも都度許可なしで使えます(新しいタブでも、ブラウザ再起動後でも有効)。すでに開いているタブでは 1 回リロードが必要です。解除も同じボタンから。この拡張はページを読み取るだけで、ページ内容の保存・リモートコード実行は行わず、任意の BYOK AI 監査 (集計スタイル値のみ・送信前プレビュー必須) を明示的に使わない限り何も送信しません。"
   },
   "allSitesEnabled": {
     "message": "全サイトで有効化しました。"
@@ -78,7 +78,7 @@
     "message": "対象: {origin}"
   },
   "injectError": {
-    "message": "このページで開始できませんでした — ページをリロードしてもう一度お試しください。"
+    "message": "このページで開始できませんでした。リロードしてからもう一度お試しください。"
   },
   "shortcutUnset": {
     "message": "(未設定)"
@@ -93,7 +93,7 @@
     "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc"
   },
   "labelEditor": {
-    "message": "エディタ"
+    "message": "ソースを開くエディタ"
   },
   "labelCustomUrl": {
     "message": "カスタム URL テンプレート"
@@ -210,7 +210,7 @@
     "message": "切替ショートカットを変更…"
   },
   "hintConfigureShortcuts": {
-    "message": "chrome://extensions/shortcuts を開き、Alt+Shift+I を任意のキーに変更できます。"
+    "message": "chrome://extensions/shortcuts を開き、各モードのキーを割り当て・変更できます。他の拡張が同じキーを使っていると、Chrome はそのショートカットを未割り当てのままにします。"
   },
   "labelRecordKey": {
     "message": "記録キー(再描画の可視化モード中)"
@@ -247,9 +247,6 @@
   },
   "editorHint": {
     "message": "⌘/Ctrl+Click でエディタで開く"
-  },
-  "labelEditor": {
-    "message": "ソースを開くエディタ"
   },
   "ownerPanelTitle": {
     "message": "描画元 (クリックでエディタへ)"

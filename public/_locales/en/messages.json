@@ -48,7 +48,7 @@
     "message": "Enable on current site…"
   },
   "hintEnableSite": {
-    "message": "For deployed/production sites (not just localhost). Grants access to this site and starts inspecting right away — no reload needed."
+    "message": "For deployed/production sites, not just localhost. Grants access and starts inspecting this page immediately. Component tree and render visualization need one page reload."
   },
   "btnAllSitesOn": {
     "message": "Enable on all sites (once)"
@@ -57,7 +57,7 @@
     "message": "Revoke all-sites access"
   },
   "hintAllSites": {
-    "message": "Grant once and it works on every site with no per-site prompts. Revoke anytime with the same button. This extension only reads the page — it never stores page content or runs remote code, and sends nothing unless you explicitly use the optional BYOK AI audit (aggregated style values only, previewed first)."
+    "message": "Grant once and every site works from then on — no per-site prompts, including new tabs and after a browser restart. Tabs that are already open need one reload. Revoke anytime with the same button. This extension only reads the page — it never stores page content or runs remote code, and sends nothing unless you explicitly use the optional BYOK AI audit (aggregated style values only, previewed first)."
   },
   "allSitesEnabled": {
     "message": "Enabled on all sites."
@@ -78,7 +78,7 @@
     "message": "Target: {origin}"
   },
   "injectError": {
-    "message": "Couldn't start on this page — reload the page and try again."
+    "message": "Couldn't start on this page. Reload it and try again."
   },
   "shortcutUnset": {
     "message": "(not set)"
@@ -93,7 +93,7 @@
     "message": "Shortcut: {key} / Record: {rec} / Exit: Esc"
   },
   "labelEditor": {
-    "message": "Editor"
+    "message": "Open source in"
   },
   "labelCustomUrl": {
     "message": "Custom URL template"
@@ -210,7 +210,7 @@
     "message": "Change toggle shortcuts…"
   },
   "hintConfigureShortcuts": {
-    "message": "Opens chrome://extensions/shortcuts to remap Alt+Shift+I to any keys."
+    "message": "Opens chrome://extensions/shortcuts, where you can assign or change the keys for each mode. Chrome leaves a shortcut unassigned when another extension already uses the same keys."
   },
   "labelRecordKey": {
     "message": "Record key (in render mode)"
@@ -247,9 +247,6 @@
   },
   "editorHint": {
     "message": "⌘/Ctrl+Click to open in editor"
-  },
-  "labelEditor": {
-    "message": "Open source in"
   },
   "ownerPanelTitle": {
     "message": "Rendered by (click to open editor)"
