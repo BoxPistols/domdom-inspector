@@ -21,12 +21,20 @@ Chrome が最前面のときだけボタンが出る。
 
 | ボタン | 送るもの | 効くのはいつか |
 |--------|----------|----------------|
-| 🔍 Inspect | `⌃I` (キーコード `59,34`) | 常時。実機で domdom-inspector に割当済みを確認済み |
-| 🌳 Tree | `⌃T` (`59,17`) | **要手動割当** (下記) |
-| ⚡︎ Render | `⌃E` (`59,14`) | **要手動割当** (下記) |
+| 🔍 Inspect | `⌃I` (キーコード `59,34`) | 常時 |
+| 🌳 Tree | `⌥⇧T` (`58,56,17`) | 常時 |
 | ▲ 親 | `↑` (`126`) | インスペクトモード ON かつ**要素をホバー済み**のときだけ |
 | ▼ 子 | `↓` (`125`) | 同上 |
 | esc | ESC アクション (`189`) | 常時 (モード解除) |
+| ⚙︎ | `⌃D` (`59,2`) | 常時 (popup を開く)。効かないときの逃げ道 |
+
+キーはすべて **Chrome の実バインド** (`Preferences` の `extensions.commands`) に一致させてある。
+記号だけのボタン (▲ / ▼ / esc / ⚙) には 62px の固定幅を指定 — Touch Bar は物理フィードバックが
+無く、細いボタンはタップしづらいため。
+
+**⚡︎ Render は未収録。** `toggle-render` は ⌥⇧R を Screencastify が予約しているため Chrome が
+割り当てておらず、送るキーが存在しない。`chrome://extensions/shortcuts` で ⌃E 等を割り当てれば
+追加できる。
 
 記録トグル (`R`) のボタンは意図的に入れていない。修飾キーが付かないため、レンダー可視化
 モードが OFF のときに押すと素の `r` がページやアドレスバーに入力されてしまうため。
@@ -34,16 +42,11 @@ Chrome が最前面のときだけボタンが出る。
 
 ## import 前にやること
 
-### 1. 拡張を最新ビルドで再読込する
+### 1. 拡張を最新ビルドで配る (完了済み)
 
-現在 Chrome にロードされている domdom-inspector のビルドには `toggle-tree` /
-`toggle-render` コマンドが**入っていない** (v0.4.0 で再配線したもの)。先に:
-
-```sh
-pnpm build
-```
-
-して `chrome://extensions` で「更新」(⟳) する。
+Chrome がロードしているのは `.output/chrome-mv3` ではなく **OneDrive の同期フォルダ**。
+`pnpm build` だけでは反映されないので **`pnpm build:sync`** を使い、`chrome://extensions` で
+「更新」(⟳) を押す。
 
 ### 2. 古い unpacked コピーを整理する
 
@@ -58,26 +61,24 @@ Chrome には domdom-inspector が **2 つ**登録されている:
 拡張には割り当たらない。古い方を削除するか、`⌥⇧I` を使わない前提で運用する
 (このプリセットは後者を採り `⌃I` を送る)。
 
-### 3. Tree / Render のショートカットを割り当てる
+### 3. Render を使うならショートカットを割り当てる
 
-`chrome://extensions/shortcuts` で domdom-inspector を開き:
-
-- `toggle-tree` → `⌃T` (現在空き)
-- `toggle-render` → `⌃E` (現在空き)
+`chrome://extensions/shortcuts` で `toggle-render` に **⌃E** 等 (空き) を割り当てる。
 
 **`⌥⇧R` は使わないこと。** Screencastify (`mmeijimgabbpbgpdklnllpncmdofkcpn`) が
 `toggle-start-stop` で予約済みで、無効化していても予約は残る。押すと画面録画が始まる。
 
-割り当てたキーが上記と違う場合は、プリセット内の `BTTShortcutToSend` を合わせて直す
-(キーコード表は `/Applications/BetterTouchTool.app/Contents/Resources/action-definitions.mdx`)。
+割り当てたキーに合わせてプリセットへボタンを足す (キーコード表は
+`/Applications/BetterTouchTool.app/Contents/Resources/action-definitions.mdx`)。
 
 ### 4. 現在の BTT 設定をバックアップする
 
 `.bttpreset` の import が「新規プリセット作成」か「現在のプリセットへのマージ」かは
-**未確認**。既存の Claude Code 用 Touch Bar ボタンを壊さないため、先に退避する:
+**未確認**。既存の Claude Code 用 Touch Bar ボタンを壊さないため、先に退避する。
+**`export_preset` は AppleScript から引数を受け付けず使えない**ので、DB をファイルごとコピーする:
 
 ```sh
-osascript -e 'tell application "BetterTouchTool" to export_preset "Default"' > ~/Desktop/BTT-Default-backup.bttpreset
+cp ~/Library/Application\ Support/BetterTouchTool/btt_data_store.version_* ~/Desktop/BTT-backup/
 ```
 
 ## import
