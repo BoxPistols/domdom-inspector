@@ -28,6 +28,28 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 >   PRIVACY/SECURITY 改訂済み。
 > - 残: FR-15〜18(リントエンジン/パネル)、Phase 4(FR-19〜22)、FR-23。
 >
+> **v1 スコープ決定(2026-08-03)— 上記「Phase 1 機能の再配線」を v1 では巻き戻す**
+> コンポーネントツリー / レンダープロファイリング v2 / Page Vitals / Markdown レポートを
+> **再び v1 の配線から外した。実装は温存(削除ではなく到達不能)** — `src/treeView.ts` /
+> `src/tree.ts` / `src/renderDebug.ts` / `src/renderTracker.ts` / `src/renderCause.ts` /
+> `src/vitals.ts` / `src/report.ts` はそのまま残っている。
+> 理由(実機フィードバックと競合調査で確定):
+> - production ビルドでは React がコンポーネント名を minify するため**原理的に判読不能**
+>   (実機で `0e` / `je` / `Anonymous` が 1064 行並ぶツリーを確認)。
+> - 開発ビルドなら React DevTools の方が優れる(同じ土俵で勝てない)。
+> - レンダー可視化は react-scan の Chrome 拡張が既に同じ土俵にいる(約 7,000 ユーザー)。
+> - 掲載文で「React 開発者向け」を名乗ると単一目的の説明が広がり、審査リスクが上がる
+>   (`STORE_LISTING.md` の Single purpose を「計測 + トークン照合」に絞り直した)。
+> - 製品の芯は「**本番画面 × 自分のトークンで準拠検証**」で、そこだけは競合が見つからなかった
+>   (`docs/assessment-20260802-store-readiness.md`)。
+>
+> 復活させる場合: `CLAUDE.md` 地雷3 の **4 点配線 + Esc 中央ハンドラ**を戻す
+> (wxt.config commands / background COMMANDS / bridge onMessage / inspector.content handler)。
+> 設計と経緯の参照先は issue #4(レンダープロファイリング)/ #5(ツリー)だが、どちらも
+> v0.4.0 で close 済みのため、再開する際は新しい issue を立てて追跡する。
+> 再配線して掲載に戻すなら、単一目的の申告 (`STORE_LISTING.md` / `PUBLISHING.md` §4-2 /
+> `PRIVACY.md`) も同時に広げること。
+>
 > **完了済み追記 — Figma デザイントークン照合(2026-07)** — Phase 3 FR-15 の
 > 「テーマ取得に依存しない先行版」:
 > - popup にトークン JSON 貼り付け(Figma Variables / W3C Design Tokens / Tokens Studio

@@ -5,22 +5,33 @@
 ## プロダクト概要
 
 React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeScript, MV3)。
-- **コア(React 汎用)**: ホバー識別 / ツリー / エディタジャンプ / レンダーデバッグ。
+- **コア(React 汎用)**: ホバー識別 / エディタジャンプ
+  (ツリー / レンダーデバッグは実装を温存したまま v1 の配線から外した。下記「現状」)。
   スタイル手法(Tailwind/CSS/styled)非依存。React Fiber を読む。
 - **MUI 固有**: 分類の「青=MUI」判別 + 将来のデザイントークン計測。
 - **デザイナー向け production 対応**: デプロイ済み App でも computed-style デザイン検査
   (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
 - ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
 
-現状: inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優先表示**
-(`cssVars.ts` Tier1) + **Cmd/Ctrl+Click エディタジャンプ** (dev の実ソースのみ /
-minified は `isBundledSource` で抑制)) / **レンダープロファイリング v2 (Alt+Shift+R)** /
-**コンポーネントツリー (Alt+Shift+T)** / **Page Vitals** / **MUI テーマ自動取得**
-(`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換 → 手動貼り付け優先で併合) /
-**BYOK AI デザイン監査** (`designScan.ts` 集計 → popup で送信前プレビュー → background から
-OpenAI/Gemini 公式エンドポイントへ fetch)。issue #3-#9 の機能はすべて到達可能。
+現状: **v0.4.0**。**v1 の配線は inspect 一本**に絞ってある:
+inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優先表示** (`cssVars.ts` Tier1)
++ **Cmd/Ctrl+Click エディタジャンプ** (dev の実ソースのみ / minified は `isBundledSource` で抑制))
+/ **MUI テーマ自動取得** (`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換 →
+手動貼り付け優先で併合) / **トークンカバレッジパネル** (`coverage.ts` 集計 → popup。一致と来歴を
+直交させて出す) / **BYOK AI デザイン監査** (`designScan.ts` 集計 → popup で送信前プレビュー →
+background から OpenAI/Gemini 公式エンドポイントへ fetch)。
+
+**コンポーネントツリー (旧 Alt+Shift+T) / レンダープロファイリング v2 (旧 Alt+Shift+R) /
+Page Vitals / Markdown レポートは v1 の配線から外した**(実装は `treeView.ts` / `tree.ts` /
+`renderDebug.ts` / `renderTracker.ts` / `renderCause.ts` / `vitals.ts` / `report.ts` に温存。
+**削除ではなく到達不能**)。理由: production では React がコンポーネント名を minify するため
+原理的に判読不能(実機で "0e" "je" "Anonymous" が並ぶ)/ dev なら React DevTools が優れる /
+レンダー可視化は react-scan の Chrome 拡張が同じ土俵にいる / 掲載文で「React 開発者向け」を
+名乗ると単一目的の説明が広がり審査リスクが上がる。製品の芯は「本番画面 × 自分のトークンで
+準拠検証」。**モード系の復活時は本ファイル地雷3の 4 点配線を戻す**(エディタジャンプは click
+ハンドラで mode ではないため 4 点配線不要)。
 designer/engineer ロールトグルは機能差ゼロのため除去済み (`Settings.role` 型は dormant)。
-詳細 `docs/ROADMAP.md`。
+詳細 `docs/ROADMAP.md` / 判断の根拠 `docs/assessment-20260802-store-readiness.md`。
 
 ## アーキテクチャ(2 world 構成 — 最重要)
 
@@ -30,7 +41,8 @@ background.ts (SW) ── commands/tab メッセージ中継
 bridge.content.ts (ISOLATED) ── browser.* 可。storage/i18n を解決
   │ window.postMessage (同一 window 内のみ)
 inspector.content.ts (MAIN, document_start) ── ページ JS と同環境。browser.* 不可
-  ├ hook.ts / fiber.ts / tree.ts / inspector.ts / renderDebug.ts / treeView.ts / overlay.ts
+  ├ hook.ts / fiber.ts / inspector.ts / overlay.ts
+  └ (v1 配線外し・温存) tree.ts / treeView.ts / renderDebug.ts / vitals.ts
 popup/ ── 設定 UI (browser.* 可)
 ```
 **鉄則: MAIN world は `browser.*` を使えない。** 設定・i18n は bridge が解決して postMessage で

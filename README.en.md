@@ -13,14 +13,15 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
+- **Token coverage panel** — measure the whole screen and get a per-family match rate (color / spacing / radius / font size) with real counts, plus the values worth fixing first. Deterministic, no AI required (`coverage.ts`)
 - **AI design audit (BYOK, optional)** — collect aggregated style values from the page, preview exactly what will be sent, and get an AI-written audit (rogue values, consolidation, next steps) using your own OpenAI / Gemini API key. Inert until you configure a key; hard-disable toggle for client work
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
 - **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
-- **Component tree** (`Alt+Shift+T`) — shows the React Fiber tree in a panel. Hovering a node highlights the actual DOM element; clicking jumps to the editor (dev only)
-- **Render profiling** (`Alt+Shift+R`) — re-render measurement using the same criterion as React DevTools (`PerformedWork`). Heatmap flashes + recording (`R`) → cause classification (state/props/parent/memo candidates) + Page Vitals (LCP/CLS/INP) + a Markdown report you can paste into an AI. Counts and causes are accurate even on production builds (only timing measurement requires a dev build)
 - **Bilingual** — English / Japanese UI, switches with the browser locale
+
+> **Not in v1** — the component tree and render profiling (plus Page Vitals and the Markdown report) are **unwired from v1**. The implementation is kept in the repository (`src/treeView.ts`, `src/renderDebug.ts`, `src/renderTracker.ts`, `src/vitals.ts`, …) but no shortcut or message path reaches it. Why: on production builds React minifies component names, so they are fundamentally unreadable; on dev builds React DevTools does the job better; and render visualization is already covered by the react-scan extension. Re-wiring is tracked in [`docs/ROADMAP.md`](./docs/ROADMAP.md) (restoring a mode means restoring the "4-point wiring" described in `CLAUDE.md`).
 
 ## Setup
 
@@ -57,10 +58,9 @@ The extension only reads the page — it never stores page content or executes r
 ## Shortcuts
 
 - `Alt+Shift+I` — toggle inspect mode (rebindable at `chrome://extensions/shortcuts` via "Change toggle shortcut" in the popup)
-- `Alt+Shift+T` — toggle component tree
-- `Alt+Shift+R` — toggle render visualization (press `R` while in the mode to start/stop recording; the key can be changed in the popup)
+- `⌘/Ctrl+Click` — open the element's source in your editor (dev builds only)
 - `↑` / `↓` — move selection to parent/child elements
-- `Esc` — exit modes (closes one per press, in order: inspector → render → tree)
+- `Esc` — exit inspect mode
 
 The popup shows the actual bindings from `chrome.commands.getAll()` in OS-native notation (⌥⇧I on Mac).
 

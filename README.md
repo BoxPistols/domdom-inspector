@@ -15,14 +15,15 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
+- **Token coverage panel** — measure the whole screen and get a per-family match rate (color / spacing / radius / font size) with real counts, plus the values worth fixing first. Deterministic, no AI required (`coverage.ts`)
 - **AI design audit (BYOK, optional)** — collect aggregated style values from the page, preview exactly what will be sent, and get an AI-written audit (rogue values, consolidation, next steps) using your own OpenAI / Gemini API key. Inert until you configure a key; hard-disable toggle for client work
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
 - **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
-- **Component tree** (`Alt+Shift+T`) — React Fiber ツリーをパネル表示。ノード hover で実 DOM をハイライト、click でエディタジャンプ(dev のみ)
-- **Render profiling** (`Alt+Shift+R`) — React DevTools と同一基準 (`PerformedWork`) の再レンダー計測。ヒートマップ明滅 + 記録 (`R`) → 原因分類 (state/props/parent/memo 候補) + Page Vitals (LCP/CLS/INP) + AI に貼れる Markdown レポート。production ビルドでも回数・原因は正確(時間計測のみ dev ビルド)
 - **Bilingual** — English / Japanese UI, switches with the browser locale
+
+> **v1 の対象外 / Not in v1** — コンポーネントツリーとレンダープロファイリング(+ Page Vitals・Markdown レポート)は **v1 の配線から外している**。実装は `src/treeView.ts` / `src/renderDebug.ts` / `src/renderTracker.ts` / `src/vitals.ts` などにそのまま温存してあるが、ショートカット・メッセージ経路を通していないため到達しない。理由: production ビルドでは React がコンポーネント名を minify するため原理的に判読できず、開発ビルドなら React DevTools の方が優れ、レンダー可視化は react-scan の拡張が同じ土俵にいるため。再配線の判断と手順は [`docs/ROADMAP.md`](./docs/ROADMAP.md)(復活時は `CLAUDE.md` の「4 点配線」を戻す)。
 
 ## Setup / セットアップ
 
@@ -59,10 +60,9 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 ## Shortcuts / ショートカット
 
 - `Alt+Shift+I` — インスペクトモード切替(popup の「切替ショートカットを変更」から `chrome://extensions/shortcuts` で再割当可能)
-- `Alt+Shift+T` — コンポーネントツリー切替
-- `Alt+Shift+R` — レンダー可視化切替(モード中 `R` で記録開始/停止、キーは popup で変更可)
+- `⌘/Ctrl+Click` — 要素のソースをエディタで開く(dev ビルドのみ)
 - `↑` / `↓` — 親子要素へ選択移動
-- `Esc` — モード解除(インスペクタ → レンダー → ツリーの順に 1 度で 1 つ閉じる)
+- `Esc` — インスペクトモード解除
 
 popup のショートカット表示は `chrome.commands.getAll()` の実バインドを OS 表記で出す(Mac は ⌥⇧I)。
 

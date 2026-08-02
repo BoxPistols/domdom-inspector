@@ -58,6 +58,13 @@ MUI THEME AUTO-DETECTION
   font sizes) is read from its ThemeProvider and merged into token matching
   automatically — no JSON pasting needed. Pasted tokens take precedence.
 
+TOKEN COVERAGE FOR THE WHOLE SCREEN
+- One click measures every visible element and reports a match rate per family
+  (color / spacing / radius / font size) with the real counts behind it.
+- Values that are off-token are listed most-used first, so you know what to fix
+  for the biggest effect.
+- Deterministic and local. No AI needed.
+
 OPTIONAL AI DESIGN AUDIT (BYOK)
 - Bring your own OpenAI or Gemini API key and get an AI-written audit of the
   page's aggregated style values (rogue values, consolidation, next steps).
@@ -166,13 +173,11 @@ MUI テーマの自動検出
   角丸 / フォントサイズ) を読み取り、JSON 貼り付けなしでトークン照合に
   自動併合します (貼り付けトークン優先)。
 
-React 開発者向け
-- コンポーネントツリー (Alt+Shift+T): React のコンポーネント階層をパネル表示。
-  ノードにホバーすると実ページ上でハイライトされます。
-- レンダープロファイリング (Alt+Shift+R): React DevTools と同一基準の正確な
-  再レンダー回数と原因 (state / props / 親巻き込まれの無駄レンダー)。
-  production ビルドでも動作します。
-- エディタで開く: Cmd/Ctrl+クリックで要素のソースへジャンプ (開発ビルドのみ)。
+画面全体のトークンカバレッジ
+- ワンクリックで表示中の全要素を計測し、色 / 余白 / 角丸 / 文字サイズごとの
+  一致率を実数つきで表示します。
+- トークンから外れた値は使用回数の多い順に並ぶので、どこから直せば効くかが分かります。
+- 決定論的でローカル完結。AI は不要です。
 
 任意の AI デザイン監査 (BYOK)
 - 自分の OpenAI / Gemini API キーで、ページの集計スタイル値への AI 講評
@@ -196,13 +201,13 @@ React 開発者向け
 ```
 
 **単一目的 (Single purpose — 上記英文の対訳。CWS への入力は英文):**
-web ページの UI 実装を検査する — ページ要素のデザイン値 (色 / 余白 / 角丸 / タイポグラフィ)
-を計測し、利用者自身のデザイントークンと照合し、それを生むコンポーネント構造とレンダー挙動を
-可視化する。全機能がこの単一目的に奉仕する: コンポーネントツリーとレンダープロファイリングは
-「計測値を生んだのはどのコンポーネントか」「それが何回再レンダーされているか」を説明し、
-エディタジャンプは検査中の要素のソースを開き、任意の AI 監査は集計済み計測値に講評を付ける。
-検査はすべてローカルの読み取り専用で、外部送信は利用者が起動する AI 講評 (利用者自身のキー)
-のみ。
+web ページの UI のデザイン値を計測し、利用者自身のデザインシステムと照合する —
+ページ要素の値 (色 / 余白 / 角丸 / タイポグラフィ) を読み取り、利用者のデザイントークンと
+要素単位またはページ全体の集計で照合する。全機能がこの単一目的に奉仕する: MUI テーマ
+自動取得はページ自身からトークン辞書を組み立てて貼り付けを不要にし、エディタジャンプは
+計測中の要素のソースを開き (React の開発ビルドのみ)、任意の AI 監査は集計済み計測値に
+講評を付ける。検査はすべてローカルの読み取り専用で、外部送信は利用者が起動する AI 講評
+(利用者自身のキー) のみ。
 
 **データ利用の申告 (対訳):** Website content = **収集する** (BYOK AI 監査で集計スタイル値を
 利用者設定のプロバイダへ送信。2 段の明示操作 + プレビュー必須。URL・テキスト・DOM・
@@ -232,4 +237,12 @@ web ページの UI 実装を検査する — ページ要素のデザイン値 
 
 Phase 4 (セッションスキャン / UI アーキテクチャ抽出 / 課題レポート / Skills 生成) と
 Phase 3 の残り (リントエンジン FR-15〜18) は `docs/ROADMAP.md` で管理し、搭載時に
-リスティングを更新する。(旧 issue #4-#9 の機能は v0.4.0 で搭載済み → 上記本文に反映済み)
+リスティングを更新する。
+
+**コンポーネントツリー / レンダープロファイリング / Page Vitals は v1 の配線から外した**
+(実装は `src/treeView.ts` / `src/renderDebug.ts` / `src/vitals.ts` などに温存。到達不能)。
+掲載文・単一目的・スクリーンショットのいずれにも含めないこと。再配線して掲載に戻す場合は
+単一目的の申告も同時に広げる必要がある(審査リスクは上がる)。判断の根拠は
+`docs/assessment-20260802-store-readiness.md` と `docs/ROADMAP.md`。
+MUI テーマ自動取得 (旧 issue #8) と BYOK AI 監査 (旧 issue #9) は v0.4.0 で搭載済み
+→ 上記本文に反映済み。
