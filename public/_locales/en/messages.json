@@ -3,7 +3,7 @@
     "message": "DomDom Inspector"
   },
   "extDescription": {
-    "message": "See any page's design values and check them against your design tokens — on production sites, not just localhost."
+    "message": "See any page's design values, and match them against your MUI theme — on production sites, not just localhost."
   },
   "cmdToggleInspect": {
     "message": "Toggle inspect mode"

@@ -52,18 +52,15 @@ INSPECT DESIGN VALUES (Alt+Shift+I)
 - Open in editor: Cmd/Ctrl+Click an element (or use the right-click menu) to jump
   to its source (React dev builds only).
 
-MATCH AGAINST YOUR DESIGN TOKENS
-- Paste your design token JSON (Figma Variables export, W3C Design Tokens,
-  or Tokens Studio) into the popup.
-- Matched values are annotated with the token name (e.g. primary.main);
-  unmatched values are flagged as rogue.
-- Audit a deployed product against your design system without opening
-  DevTools or reading CSS.
-
-MUI THEME AUTO-DETECTION
+MATCH AGAINST YOUR DESIGN TOKENS — ZERO CONFIG
 - When the page uses MUI, the theme (palette / spacing / border radius /
-  font sizes) is read from its ThemeProvider and merged into token matching
-  automatically — no JSON pasting needed. Pasted tokens take precedence.
+  font sizes) is read from its ThemeProvider automatically. Nothing to set up.
+- Matched values are annotated with the token name (e.g. primary.main);
+  unmatched values are flagged as rogue with the nearest token.
+- Audit a deployed product against its own design system without opening
+  DevTools or reading CSS.
+- On pages without a theme, the badge still shows the declared CSS variable
+  name behind each value, plus off-grid spacing warnings.
 
 WORKS ANYWHERE
 - Any site, any styling method. React apps (dev or production build) and
@@ -93,11 +90,11 @@ PRIVACY
 - No remote code, and no network requests of any kind. Nothing leaves the device.
 
 **Single purpose:** Measure the design values of a web page's UI and check them against the
-user's own design system — read the values of the element the user points at (colors,
-spacing, border-radius, typography) and match them against the user's design tokens.
-Every feature serves that one purpose: MUI theme auto-detection builds the token dictionary
-from the page itself so nothing has to be pasted; the right-click menu and "open in editor"
-reach the element and its source while it is being measured (React dev builds only).
+design system that page is built on — read the values of the element the user points at
+(colors, spacing, border-radius, typography) and match them against the design tokens found
+on the page. Every feature serves that one purpose: MUI theme auto-detection builds the
+token dictionary from the page itself; the right-click menu and "open in editor" reach the
+element and its source while it is being measured (React dev builds only).
 All inspection is local and read-only, and the extension sends nothing anywhere.
 
 **Data usage disclosure (CWS form):** — v1 は**外部送信を一切持たない**
@@ -107,8 +104,7 @@ All inspection is local and read-only, and the extension sends nothing anywhere.
   information / authentication information / health / financial and payment /
   personal communications / location / web history / user activity。
   拡張はページの DOM と computed style を**メモリ内で読むだけ**で、保存も送信もしない。
-  保存するのは利用者自身の設定と、利用者が貼り付けたデザイントークン JSON のみ
-  (`chrome.storage.local`、端末内)。
+  保存するのは利用者自身の設定のみ (`chrome.storage.local`、端末内)。
 - **ネットワークリクエストを一切行わない。** `fetch` / `XMLHttpRequest` /
   WebSocket の発行箇所がゼロであることを grep で再現証明できる (`SECURITY.md` の監査手順)。
 - Sold to third parties? No. Used for unrelated purposes? No. Used for creditworthiness? No.
@@ -148,18 +144,15 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 - エディタで開く: Cmd/Ctrl+クリック (または右クリックメニュー) で要素のソースへ
   ジャンプ (React の開発ビルドのみ)。
 
-デザイントークンとの照合
-- Figma Variables のエクスポート / W3C Design Tokens / Tokens Studio の
-  JSON をポップアップに貼り付け。
-- 一致した値にはトークン名 (例: primary.main) が注釈され、
-  一致しない値は「野良値」として警告されます。
-- DevTools を開かず、CSS を読まずに、デプロイ済みプロダクトを
-  デザインシステムと照合できます。
-
-MUI テーマの自動検出
+デザイントークンとの照合 — 設定ゼロ
 - ページが MUI を使っていれば、ThemeProvider からテーマ (palette / spacing /
-  角丸 / フォントサイズ) を読み取り、JSON 貼り付けなしでトークン照合に
-  自動併合します (貼り付けトークン優先)。
+  角丸 / フォントサイズ) を自動で読み取ります。設定は不要です。
+- 一致した値にはトークン名 (例: primary.main) が注釈され、一致しない値は
+  最近傍トークン付きで「野良値」として警告されます。
+- DevTools を開かず、CSS を読まずに、デプロイ済みプロダクトをそのプロダクト自身の
+  デザインシステムと照合できます。
+- テーマが無いページでも、値の背後で宣言されている CSS 変数名と、
+  グリッド外の余白警告は表示されます。
 
 どこでも動作
 - サイト・スタイル手法を問いません。React アプリ (開発・本番ビルドとも) でも
@@ -176,11 +169,11 @@ MUI テーマの自動検出
 ```
 
 **単一目的 (Single purpose — 上記英文の対訳。CWS への入力は英文):**
-web ページの UI のデザイン値を計測し、利用者自身のデザインシステムと照合する —
-利用者が指した要素の値 (色 / 余白 / 角丸 / タイポグラフィ) を読み取り、利用者の
-デザイントークンと照合する。全機能がこの単一目的に奉仕する: MUI テーマ自動取得は
-ページ自身からトークン辞書を組み立てて貼り付けを不要にし、右クリックメニューと
-エディタジャンプは計測中の要素とそのソースへ到達する (React の開発ビルドのみ)。
+web ページの UI のデザイン値を計測し、そのページが依拠するデザインシステムと照合する —
+利用者が指した要素の値 (色 / 余白 / 角丸 / タイポグラフィ) を読み取り、ページから
+見つけたデザイントークンと照合する。全機能がこの単一目的に奉仕する: MUI テーマ自動取得は
+ページ自身からトークン辞書を組み立て、右クリックメニューとエディタジャンプは計測中の
+要素とそのソースへ到達する (React の開発ビルドのみ)。
 検査はすべてローカルの読み取り専用で、外部送信は一切ない。
 
 **データ利用の申告 (対訳):** **全カテゴリを「収集しない」**。v1 は外部送信を一切持たず

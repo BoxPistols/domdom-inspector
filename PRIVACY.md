@@ -13,8 +13,8 @@ user's editor. This policy explains what the extension does and does not do with
 - **No telemetry, no analytics, no tracking.** The extension does not collect usage data.
 - **Nothing is transmitted, ever.** The extension has no backend and makes **no network
   requests of any kind**. Nothing you inspect leaves your machine.
-- **All data stays local.** Your settings and pasted design tokens are stored only in your
-  browser via `chrome.storage.local`.
+- **All data stays local.** Your settings are stored only in your browser via
+  `chrome.storage.local`. Nothing else is persisted.
 - **Localhost works out of the box; other sites are opt-in.** The extension activates
   automatically on `localhost` / `127.0.0.1`. Any other site is inspected only after you
   explicitly enable it, and even then it only reads the page — page content is never stored.
@@ -24,7 +24,6 @@ user's editor. This policy explains what the extension does and does not do with
 | Data | Where | Purpose |
 |------|-------|---------|
 | Settings (editor choice, path mappings) | `chrome.storage.local` on your device | Remember your preferences |
-| Design tokens you paste (JSON) | `chrome.storage.local` on your device | Annotate measured values with token names |
 
 The extension reads the page's DOM and computed styles in memory to display design values.
 When the page uses React, it also reads React's in-memory component tree to show component
@@ -47,7 +46,7 @@ extension offers a **Copy path** button. It writes only the source file path and
 
 ## Permissions
 
-- `storage` — to save your settings and pasted design tokens locally.
+- `storage` — to save your settings locally.
 - `activeTab` — to read the current tab's origin when you open the popup.
 - `scripting` — to inject the inspector into origins you have enabled.
 - Host access — `localhost` / `127.0.0.1` is covered by a static content script. Any other
@@ -80,8 +79,8 @@ DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を
 - **テレメトリ・分析・トラッキングは一切なし。** 利用状況データを収集しません。
 - **外部送信は一切ありません。** バックエンドを持たず、**ネットワークリクエストを 1 つも
   発行しません**。検査した内容が端末外へ出ることはありません。
-- **すべてのデータはローカルに留まります。** 設定と貼り付けたデザイントークンは
-  `chrome.storage.local` にのみ保存します。
+- **すべてのデータはローカルに留まります。** 保存するのは設定だけで、
+  `chrome.storage.local` にのみ置きます。それ以外は永続化しません。
 - **localhost は自動、その他のサイトはオプトインです。** `localhost` / `127.0.0.1` では自動で
   有効化されます。その他のサイトはあなたが明示的に「有効化」した時のみ検査対象になり、その場合も
   ページを読むだけです。ページ内容を保存することはありません。
@@ -91,7 +90,6 @@ DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を
 | データ | 保存先 | 目的 |
 |------|--------|------|
 | 設定(エディタの選択・パスマッピング) | 端末の `chrome.storage.local` | 設定の記憶 |
-| 貼り付けたデザイントークン(JSON) | 端末の `chrome.storage.local` | 計測値へのトークン名注釈 |
 
 デザイン値の表示のためにページの DOM と computed style をメモリ上で読み取ります。ページが
 React を使用している場合は、コンポーネント名の補足表示のために React のメモリ上のコンポーネント
@@ -113,7 +111,7 @@ React を使用している場合は、コンポーネント名の補足表示�
 
 ## 権限
 
-- `storage` — 設定と貼り付けたデザイントークンをローカル保存するため。
+- `storage` — 設定をローカル保存するため。
 - `activeTab` — ポップアップを開いた時に現タブの origin を取得するため。
 - `scripting` — あなたが有効化したオリジンにインスペクタを注入するため。
 - ホストアクセス — `localhost` / `127.0.0.1` は静的コンテンツスクリプトで対応。その他の

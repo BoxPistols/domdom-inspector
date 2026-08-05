@@ -11,7 +11,7 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 
 - **Inspect mode** (`Alt+Shift+I`, exit with `Esc`) — hover any element to see a floating badge with its computed design values: text color, background, spacing (margin/padding), border-radius, typography
 - **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
-- **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
+- **Design token matching (zero config)** — on MUI pages the theme is auto-detected from `ThemeProvider`; matched values are annotated with the token name, unmatched values flagged as rogue with the nearest token (`muiTheme.ts` / `tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
 - **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
@@ -82,7 +82,7 @@ entrypoints/
   inspector.content.ts  MAIN world / document_start. Establishes the hook + inspector core
   bridge.content.ts     ISOLATED world. Relays settings/tokens/toggle commands + injects i18n
   background.ts         Keyboard shortcuts → toggle commands to tabs
-  popup/                Site enablement, token pasting, editor settings, help
+  popup/                Site enablement, mode toggle, editor settings, help
 src/
   hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ shim (installed before React loads)
   fiber.ts       Element info resolution (3-tier fallback: design-only / safe / dev)

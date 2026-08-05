@@ -11,6 +11,46 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.4 (2026-08-06)
+
+### 変更 — トークン JSON 貼り付けを外した (オーナー判断)
+
+→ [#13](https://github.com/BoxPistols/domdom-inspector/issues/13)。実装は温存。
+
+- オーナーは Figma を使わないため、**使わない機能を popup の一等地に毎回見せていた**
+- **MUI テーマ自動検出があるので、MUI アプリでは設定ゼロでトークン照合が動く。**
+  貼り付けが必要なのは Figma / W3C / Tokens Studio の JSON を持っている人だけだった
+- 非 MUI ページでも動き続けるもの: computed デザイン値 / **宣言された CSS 変数名の優先表示** /
+  4px グリッド外の野良値検出 (いずれも辞書不要)
+- **storage の `tokenDict` 中継も外した** (`bridge.content.ts`)。書き込む側が無いのに読むと
+  「UI から見えない古い辞書でバッジが注釈される」状態になりうるため。
+  MAIN world 側の `tokens` 受信は残してある (e2e が照合エンジンを検証している)
+- 永続化するものが**ユーザー設定だけ**になった (ページ由来のデータをゼロに)
+
+### 対外文書
+
+- **`_locales` の `extDescription`** (拡張カードとストアに出る説明文) を MUI 軸へ:
+  「どのページでも色・余白・角丸・文字サイズを計測。**MUI ならテーマを自動検出して**
+  トークン名と照合。」— 貼り付け UI が無いのに「あなたのトークンと照合」と言うと
+  非 MUI サイトで嘘になるため
+- `STORE_LISTING.md`: 掲載文 (en/ja) の「MATCH AGAINST YOUR DESIGN TOKENS」を
+  「— ZERO CONFIG」に書き換え、貼り付け手順を削除。Single purpose も
+  「利用者のトークン」→「そのページが依拠するデザインシステム」へ
+- `PRIVACY.md`: 保存データ表から「貼り付けたデザイントークン」の行を削除。
+  **保存するのは設定だけ**になった
+- `SECURITY.md`: 永続化キーを settings / popupDevOpen のみに更新
+- `PUBLISHING.md`: 審査官メモの貼り付け手順を MUI 自動検出の説明に差し替え。
+  スクリーンショット推奨カットも更新
+- `README.md` / `README.en.md` / `CLAUDE.md` / `docs/ROADMAP.md` も同期
+
+### 内部
+
+- e2e: `#tokensJson` が復活していないことを assert (issue #13)。
+  `coverage.spec.ts` は storage seed から **bridge の `tokens` メッセージ注入**へ変更
+  (storage 中継を外したため。実際の供給元である MUI 自動検出と同じ経路になった)
+
+---
+
 ## 0.4.3 (2026-08-06)
 
 ### 変更 — v1 のスコープを絞る (オーナー判断)

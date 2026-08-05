@@ -40,16 +40,16 @@ const FIXTURE_HTML = `<!DOCTYPE html>
 </body></html>`;
 
 let context: BrowserContext;
-let extensionId: string;
 
 test.beforeAll(async () => {
   context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'ext-cov-')), {
     channel: 'chromium',
     args: [`--disable-extensions-except=${EXT_PATH}`, `--load-extension=${EXT_PATH}`],
   });
+  // SW の起動を待つ = 拡張ロード完了の証拠 (extension id はこの spec では使わない)
   let [sw] = context.serviceWorkers();
   sw ??= await context.waitForEvent('serviceworker');
-  extensionId = new URL(sw.url()).host;
+  void sw;
 });
 
 test.afterAll(async () => {
@@ -57,19 +57,6 @@ test.afterAll(async () => {
 });
 
 test('実ページの computed style と CSSOM からカバレッジ数値が出る', async () => {
-  // トークン辞書を storage に直接入れる (popup の貼り付け UI は別テストの領分)。
-  // chrome.* は拡張ページの実行時にだけ存在するので、型解決を避けて動的に参照する。
-  const seed = await context.newPage();
-  await seed.goto(`chrome-extension://${extensionId}/popup.html`);
-  await seed.evaluate(async (dict) => {
-    const api = (globalThis as unknown as { chrome: { storage: { local: { set(v: unknown): Promise<void> } } } }).chrome;
-    await api.storage.local.set({ tokenDict: dict, tokenJson: '{}' });
-  }, {
-    colors: [{ name: 'brand', r: 0x16, g: 0x68, b: 0xd4, a: 1 }],
-    sizes: [{ name: 'space/2', px: 8, category: 'space' }],
-  });
-  await seed.close();
-
   const page = await context.newPage();
   await page.route(`${FIXTURE_ORIGIN}/**`, (route) =>
     route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: FIXTURE_HTML }),
@@ -77,6 +64,25 @@ test('実ページの computed style と CSSOM からカバレッジ数値が出
   await page.goto(`${FIXTURE_ORIGIN}/`);
   await page.waitForFunction(() => '__DOMDOM_INSPECTOR_LOADED__' in window);
   await page.bringToFront();
+
+  // 照合辞書は bridge の 'tokens' メッセージで注入する。
+  // **storage 経由 (tokenDict) の中継は v1 の配線から外した** (issue #13 — 貼り付け UI が
+  // 無いので書き込む側が存在しない)。MAIN world の受信経路は残っており、v1 の実際の供給元
+  // (MUI テーマ自動検出) もこの経路で辞書を渡すので、ここを叩くのが実態に沿う。
+  await page.evaluate(
+    ({ bridge, dict }) =>
+      new Promise<void>((resolve) => {
+        window.postMessage({ source: bridge, type: 'tokens', payload: dict }, '*');
+        setTimeout(resolve, 0);
+      }),
+    {
+      bridge: BRIDGE_SOURCE,
+      dict: {
+        colors: [{ name: 'brand', r: 0x16, g: 0x68, b: 0xd4, a: 1 }],
+        sizes: [{ name: 'space/2', px: 8, category: 'space' }],
+      },
+    },
+  );
 
   // popup → tabs.sendMessage は tabs 権限が要る (テスト環境では未付与) ため、
   // bridge → MAIN world の往復をページ側から直接叩く。検証したいのは

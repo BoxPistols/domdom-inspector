@@ -41,9 +41,11 @@ test('popup が開き主要 UI が描画される', async () => {
   await expect(page.locator('#coverageMeasure')).toHaveCount(0); // issue #10
   await expect(page.locator('#aiSection')).toHaveCount(0); // issue #11
   await expect(page.locator('#badgeDetail')).toHaveCount(0); // issue #12
+  await expect(page.locator('#tokensJson')).toHaveCount(0); // issue #13
 
-  // デザイントークン貼り付け欄 (中核機能) が存在する
-  await expect(page.locator('#tokensJson')).toBeVisible();
+  // 権限導線と開発者向け設定が残っている (v1 の popup はこの 2 つ + モードだけ)
+  await expect(page.locator('#enableSite')).toBeVisible();
+  await expect(page.locator('#devSection')).toBeAttached();
 
   // i18n が解決されボタンに文言が入っている (生キーや空でない)
   const label = (await page.locator('#toggle').textContent())?.trim() ?? '';

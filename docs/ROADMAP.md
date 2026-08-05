@@ -41,6 +41,11 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 >   [#11](https://github.com/BoxPistols/domdom-inspector/issues/11)
 > - **表示設定**: 「設定」ではなく**計測条件**。率の隣に出すべき情報だった →
 >   [#12](https://github.com/BoxPistols/domdom-inspector/issues/12)
+> - **トークン JSON 貼り付け**: オーナーが Figma を使わないため、使わない機能を popup の
+>   一等地に見せていた。MUI テーマ自動検出があるので **MUI アプリでは設定ゼロで照合が動く** →
+>   [#13](https://github.com/BoxPistols/domdom-inspector/issues/13)。
+>   これに伴い照合辞書の供給元は MUI 自動検出のみになり、`_locales` の `extDescription`
+>   (拡張カードに出る説明文) も MUI 軸へ書き換えた
 > 外した結果、対外文書 4 点 (STORE_LISTING / PRIVACY / SECURITY / PUBLISHING) の単一目的と
 > データ申告を同時に狭めた。再導入時は 4 文書を同時に広げること。
 

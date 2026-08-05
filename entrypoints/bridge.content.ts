@@ -1,5 +1,4 @@
 import { DEV_MATCHES } from '../src/matches';
-import { EMPTY_TOKEN_DICT } from '../src/tokenDict';
 import {
   BRIDGE_SOURCE,
   DEFAULT_SETTINGS,
@@ -37,14 +36,10 @@ export default defineContentScript({
       );
     };
 
-    // デザイントークン辞書 (popup で解析済み) を MAIN world へ中継
-    const pushTokens = async () => {
-      const { tokenDict } = await browser.storage.local.get('tokenDict');
-      window.postMessage(
-        { source: BRIDGE_SOURCE, type: 'tokens', payload: tokenDict ?? EMPTY_TOKEN_DICT },
-        '*',
-      );
-    };
+    // **storage の tokenDict の中継は v1 の配線から外した** (issue #13)。
+    // 貼り付け UI が無いので書き込む側が存在せず、読むと「UI から見えない古い辞書で
+    // バッジが注釈される」状態になりうる。照合辞書は MUI テーマ自動検出だけが供給する。
+    // MAIN world 側の 'tokens' 受信は残してある (e2e がこの経路で辞書を注入して照合を検証する)。
 
     // UiStrings の各キーを _locales から解決 (欠落時は英語既定にフォールバック)
     const pushStrings = () => {
@@ -65,18 +60,15 @@ export default defineContentScript({
       if (!d || d.source !== PAGE_SOURCE || d.type !== 'ready') return;
       pushStrings();
       void pushSettings();
-      void pushTokens();
     });
 
     pushStrings();
     void pushSettings();
-    void pushTokens();
     // 変更されたキーに対応する中継だけを行う (popupDevOpen 等の無関係な変更で
     // settings の再取得・postMessage を走らせない)
     browser.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
       if ('settings' in changes) void pushSettings();
-      if ('tokenDict' in changes) void pushTokens();
     });
 
     browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {

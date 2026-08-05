@@ -201,28 +201,6 @@
       <div class="hint" id="modeUnavailable" hidden></div>
     </section>
 
-    <!-- ③ デザイントークン (Figma): デザイナーの中核機能。両ロールで表示 -->
-    <section class="section">
-      <h2 data-i18n="sectionTokens">Design tokens (Figma)</h2>
-      <label for="tokensJson" data-i18n="labelTokens">
-        Paste tokens JSON (Figma Variables / W3C / Tokens Studio)
-      </label>
-      <textarea
-        id="tokensJson"
-        aria-describedby="tokensStatus"
-        placeholder='{"color":{"primary":{"$value":"#1668d4","$type":"color"}},"space":{"2":{"$value":"8px","$type":"dimension"}}}'
-      ></textarea>
-      <div class="hint" id="tokensStatus" role="status" aria-live="polite"></div>
-      <button id="tokensClear" class="secondary" data-i18n="btnTokensClear" hidden>
-        Clear tokens
-      </button>
-      <div class="hint" data-i18n="hintTokens">
-        Export your Figma Variables (or any design-tokens JSON) and paste it here. While
-        inspecting, each color/spacing chip shows the matching token name — or flags it as a
-        stray value with the nearest token. Works on production sites.
-      </div>
-    </section>
-
     <!-- ⑥ 開発者向け: エンジニア専用設定 (既定で閉じ、開閉状態は保存)。
          v0.3.0 で Cmd/Ctrl+Click エディタジャンプ (dev ビルド限定) を復活 -->
     <details class="section" id="devSection">

@@ -4,7 +4,6 @@
 //   - AI 監査:    https://github.com/BoxPistols/domdom-inspector/issues/11
 //   - 表示設定:   https://github.com/BoxPistols/domdom-inspector/issues/12 (計測条件として率の隣へ)
 import { parseMappings } from '../../src/mappings';
-import { parseTokens, type TokenDict } from '../../src/tokenDict';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -55,56 +54,9 @@ async function applyShortcutHints() {
   );
 }
 
-// デザイントークン (Figma) の貼り付け → 解析 → storage 保存。
-// bridge が storage 変更を検知して MAIN world のバッジ照合に即反映する。
-const tokensEl = $<HTMLTextAreaElement>('tokensJson');
-const tokensStatusEl = $('tokensStatus');
-const tokensClearEl = $<HTMLButtonElement>('tokensClear');
-
-function showTokensStatus(colors: number, sizes: number) {
-  tokensStatusEl.textContent = msg('tokensStatus')
-    .replace('{colors}', String(colors))
-    .replace('{sizes}', String(sizes));
-}
-
-async function saveTokens() {
-  const raw = tokensEl.value.trim();
-  if (!raw) {
-    await browser.storage.local.remove(['tokenDict', 'tokenJson']);
-    tokensStatusEl.textContent = msg('tokensEmpty');
-    tokensClearEl.hidden = true;
-    return;
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    tokensStatusEl.textContent = msg('tokensError');
-    return;
-  }
-  const dict = parseTokens(parsed);
-  await browser.storage.local.set({ tokenDict: dict, tokenJson: raw });
-  showTokensStatus(dict.colors.length, dict.sizes.length);
-  tokensClearEl.hidden = false;
-}
-
-// change (blur/commit 時) に加え、input のデバウンス保存も行う。
-// トークンは「1 回の長文貼り付け」が主操作で、フォーカスを残したまま
-// ポップアップを閉じると change が発火せず保存漏れするため。
-let tokensSaveTimer: ReturnType<typeof setTimeout> | undefined;
-tokensEl.addEventListener('input', () => {
-  clearTimeout(tokensSaveTimer);
-  tokensSaveTimer = setTimeout(() => void saveTokens(), 400);
-});
-tokensEl.addEventListener('change', () => {
-  clearTimeout(tokensSaveTimer);
-  void saveTokens();
-});
-tokensClearEl.addEventListener('click', () => {
-  clearTimeout(tokensSaveTimer);
-  tokensEl.value = '';
-  void saveTokens();
-});
+// トークン JSON 貼り付けは v1 の配線から外した (issue #13)。
+// 照合辞書は MUI テーマ自動検出 (src/muiTheme.ts → tokenDict.parseMuiTheme) だけが供給する。
+// parseTokens (Figma / W3C / Tokens Studio の判別) は温存 = 再導入時にそのまま使える。
 
 // 「開発者向け」折りたたみの開閉状態を保持 (エンジニアは開きっぱなしにできる)
 const devSectionEl = $<HTMLElement>('devSection') as HTMLDetailsElement;
@@ -122,18 +74,6 @@ async function load() {
   // 保存形は PathMapping[]。編集は 1 行 1 件のテキストで行う (parseMappings と対)
   pathMappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
   syncEditorRows();
-  // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
-  const { tokenJson, tokenDict } = (await browser.storage.local.get([
-    'tokenJson',
-    'tokenDict',
-  ])) as { tokenJson?: string; tokenDict?: TokenDict };
-  if (typeof tokenJson === 'string' && tokenDict) {
-    tokensEl.value = tokenJson;
-    showTokensStatus(tokenDict.colors?.length ?? 0, tokenDict.sizes?.length ?? 0);
-    tokensClearEl.hidden = false;
-  } else {
-    tokensStatusEl.textContent = msg('tokensEmpty');
-  }
   void applyShortcutHints();
 }
 

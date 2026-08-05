@@ -18,8 +18,9 @@ inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優
 + **⌘/Ctrl+Click / 右クリックメニュー からのエディタジャンプ** (dev の実ソースのみ /
 minified は `isBundledSource` で抑制 / 開かなければパスのコピー導線) + **Alt+Click の描画元リスト**
 + **shadow DOM 貫通** (open root は最内要素まで / closed はホストで止まる)) /
-**MUI テーマ自動取得** (`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換 →
-手動貼り付け優先で併合) / **トークン JSON 貼り付け** (popup)。
+**MUI テーマ自動取得** (`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換)。
+**照合辞書の供給元はこれだけ** — トークン JSON 貼り付けは v1 の配線から外した
+([#13](https://github.com/BoxPistols/domdom-inspector/issues/13))。
 
 **外部送信はゼロ** (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件)。この事実に
 `SECURITY.md` / `PRIVACY.md` / `STORE_LISTING.md` / `PUBLISHING.md` の申告が依存しているので、

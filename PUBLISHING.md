@@ -154,7 +154,7 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 - **言語**: 既定 English(日本語対応は `_locales` により自動。掲載文の各言語版は任意で追加可)
 - **アイコン**: 128×128 は zip 内 `icon/128.png` が使われる(別途アップロード不要な場合あり)
 - **スクリーンショット**: **1280×800**(または 640×400)を 1〜5 枚 【必須・要撮影】
-  - 推奨カット: ①インスペクト中のデザインバッジ ②トークン照合の注釈(一致名表示) ③野良値警告 ④設定ポップアップ(トークン貼り付け)
+  - 推奨カット: ①インスペクト中のデザインバッジ ②トークン照合の注釈(MUI テーマ自動検出による一致名表示) ③野良値警告 / CSS 変数名の表示 ④右クリックメニュー ⑤ポップアップ(サイト有効化)
   - 撮り方は §7 参照
 
 ### 4-2. プライバシー (Privacy practices)
@@ -169,14 +169,14 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
   ページ要素の色/余白/角丸/タイポグラフィを読み取り、ユーザーのデザイントークンと
   要素単位およびページ全体の集計で突合する。」
   - **v1 の搭載機能はすべてこの 1 目的に奉仕する**ことを示す: MUI テーマ自動取得は
-    貼り付け無しで照合辞書を作るため / 右クリックメニューとエディタジャンプは計測中の要素と
-    そのソースへ到達するため。
+    ページ自身から照合辞書を作るため / 右クリックメニューとエディタジャンプは計測中の
+    要素とそのソースへ到達するため。
   - コンポーネントツリーとレンダープロファイリングは **v1 の配線から外してある**ので
     申告に含めない(実装は温存しているが到達不能)。再配線するなら、この単一目的も
     同時に広げ直すこと (2026-08-01 施行の新ポリシー: 収集データは開示済み単一目的に
     厳密に必要な範囲のみ)
 - **権限の正当化 (Permission justification)** — SECURITY.md の 4 権限表を転記:
-  - `storage`: ユーザー設定・貼り付けたデザイントークンのローカル保存
+  - `storage`: ユーザー設定のローカル保存
   - `activeTab`: ポップアップから現タブ origin の取得
   - `scripting`: ユーザーが有効化したオリジンへのインスペクタ動的注入
   - `contextMenus`: 右クリックに「この要素を検査 / ソースをエディタで開く」を追加
@@ -188,7 +188,7 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
 - **データ利用 (Data usage)** — **全カテゴリを「収集しない」**で申告する。
   v1 は外部送信を持たない (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件。
   `SECURITY.md` の grep 手順で再現証明できる)。保存するのは利用者の設定と、利用者が
-  貼り付けたデザイントークン JSON のみ (端末内)。
+  端末内の利用者設定のみ。
   - ☐ website content / PII / authentication information / 健康 / 金融・決済 /
     個人的通信 / 位置情報 / ウェブ履歴 / ユーザー行動 — **すべて未チェック**
   - 「第三者への販売なし」「無関係な用途に使わない」「信用調査に使わない」すべてにチェック
@@ -221,8 +221,9 @@ How to test:
    element — a badge shows its measured design values. Press Esc to exit.
 4. Or right-click any element and choose "Inspect this element" — same result
    without the keyboard.
-5. Optional: paste any design-token JSON in the popup to see values annotated
-   with token names, then press "Measure this screen" for page-wide totals.
+5. On a page built with MUI, the badge additionally shows design-token names
+   (palette / spacing / radius / typography) read from the app's own theme —
+   no configuration needed.
 6. "Open this element's source in my editor" (right-click, or Cmd/Ctrl+Click
    while inspecting) needs a React development build. On production builds the
    extension says why instead of doing nothing.
