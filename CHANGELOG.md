@@ -11,6 +11,26 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.8 (2026-08-06)
+
+### 追加 — 提出前チェックを実測する
+
+- **`pnpm check:submission`** (`scripts/submission-check.mjs`): 20 項目を実測して PASS/FAIL を
+  出す。未達があれば exit 1。
+  - **なぜスクリプトにしたか**: 判定を文書に数字で書くと即座に古くなる。実際に「対象版
+    v0.4.6」「未 push 17 件」と書いた直後に自分のコミットで古くなった。**古い判定書は旧 zip を
+    アップロードする事故を生む**
+  - 測るもの: 版数の一致 (package.json ↔ manifest) / 提出 zip が今の版で存在 (`.output` に
+    旧 zip が残るので取り違え検知) / permissions / optional_host_permissions /
+    minimum_chrome_version / default_locale / commands / アイコン 5 サイズ / _locales /
+    description と Summary の文字数 / **送信 API の発生箇所が 0 件** (Data usage 申告の根拠) /
+    成果物に外部エンドポイントが残っていない / **スクリーンショットの実寸を PNG ヘッダから
+    読んで 1280×800 か** / 旧画像の残骸 / **未 push のコミット**
+  - 現状 **19/20 pass**。唯一の未達は「未 push のコミット」= 人間の操作待ち
+- `docs/store-submission-readiness.md` を「数字を書く」から「スクリプトで測る」に変更
+
+---
+
 ## 0.4.7 (2026-08-06)
 
 ### 提出準備 — 可否を実測で確定

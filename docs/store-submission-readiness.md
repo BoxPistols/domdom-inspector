@@ -2,11 +2,26 @@
 
 配信形態: **Public(一般公開)+ 全地域**。対象版: **v0.4.7**。
 
-> 版数を上げたらこのファイルの「対象版」と zip 名も直す。**判定書が古い版を指していると、
-> 旧 zip をアップロードする事故になる** (`.output/` には過去の zip が残る)。
+このファイルは「何が終わっていて、あと何をすれば送信できるか」を示す。
+⬜ は人間の操作が必要。手順の詳細は [`PUBLISHING.md`](../PUBLISHING.md)。
 
-このファイルは「何が終わっていて、あと何をすれば送信できるか」を**実測値**で示す。
-✅ は機械で確認済み、⬜ は人間の操作が必要。手順の詳細は [`PUBLISHING.md`](../PUBLISHING.md)。
+## 数字は毎回測る — `pnpm check:submission`
+
+```sh
+pnpm build && pnpm shots && pnpm zip   # 成果物を作る
+pnpm check:submission                   # 20 項目を実測して PASS/FAIL
+```
+
+**この文書に書いた数字はスナップショットで、すぐ古くなる。** 実際に「対象版 v0.4.6」
+「未 push 17 件」と書いた直後に自分のコミットで古くなった。
+**古い判定書は旧 zip をアップロードする事故を生む**ので、判定は必ずスクリプトで測る。
+
+スクリプトが測るもの: 版数の一致 (package.json ↔ manifest) / 提出 zip が今の版で存在 /
+permissions と optional_host_permissions / minimum_chrome_version / default_locale /
+commands / アイコン 5 サイズ / _locales / description と Summary の文字数 (上限 132) /
+**送信 API の発生箇所が 0 件** / 成果物に外部エンドポイントが残っていない /
+**スクリーンショットが 1280×800** (PNG ヘッダから実寸を読む) / 旧画像の残骸 /
+**未 push のコミット**。
 
 ---
 
