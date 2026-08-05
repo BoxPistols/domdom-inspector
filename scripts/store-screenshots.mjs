@@ -9,7 +9,7 @@
 // 出力: docs/store-assets/*.png (1280×800)
 // 前提: pnpm build 済み (.output/chrome-mv3 が存在すること)
 
-import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -329,6 +329,15 @@ async function shootLocale(locale) {
 }
 
 async function main() {
+  // locale 別ディレクトリへ移す前の実行が残した画像を掃除する (README.md は残す)。
+  // 古い画像が残ると「どれが提出物か」が曖昧になり、実物と一致しない画像を出す事故になる
+  for (const name of readdirSync(OUT_BASE, { withFileTypes: true })) {
+    if (name.isFile() && name.name.endsWith('.png')) {
+      rmSync(join(OUT_BASE, name.name));
+      console.log(`  - 旧画像を削除: ${name.name}`);
+    }
+  }
+
   let total = 0;
   for (const locale of LOCALES) total += await shootLocale(locale);
   console.log(`\n✓ 合計 ${total} 枚を ${OUT_BASE} に出力`);
