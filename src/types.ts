@@ -229,7 +229,10 @@ export const DEFAULT_STRINGS: UiStrings = {
   // 「Alt+Click: rendered-by tree」(ハンドラ不在) を案内しており、画面の指示どおり操作しても
   // 無反応になっていた (Alt+Click は preventDefault されるためページ本来の動作も潰れていた)
   inspectOn: 'Inspect ON — hover to inspect, Esc to exit. ⌘/Ctrl+Click: open in editor / Alt+Click: what rendered this / ↑↓: parent/child',
-  inspectOnSafe: 'Inspect ON — no dev build detected, safe mode (names only / Esc to exit)',
+  // 「名前のみ」は嘘だった: production でもデザイン値・CSS 変数名・トークン照合・野良値警告は
+  // すべて出る。出ないのは「自作コンポーネント名」と「ソースジャンプ」だけ
+  inspectOnSafe:
+    'Inspect ON — production build: no component names or source jump, but design values and token matching work. Esc to exit',
   inspectOff: 'Inspect OFF',
   noOuterComponent: 'No further outer element',
   jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',

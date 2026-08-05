@@ -228,7 +228,7 @@
     "message": "Inspect ON — hover to inspect, Esc to exit. ⌘/Ctrl+Click: open in editor / Alt+Click: what rendered this / ↑↓: parent/child"
   },
   "inspectOnSafe": {
-    "message": "Inspect ON — no dev build detected, safe mode (names only / Esc to exit)"
+    "message": "Inspect ON — production build: no component names or source jump, but design values and token matching work. Esc to exit"
   },
   "inspectOff": {
     "message": "Inspect OFF"

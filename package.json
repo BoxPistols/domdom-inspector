@@ -1,6 +1,6 @@
 {
   "name": "domdom-inspector",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "private": true,
   "type": "module",
   "description": "DomDom Inspector — DOM/HTML/CSS デザイン計測 (色/余白/角丸 + デザイントークン照合) Chrome 拡張",
@@ -10,6 +10,7 @@
     "build": "wxt build && node scripts/sync-extension.mjs --auto",
     "build:only": "wxt build",
     "sync": "node scripts/sync-extension.mjs",
+    "shots": "node scripts/store-screenshots.mjs",
     "build:sync": "wxt build && node scripts/sync-extension.mjs",
     "bump:patch": "npm version patch --no-git-tag-version",
     "bump:minor": "npm version minor --no-git-tag-version",

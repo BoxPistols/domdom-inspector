@@ -11,6 +11,42 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.5 (2026-08-06)
+
+### 修正
+
+- **モード ON トーストの文言が嘘だった。** production ビルドで
+  「no dev build detected, safe mode (**names only**)」と出していたが、実際は**デザイン値・
+  CSS 変数名・トークン照合・野良値警告はすべて出る**。出ないのは自作コンポーネント名と
+  ソースジャンプだけ。スクリーンショットを撮って初めて気づいた (画像がその証拠だった)。
+  「production build: no component names or source jump, but design values and token
+  matching work」に修正 (i18n 3 箇所同期)
+
+### 追加 — Chrome Web Store 提出物の自動生成
+
+- **`pnpm shots`** (`scripts/store-screenshots.mjs`): ビルド済み拡張を実 Chromium に
+  ロードして 1280×800 の提出用スクリーンショットを生成する。出力
+  `docs/store-assets/{en,ja}/` × 4 枚。**提出ブロッカーだった「スクリーンショット撮影」が
+  ユーザー作業から外れた**
+  - Public 公開では**実物一致が必須** (合成・モック不可)。手撮りだと UI を変えるたびに
+    古い画像が残り、掲載文と実装の不一致として審査で拾われる。自動化すれば何度でも作り直せる
+  - **locale の強制**: 拡張の i18n はブラウザ UI 言語に従うが、macOS の Chromium は
+    `--lang` も `LANG`/`LC_ALL`/`LANGUAGE` も**無視してシステムロケールを使う** (実測)。
+    開発機が日本語だと英語の画像が撮れないため、`_locales/<locale>/messages.json` の
+    **実在する文字列**を実 UI 経路に流し込んでいる (文言は作らない)
+  - **popup は自動生成に含めない**: Playwright の各ページは別ウィンドウ扱いになるため
+    popup の `tabs.query({active:true,currentWindow:true})` が常に自分自身を返し、
+    CTA が disabled の状態でしか撮れない。`chrome.tabs.query` を偽装すれば撮れるが、
+    それは実物ではないので使わない (要るなら実機で手撮り。`PUBLISHING.md` §7)
+- `docs/store-assets/README.md`: 各画像の意図と再生成手順、実物一致の根拠
+
+### 対外文書
+
+- `PUBLISHING.md` §7 を「撮り方」から「自動生成」に書き換え。未完ブロッカーから
+  スクリーンショットを削除 (残るユーザー作業は 4 件 → **3 件 + ③目視**)
+
+---
+
 ## 0.4.4 (2026-08-06)
 
 ### 変更 — トークン JSON 貼り付けを外した (オーナー判断)
