@@ -56,7 +56,12 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 >   停止理由になりやすい
 掲載文 [`STORE_LISTING.md`](./STORE_LISTING.md) / プライバシー本文 [`PRIVACY.md`](./PRIVACY.md)。
 
+> **提出可否の実測サマリは [`docs/store-submission-readiness.md`](./docs/store-submission-readiness.md)。**
+> 何が機械で確認済みで、あと何を人手でやれば送信できるかを 1 枚にしてある。
+
 **未完のブロッカー(submit 前に必須):**
+0. **`git push origin main`** — `PRIVACY.md` を GitHub Pages で公開する前に必須。
+   push しないと**古いポリシーが配信される**(申告との食い違いは審査で拾われる)
 1. プライバシーポリシーを**公開 URL でホスト**(本 repo は public のため GitHub Pages を
    有効化するだけで済む。§2 参照)
 2. デベロッパー登録($5)+ submit(手動操作)
@@ -84,7 +89,7 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 ```sh
 pnpm install
 pnpm lint        # ESLint (any / @ts-ignore / console.log / 境界契約)
-pnpm test        # 277 tests (25 files) — 2026-08-06 時点
+pnpm test        # 295 tests (26 files) — 2026-08-06 時点
 pnpm typecheck   # tsc --noEmit
 pnpm build       # .output/chrome-mv3
 ```
@@ -94,7 +99,9 @@ pnpm build       # .output/chrome-mv3
 - [ ] `public/_locales/{en,ja}/messages.json` が存在する
 - [ ] 本番 manifest の permissions が `storage`/`activeTab`/`scripting`/`contextMenus` + `optional_host_permissions: *://*/*`(`.output/chrome-mv3/manifest.json` で確認。正当化は SECURITY.md)
 - [ ] `minimum_chrome_version` が manifest に入っている(依存 API の下限。現在 119)
-- [ ] `package.json` の `version` が公開したい版になっている(現行 `0.4.0`)
+- [ ] `package.json` の `version` が公開したい版になっている(`CHANGELOG.md` の最新と一致)
+- [ ] **未 push のコミットが無い** — `PRIVACY.md` を GitHub Pages で公開する場合、
+      push されていない内容は配信されない(古いポリシーが公開される事故になる)
 
 > バージョンは `package.json` の `version` が manifest に反映される。**更新のたびに必ず上げる**
 > (CWS は同一バージョンの再アップロードを拒否する)。
