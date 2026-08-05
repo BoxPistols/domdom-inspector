@@ -283,13 +283,22 @@ export class Overlay {
     const title = el('div', 'title', this.strings.ownerPanelTitle);
     this.panel.appendChild(title);
 
+    // 空のまま出すと「タイトルだけの箱」になり、押しても何も起きないのと同じ体験になる。
+    // 素の DOM 要素と production ビルドでは owner が取れないので理由を書く
+    if (!info.ownerChain.length) {
+      this.panel.appendChild(el('div', 'row', this.strings.chainEmpty));
+    }
+
     for (const entry of info.ownerChain) {
       const row = el('div', 'row');
       const dot = el('span', 'dot');
       dot.style.background = colorFor(entry.classification, this.settings.colors);
       const name = el('span', undefined, entry.name);
       const file = el('span', 'file');
-      if (entry.source) {
+      // バッジと同じ規約: バンドル出力 (ハッシュ付きチャンク) は実ソースでないので
+      // file:line を出さずジャンプもさせない (開いても存在しないパスになる)
+      const jumpable = !!entry.source && !isBundledSource(entry.source.fileName);
+      if (entry.source && jumpable) {
         file.textContent = `${entry.source.fileName.split('/').pop()}:${entry.source.lineNumber}`;
         row.classList.add('jumpable');
         const source = entry.source;
@@ -297,6 +306,8 @@ export class Overlay {
           this.openEditor(source);
           this.hideChainPanel();
         });
+      } else if (entry.source) {
+        file.textContent = this.strings.sourceMinified;
       }
       row.append(dot, name, file);
       this.panel.appendChild(row);
@@ -322,10 +333,24 @@ export class Overlay {
     this.hideChainPanel();
   }
 
+  /**
+   * エディタを開く唯一の実装。MAIN world は `browser.*` を使えないため
+   * `a[href="cursor://…"]` を生成して click する。
+   *
+   * `window.location.href = url` は使わない: スキーム未登録のとき**ページ遷移として扱われて
+   * 現在の画面を失う**ことがあり、検査中に押した結果ページが飛ぶのは回復不能な事故になる。
+   * アンカーには data-domdom-editor を付け、インスペクタのクリック抑止を素通りさせる。
+   */
   openEditor(loc: { fileName: string; lineNumber: number; columnNumber: number }) {
     const url = buildEditorUrl(this.settings, loc);
-    // カスタムスキームはページ遷移せず外部プロトコルダイアログを開く
-    window.location.href = url;
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('data-domdom-editor', '1');
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+    this.toast(this.strings.editorOpening);
   }
 
   /** レンダーデバッグ: 再描画した要素群をヒートマップ色で明滅させる */

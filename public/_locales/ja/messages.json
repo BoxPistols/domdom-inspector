@@ -48,7 +48,13 @@
     "message": "現在のサイトで有効化…"
   },
   "hintEnableSite": {
-    "message": "デプロイ済み/本番サイト用(localhost 以外)。許可すると、このページですぐインスペクトを開始します。コンポーネントツリーと再描画の可視化は、1 回リロードすると使えます。"
+    "message": "デプロイ済み/本番サイト用(localhost 以外)。許可すると、このページですぐインスペクトを開始します。"
+  },
+  "ctxInspectElement": {
+    "message": "この要素を検査"
+  },
+  "ctxOpenInEditor": {
+    "message": "この要素のソースをエディタで開く"
   },
   "btnAllSitesOn": {
     "message": "全サイトで許可(一度だけ)"
@@ -216,7 +222,7 @@
     "message": "記録キー(再描画の可視化モード中)"
   },
   "inspectOn": {
-    "message": "インスペクト ON — ホバーで検査、Esc で終了。クリック: エディタ / Alt+クリック: 描画元ツリー / ↑↓: 親子移動"
+    "message": "インスペクト ON — ホバーで検査、Esc で終了。⌘/Ctrl+クリック: エディタで開く / Alt+クリック: 描画元を見る / ↑↓: 親子移動"
   },
   "inspectOnSafe": {
     "message": "インスペクト ON — 開発ビルド未検出のため簡易表示(名前のみ / Esc で終了)"
@@ -233,9 +239,6 @@
   "jumpProd": {
     "message": "本番サイト(公開ビルド)のため、コードへのジャンプは使えません"
   },
-  "editorLinkOff": {
-    "message": "エディタ連携は OFF です(ポップアップで切替)。Alt+クリックは描画元ツリーを開きます。"
-  },
   "sourceUnavailable": {
     "message": "ソース不明"
   },
@@ -248,8 +251,17 @@
   "editorHint": {
     "message": "⌘/Ctrl+Click でエディタで開く"
   },
+  "editorOpening": {
+    "message": "エディタでソースを開いています…"
+  },
   "ownerPanelTitle": {
     "message": "描画元 (クリックでエディタへ)"
+  },
+  "chainEmpty": {
+    "message": "表示できる描画元がありません (素の DOM 要素、または名前が削られた本番ビルドです)。"
+  },
+  "noSourceDom": {
+    "message": "この要素は React コンポーネントではないため、開くソースファイルがありません。"
   },
   "renderOn": {
     "message": "再描画の可視化 ON — 再描画した要素が明滅 (青→赤=高頻度) / R: 記録開始 / 再度で OFF"
@@ -442,7 +454,7 @@
     "message": "{elements} 要素を測定 · トークン: 色 {colors} 件 / サイズ {sizes} 件"
   },
   "coverageTruncated": {
-    "message": "先頭 {shown} / 全 {total} 要素を測定しました。件数はその範囲では正確ですが、ページ全体の値ではありません。"
+    "message": "上限に達したため {shown} 要素で計測を打ち切りました。件数はその範囲では正確ですが、ページ全体の値ではありません。"
   },
   "coverageFamilyColor": {
     "message": "色"
@@ -458,6 +470,9 @@
   },
   "coverageNoDict": {
     "message": "該当トークンなし"
+  },
+  "coverageNotJudged": {
+    "message": "判定できず: 該当トークン無し {noDict} 件 / 解析不能 {unmeasurable} 件"
   },
   "coverageLowSample": {
     "message": "サンプル僅少"
@@ -494,6 +509,9 @@
   },
   "coverageOriginUnavailable": {
     "message": "このページでは変数かベタ書きかを判定できません (スタイルシートを読めないため)。上の一致率には影響しません。"
+  },
+  "coverageOriginBudget": {
+    "message": "このページでは来歴の判定に時間がかかりすぎたため打ち切りました。上の一致率には影響しません。"
   },
   "coverageVarRate": {
     "message": "CSS 変数経由: {rate}% ({vars}/{known})"

@@ -8,6 +8,35 @@ import {
 // v1 はデザイン計測のみ (tree/render は配線外し、実装は温存)
 const COMMANDS = new Set(['toggle-inspect']);
 
+/**
+ * 右クリックメニュー。id はそのまま content script へ送るメッセージ型になる。
+ * **要素は Chrome から渡されない** (contextMenus API は座標も要素も持たない) ため、
+ * MAIN world 側が contextmenu イベントで対象要素を控えておき、それを使う。
+ */
+const CONTEXT_ITEMS = [
+  { id: 'inspect-at-context', titleKey: 'ctxInspectElement' },
+  { id: 'open-editor-at-context', titleKey: 'ctxOpenInEditor' },
+] as const;
+
+/** メニューを作り直す (重複 id で create が失敗するため removeAll してから) */
+function createContextMenus(): void {
+  try {
+    browser.contextMenus.removeAll(() => {
+      for (const item of CONTEXT_ITEMS) {
+        browser.contextMenus.create({
+          id: item.id,
+          title: browser.i18n.getMessage(item.titleKey),
+          // 注入できないページ (chrome:// 等) では出さない。出して無反応が一番わかりにくい
+          documentUrlPatterns: ['http://*/*', 'https://*/*'],
+          contexts: ['all'],
+        });
+      }
+    });
+  } catch {
+    // contextMenus が使えない環境では黙って諦める (他機能は動く)
+  }
+}
+
 /** popup からの AI 講評依頼 (FR-24)。キーは載せ替えるだけで保存しない */
 interface AiReviewMessage {
   type: 'ai-review';
@@ -118,6 +147,23 @@ export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => void restoreRegistrations());
   browser.runtime.onStartup.addListener(() => void restoreRegistrations());
   void restoreRegistrations();
+
+  // 右クリックメニューは onInstalled/onStartup で作り直す (SW が寝ても項目は残る)
+  browser.runtime.onInstalled.addListener(createContextMenus);
+  browser.runtime.onStartup.addListener(createContextMenus);
+
+  browser.contextMenus.onClicked.addListener((info, tab) => {
+    if (tab?.id == null) return;
+    if (!CONTEXT_ITEMS.some((i) => i.id === info.menuItemId)) return;
+    // **frameId を必ず指定する**: 未指定だと全フレームの bridge に配信され、
+    // 右クリックしていない iframe 側でも検査が始まる (info.frameId は右クリックされたフレーム)
+    browser.tabs
+      .sendMessage(tab.id, { type: info.menuItemId }, { frameId: info.frameId ?? 0 })
+      .catch(() => {
+        // content script が未注入のページ (未許可オリジン) は無視。
+        // popup 側の有効化導線が同じ理由を文言で説明する
+      });
+  });
 
   // キーボードショートカット (manifest commands) → アクティブタブへトグル指示 (FR-01)
   browser.commands.onCommand.addListener(async (command, tab) => {

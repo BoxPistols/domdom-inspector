@@ -152,9 +152,10 @@ function renderCoverage(scan: DesignScan) {
   });
   coverageTruncatedEl.hidden = !scan.truncated;
   if (scan.truncated) {
+    // candidateCount (DOM 全ノード数) は elementCount (可視要素) と母集団が違うので並べない。
+    // 並べると打ち切りが起きていないページでも「部分計測」に見える (§6-4)
     coverageTruncatedEl.textContent = fillTemplate('coverageTruncated', {
       shown: scan.elementCount,
-      total: scan.candidateCount,
     });
   }
 
@@ -171,7 +172,20 @@ function renderCoverage(scan: DesignScan) {
       row.append(el('span', 'cov-name', msg(FAMILY_LABEL[f.family] as Parameters<typeof msg>[0])));
       const rate = ratePercent(f.hit, f.judged);
       if (rate === null) {
-        row.append(el('span', 'cov-rate cov-none', msg('coverageNoDict')));
+        // 率が出ない理由は「該当トークンが無い」だけではない (値を解析できなかった分もある)。
+        // 無条件に「該当トークンなし」と書くと、解析不能しか無いファミリで嘘になる
+        row.append(
+          el(
+            'span',
+            'cov-rate cov-none',
+            f.unmeasurable > 0
+              ? fillTemplate('coverageNotJudged', {
+                  noDict: f.noDict,
+                  unmeasurable: f.unmeasurable,
+                })
+              : msg('coverageNoDict'),
+          ),
+        );
       } else {
         const low = f.judged < LOW_SAMPLE_THRESHOLD ? ` (${msg('coverageLowSample')})` : '';
         row.append(el('span', 'cov-rate', `${rate}% (${f.hit}/${f.judged})${low}`));
@@ -211,6 +225,10 @@ function renderCoverage(scan: DesignScan) {
     // MUI の sx={{ p: 2 }} は theme 由来でも出力は padding: 16px になる。
     // これを「ベタ書き = トークン変更に追従しない」と報告するのは誤りなので主張を止める。
     coverageOriginEl.append(el('div', 'hint', msg('coverageOriginCssInJs')));
+  } else if (scan.originBudgetExceeded) {
+    // 「スタイルシートを読めない」ではなく「時間がかかりすぎて打ち切った」。
+    // 同じ originAvailable=false に 2 つの理由があり、取り違えると理由が嘘になる
+    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginBudget')));
   } else if (!scan.originAvailable || cov.originKnown === 0) {
     coverageOriginEl.append(el('div', 'hint', msg('coverageOriginUnavailable')));
   } else {

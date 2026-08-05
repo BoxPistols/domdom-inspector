@@ -55,6 +55,19 @@ export default defineContentScript({
       window.postMessage({ source: BRIDGE_SOURCE, type: 'i18n', payload: resolved }, '*');
     };
 
+    // MAIN world 側がリスナ登録を終えた合図。executeScript による即時注入では
+    // bridge → inspector の順で別々に注入されるため、下の初回 push は
+    // **inspector のリスナ登録より前に飛ぶ**。同期の pushStrings は確実に失われ、
+    // そのタブの overlay 文言が既定の英語で固定されていた (決定論的な取りこぼし)。
+    window.addEventListener('message', (event: MessageEvent) => {
+      if (event.source !== window) return;
+      const d = event.data;
+      if (!d || d.source !== PAGE_SOURCE || d.type !== 'ready') return;
+      pushStrings();
+      void pushSettings();
+      void pushTokens();
+    });
+
     pushStrings();
     void pushSettings();
     void pushTokens();
@@ -73,6 +86,11 @@ export default defineContentScript({
       // 冪等 ON (popup のサイト有効化直後に使う。既に ON でも OFF に倒れない)
       if (message?.type === 'inspect-on') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'inspect-on' }, '*');
+      }
+      // 右クリックメニュー (background) → MAIN world。対象要素は MAIN world 側が
+      // contextmenu イベントで控えているので、ここでは種別だけ渡す
+      if (message?.type === 'inspect-at-context' || message?.type === 'open-editor-at-context') {
+        window.postMessage({ source: BRIDGE_SOURCE, type: message.type }, '*');
       }
       // popup のページスキャン依頼を MAIN world へ往復中継する (AI 監査の入力収集)。
       // 非同期応答は sendResponse + return true (Chrome ネイティブ API では

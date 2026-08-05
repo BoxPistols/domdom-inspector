@@ -8,6 +8,7 @@ const SCAN: DesignScan = {
   candidateCount: 120,
   truncated: false,
   originAvailable: true,
+  originBudgetExceeded: false,
   styleSource: 'stylesheet',
   statsTotals: {
     color: { uniqueValues: 2, shown: 2, occurrences: 43 },

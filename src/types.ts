@@ -138,14 +138,19 @@ export interface UiStrings {
   noOuterComponent: string;
   jumpUnresolved: string;
   jumpProd: string;
-  editorLinkOff: string;
   sourceUnavailable: string;
   prodSafeMode: string;
   /** バンドル出力パス (ハッシュ付きチャンク) でジャンプ不可な時の注記 */
   sourceMinified: string;
   /** file:line 行に添える「エディタで開く」操作ヒント */
   editorHint: string;
+  /** エディタ起動の実行確認 (押した結果が何も起きないように見えるのを防ぐ) */
+  editorOpening: string;
   ownerPanelTitle: string;
+  /** 描画元リストが空 (素の DOM / production ビルド) のときの説明 */
+  chainEmpty: string;
+  /** 素の DOM 要素にソースジャンプを試みたときの説明 (React でないので原理的に無い) */
+  noSourceDom: string;
   renderOn: string;
   renderOnNoDev: string;
   renderOff: string;
@@ -215,18 +220,23 @@ export interface UiStrings {
 }
 
 export const DEFAULT_STRINGS: UiStrings = {
-  inspectOn: 'Inspect ON — hover to inspect, Esc to exit. Click: editor / Alt+Click: rendered-by tree / ↑↓: parent/child',
+  // 案内する操作は実装と 1 対 1 で対応させる。以前は「Click: editor」(実際は ⌘/Ctrl 必須) と
+  // 「Alt+Click: rendered-by tree」(ハンドラ不在) を案内しており、画面の指示どおり操作しても
+  // 無反応になっていた (Alt+Click は preventDefault されるためページ本来の動作も潰れていた)
+  inspectOn: 'Inspect ON — hover to inspect, Esc to exit. ⌘/Ctrl+Click: open in editor / Alt+Click: what rendered this / ↑↓: parent/child',
   inspectOnSafe: 'Inspect ON — no dev build detected, safe mode (names only / Esc to exit)',
   inspectOff: 'Inspect OFF',
   noOuterComponent: 'No further outer element',
   jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',
   jumpProd: 'Source jump is unavailable on production builds',
-  editorLinkOff: 'Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree.',
   sourceUnavailable: 'source unavailable',
   prodSafeMode: 'production build (safe mode)',
   sourceMinified: 'bundled output · run a dev build to jump',
   editorHint: '⌘/Ctrl+Click to open in editor',
+  editorOpening: 'Opening the source in your editor…',
   ownerPanelTitle: 'Rendered by (click to open editor)',
+  chainEmpty: 'Nothing to show — this element has no React owner (plain DOM, or a production build with names stripped).',
+  noSourceDom: 'This element is not a React component, so it has no source file to open.',
   renderOn:
     'Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit',
   renderOnNoDev: 'Render viz ON — no dev build detected, timing unavailable (flash only)',

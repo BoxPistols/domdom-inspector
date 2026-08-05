@@ -1,4 +1,3 @@
-import { buildEditorUrl } from './editor';
 import { getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
@@ -8,7 +7,6 @@ import {
   DEFAULT_STRINGS,
   type InspectInfo,
   type Settings,
-  type SourceLocation,
   type UiStrings,
 } from './types';
 
@@ -133,26 +131,59 @@ export class Inspector {
     if (event.target instanceof Element && event.target.closest('[data-domdom-editor]')) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    // Cmd(Mac)/Ctrl(Win)+Click で該当ソースをエディタで開く (dev の実ソースのみ)。
     // 通常クリックはページ誤操作の抑止だけ (デザイン検査に専念)。
     if (event.type !== 'click') return;
     const me = event as MouseEvent;
+    // Alt+Click: 描画元 (owner) の一覧を出し、行クリックでそのファイルをエディタで開く。
+    // モード ON のトーストで案内している操作なので、必ずここで応答する
+    // (以前はハンドラが無く、preventDefault だけが効いて完全な無反応になっていた)。
+    if (me.altKey) {
+      if (this.currentInfo) this.overlay.showChainPanel(this.currentInfo, me.clientX, me.clientY);
+      return;
+    }
+    // Cmd(Mac)/Ctrl(Win)+Click で該当ソースをエディタで開く (dev の実ソースのみ)
     if (!me.metaKey && !me.ctrlKey) return;
-    const jt = this.currentInfo?.jumpTarget;
-    if (jt && !isBundledSource(jt.fileName)) this.openEditor(jt);
+    this.openEditorFor(this.currentInfo);
   };
 
-  /** MAIN world から editor:// scheme を開く。browser.* 不可なので a[href].click() を使う。 */
-  private openEditor(loc: SourceLocation) {
-    const url = buildEditorUrl(this.settings, loc);
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('data-domdom-editor', '1'); // onIntercept に素通しさせる
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => a.remove(), 0);
-    this.overlay.toast(this.strings.editorHint);
+  /**
+   * 右クリックメニュー「この要素を検査」: モードを ON にして対象要素を選択する。
+   * モードが OFF でも 1 アクションで結果まで到達させる (押して何も起きないを作らない)。
+   */
+  inspectAt(element: Element) {
+    if (!this.enabled) this.enable();
+    this.keyboardNav = false;
+    this.navStack = [];
+    this.select(element);
+  }
+
+  /** 右クリックメニュー「ソースをエディタで開く」: モード ON を必要としない */
+  openEditorAt(element: Element) {
+    this.openEditorFor(inspectElement(element, this.settings.muiSkip));
+  }
+
+  /**
+   * ジャンプ可能ならエディタを開き、**不可なら理由をトーストで言う**。
+   * 黙って何もしないと「押しても無反応」= 一番わかりにくい壊れ方になる。
+   */
+  private openEditorFor(info: InspectInfo | null) {
+    const jt = info?.jumpTarget;
+    if (jt && !isBundledSource(jt.fileName)) {
+      this.overlay.openEditor(jt);
+      return;
+    }
+    this.overlay.toast(this.explainNoJump(info));
+  }
+
+  /** ジャンプできない理由を実状態から選ぶ (取り違えると「理由が嘘」になる) */
+  private explainNoJump(info: InspectInfo | null): string {
+    if (!info) return this.strings.jumpUnresolved;
+    // 素の DOM 要素はソースファイルが原理的に存在しない (production とは別の理由)
+    if (!info.isReact) return this.strings.noSourceDom;
+    if (!info.devMode) return this.strings.jumpProd;
+    // dev だがバンドル出力 (ハッシュ付きチャンク) を指している
+    if (info.jumpTarget) return this.strings.sourceMinified;
+    return this.strings.jumpUnresolved;
   }
 
   /**

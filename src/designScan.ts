@@ -61,6 +61,12 @@ export interface DesignScan {
   truncated: boolean;
   /** 来歴 (var/literal) を判定できたか。false なら来歴の率を出してはいけない */
   originAvailable: boolean;
+  /**
+   * 来歴収集が時間予算 (ORIGIN_BUDGET_MS) を超えて打ち切られたか。
+   * originAvailable=false の理由は「予算切れ」と「そもそも 1 件も取れない (クロスオリジン
+   * CSS 等)」の 2 つあり、**取り違えると表示する理由が嘘になる**ので別に持つ。
+   */
+  originBudgetExceeded: boolean;
   /** スタイルの供給元。'css-in-js' のとき来歴からハードコードを判定してはいけない */
   styleSource: StyleSource;
   /** 照合に使ったトークン辞書の規模 (0 なら未設定 = グリッド検査のみ) */
@@ -230,6 +236,7 @@ export function scanDesign(
     candidateCount,
     truncated,
     originAvailable,
+    originBudgetExceeded,
     styleSource,
     tokenCounts: { colors: dict.colors.length, sizes: dict.sizes.length },
     tokenSources: opts.tokenSources ?? null,

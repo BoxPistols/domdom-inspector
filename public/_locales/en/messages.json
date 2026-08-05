@@ -48,7 +48,13 @@
     "message": "Enable on current site…"
   },
   "hintEnableSite": {
-    "message": "For deployed/production sites, not just localhost. Grants access and starts inspecting this page immediately. Component tree and render visualization need one page reload."
+    "message": "For deployed/production sites, not just localhost. Grants access and starts inspecting this page immediately."
+  },
+  "ctxInspectElement": {
+    "message": "Inspect this element"
+  },
+  "ctxOpenInEditor": {
+    "message": "Open this element’s source in my editor"
   },
   "btnAllSitesOn": {
     "message": "Enable on all sites (once)"
@@ -216,7 +222,7 @@
     "message": "Record key (in render mode)"
   },
   "inspectOn": {
-    "message": "Inspect ON — hover to inspect, Esc to exit. Click: editor / Alt+Click: rendered-by tree / ↑↓: parent/child"
+    "message": "Inspect ON — hover to inspect, Esc to exit. ⌘/Ctrl+Click: open in editor / Alt+Click: what rendered this / ↑↓: parent/child"
   },
   "inspectOnSafe": {
     "message": "Inspect ON — no dev build detected, safe mode (names only / Esc to exit)"
@@ -233,9 +239,6 @@
   "jumpProd": {
     "message": "Source jump is unavailable on production builds"
   },
-  "editorLinkOff": {
-    "message": "Editor link is off (toggle it in the popup). Alt+Click still opens the rendered-by tree."
-  },
   "sourceUnavailable": {
     "message": "source unavailable"
   },
@@ -248,8 +251,17 @@
   "editorHint": {
     "message": "⌘/Ctrl+Click to open in editor"
   },
+  "editorOpening": {
+    "message": "Opening the source in your editor…"
+  },
   "ownerPanelTitle": {
     "message": "Rendered by (click to open editor)"
+  },
+  "chainEmpty": {
+    "message": "Nothing to show — this element has no React owner (plain DOM, or a production build with names stripped)."
+  },
+  "noSourceDom": {
+    "message": "This element is not a React component, so it has no source file to open."
   },
   "renderOn": {
     "message": "Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit"
@@ -442,7 +454,7 @@
     "message": "{elements} elements measured · tokens: {colors} colors / {sizes} sizes"
   },
   "coverageTruncated": {
-    "message": "Measured the first {shown} of {total} elements — counts are exact for that part, not for the whole page."
+    "message": "Stopped at the scan limit after {shown} elements — counts are exact for that part, not for the whole page."
   },
   "coverageFamilyColor": {
     "message": "Color"
@@ -458,6 +470,9 @@
   },
   "coverageNoDict": {
     "message": "no tokens for this"
+  },
+  "coverageNotJudged": {
+    "message": "not judged: {noDict} without a token of that kind, {unmeasurable} unparseable"
   },
   "coverageLowSample": {
     "message": "few samples"
@@ -494,6 +509,9 @@
   },
   "coverageOriginUnavailable": {
     "message": "Can't tell variable from literal on this page (its stylesheets can't be read). The match rate above is unaffected."
+  },
+  "coverageOriginBudget": {
+    "message": "Reading where values come from took too long on this page, so it was stopped. The match rates above are unaffected."
   },
   "coverageVarRate": {
     "message": "Via CSS variables: {rate}% ({vars}/{known})"

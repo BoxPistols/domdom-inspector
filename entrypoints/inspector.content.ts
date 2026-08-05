@@ -120,6 +120,20 @@ export default defineContentScript({
       true,
     );
 
+    // 右クリックされた要素を控える。contextMenus API は座標も要素も渡さないため、
+    // これが無いとメニュー項目が「どの要素に対する操作か」を知りようがない。
+    // インスペクトモードの ON/OFF と無関係に常時観測する必要があるが、
+    // preventDefault は一切しない (ページのカスタムメニューを壊さない)。
+    let contextTarget: Element | null = null;
+    window.addEventListener(
+      'contextmenu',
+      (event) => {
+        const t = event.target;
+        contextTarget = t instanceof Element ? t : null;
+      },
+      { capture: true, passive: true },
+    );
+
     window.addEventListener('message', (event: MessageEvent) => {
       if (event.source !== window) return;
       const data = event.data;
@@ -148,6 +162,15 @@ export default defineContentScript({
         inspector.enableOnly();
         attemptThemeExtract();
       }
+      // 右クリックメニューからの 2 操作。対象要素が無い (メニューを開いた記録が無い) 場合は
+      // 何もしない — 別フレームの右クリックがここへ届いた場合に他要素を掴まないため
+      if (data.type === 'inspect-at-context' && contextTarget) {
+        inspector.inspectAt(contextTarget);
+        attemptThemeExtract();
+      }
+      if (data.type === 'open-editor-at-context' && contextTarget) {
+        inspector.openEditorAt(contextTarget);
+      }
       // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
       // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
       if (data.type === 'design-scan' && typeof data.id === 'string') {
@@ -167,5 +190,12 @@ export default defineContentScript({
         );
       }
     });
+
+    // **リスナ登録が済んだことを bridge に知らせる。**
+    // popup の「このサイトで有効化」は executeScript を bridge → inspector の順に
+    // 2 回に分けて呼ぶため、bridge の初回 push は inspector がまだ存在しない時点で飛ぶ。
+    // 同期の i18n push は確実に失われ、そのタブの overlay 文言が英語で固定されていた。
+    // 押し込みではなく「受け手が用意できたら引き取る」形にして取りこぼしを消す。
+    window.postMessage({ source: PAGE_SOURCE, type: 'ready' }, '*');
   },
 });
