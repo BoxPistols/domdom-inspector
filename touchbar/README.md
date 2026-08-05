@@ -10,10 +10,8 @@ Touch Bar から domdom-inspector を操作するための BTT ウィジェッ�
 | ボタン | 送るもの | 幅 |
 |--------|----------|----|
 | 🔍 Inspect | `⌃I` (`59,34`) | 104 |
-| ▲ 親 | `↑` (`126`) | 62 |
-| ▼ 子 | `↓` (`125`) | 62 |
-| esc | ESC (`53`) | 62 |
-| ⚙︎ | `⌃D` (`59,2`) — popup を開く | 62 |
+| esc | ESC (`53`) | 76 |
+| ⚙︎ | `⌃D` (`59,2`) — popup を開く | 76 |
 
 キーはすべて **Chrome の実バインド** (`~/Library/Application Support/Google/Chrome/Default/Preferences`
 の `extensions.commands`) に一致させてある。manifest の `suggested_key` は当てにならない。
@@ -22,8 +20,21 @@ Touch Bar から domdom-inspector を操作するための BTT ウィジェッ�
 コマンドが存在しない (経緯は [`../docs/ROADMAP.md`](../docs/ROADMAP.md))。復活させるなら
 `CLAUDE.md` の 4 点配線を戻したうえで、order 101 / 106 に足す。
 
-記号だけのボタン (▲ / ▼ / esc / ⚙) は 62px の固定幅。Touch Bar は物理フィードバックが無く、
-細いボタンはタップしづらいため。
+記号だけのボタン (esc / ⚙) は **76px** の固定幅。Touch Bar は物理フィードバックが無く、
+細いボタンはタップしづらいため。**Touch Bar を共有する 3 プロジェクトの下限は 70px**
+(macenv / local-ui-builder は `max(70, 22 + 文字幅*8)` 相当)。以前の 62px はそこを下回る
+唯一の値で、「押せない」という指摘を受けて 2026-08-06 に引き上げた。
+
+## ▲ / ▼ (親子ナビ) を収録しない理由 (2026-08-06 に削除)
+
+`↑` / `↓` を**素キーで送る**ため、インスペクトモードが OFF のときはページ側へ漏れる
+(スクロール等が誤爆する)。親子ナビ自体は v1 で生きている機能なので「不要だから」ではなく
+**送り方が安全でないから**外した。復活させるなら `DESIGN.md` の結論どおり、素キー送信を
+やめて修飾キー必須の manifest command (`nav-parent` / `nav-child`) に昇格させてから
+order 101 / 102 に足す。
+
+代替として、要素を**右クリック**して「この要素を検査」を選べば、キーボードもホバーも
+使わずに対象を選べる (2026-08-06 に拡張側へ実装)。
 
 ## 仕組み: なぜ Chrome のときだけ出るのか
 
@@ -108,9 +119,9 @@ cp ~/Library/Application\ Support/BetterTouchTool/btt_data_store.version_* ~/Des
 - **許可した直後はリロードが要る**: mid-page 注入でもデザイン計測は動くが、コンポーネント名の
   解決は React 読み込み前のフック設置が前提なので、リロードするまで出ない。
   詳細は [`../docs/popup-ux-design.md`](../docs/popup-ux-design.md)
-- **▲ / ▼ はホバーが前提**: `Inspector` は `pointermove` で選択要素を決めるため、
-  モードを ON にした直後に ▲ を押しても何も起きない。[`DESIGN.md`](./DESIGN.md) の
-  `seedSelection` を実装すれば解消する
+- **親子ナビ (↑ / ↓) はホバーが前提**: `Inspector` は `pointermove` で選択要素を決めるため、
+  モードを ON にした直後に ↑ を押しても何も起きない。[`DESIGN.md`](./DESIGN.md) の
+  `seedSelection` を実装すれば解消する (Touch Bar のボタンとしては収録していない — 上記)
 
 ## 全マシンで使いたい場合
 

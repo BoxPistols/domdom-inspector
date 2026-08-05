@@ -51,78 +51,6 @@
           "BTTTriggerBelongsToPreset": "Default",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
-          "BTTTriggerTypeDescription": "▲",
-          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
-          "BTTUUID": "3ABF8978-8318-4383-85FB-03CF06570343",
-          "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
-          "BTTNotes": "domdom-touchbar",
-          "BTTOrder": 102,
-          "BTTMergeIntoTouchBarGroups": 0,
-          "BTTActionsToExecute": [
-            {
-              "BTTTriggerBelongsToPreset": "Default",
-              "BTTTriggerParentUUID": "3ABF8978-8318-4383-85FB-03CF06570343",
-              "BTTIsPureAction": true,
-              "BTTUUID": "A9C012C0-FE5D-40DE-8D9B-962160F9DAAD",
-              "BTTPredefinedActionType": 264,
-              "BTTPredefinedActionName": "",
-              "BTTShortcutToSend": "126",
-              "BTTOrder": 0
-            }
-          ],
-          "BTTWidgetName": "▲",
-          "BTTTriggerConfig": {
-            "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarItemPlacement": 0,
-            "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"▲\",\"background_color\":\"74,81,99,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
-            "BTTTouchBarAlwaysShowButton": false,
-            "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 62,
-            "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 2
-          },
-          "BTTBelongsToApp": "Global"
-        },
-        {
-          "BTTTriggerBelongsToPreset": "Default",
-          "BTTTriggerType": 642,
-          "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
-          "BTTTriggerTypeDescription": "▼",
-          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
-          "BTTUUID": "626C3A4D-B39F-4EC2-BDD2-BE25319E9238",
-          "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
-          "BTTNotes": "domdom-touchbar",
-          "BTTOrder": 103,
-          "BTTMergeIntoTouchBarGroups": 0,
-          "BTTActionsToExecute": [
-            {
-              "BTTTriggerBelongsToPreset": "Default",
-              "BTTTriggerParentUUID": "626C3A4D-B39F-4EC2-BDD2-BE25319E9238",
-              "BTTIsPureAction": true,
-              "BTTUUID": "047A16C8-22B2-4C25-9D2B-5CAF2AB48DA0",
-              "BTTPredefinedActionType": 264,
-              "BTTPredefinedActionName": "",
-              "BTTShortcutToSend": "125",
-              "BTTOrder": 0
-            }
-          ],
-          "BTTWidgetName": "▼",
-          "BTTTriggerConfig": {
-            "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarItemPlacement": 0,
-            "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"▼\",\"background_color\":\"74,81,99,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
-            "BTTTouchBarAlwaysShowButton": false,
-            "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 62,
-            "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 2
-          },
-          "BTTBelongsToApp": "Global"
-        },
-        {
-          "BTTTriggerBelongsToPreset": "Default",
-          "BTTTriggerType": 642,
-          "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
           "BTTTriggerTypeDescription": "esc",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
           "BTTUUID": "E883654B-F93C-4813-A512-7D1074B8FFD2",
@@ -149,7 +77,7 @@
             "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"esc\",\"background_color\":\"74,81,99,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
             "BTTTouchBarAlwaysShowButton": false,
             "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 62,
+            "BTTTBWidgetWidth": 76,
             "BTTTouchBarFreeSpaceAfterButton": 4,
             "BTTTouchBarScriptUpdateInterval": 2
           },
@@ -185,7 +113,7 @@
             "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"⚙︎\",\"background_color\":\"74,81,99,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
             "BTTTouchBarAlwaysShowButton": false,
             "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 62,
+            "BTTTBWidgetWidth": 76,
             "BTTTouchBarFreeSpaceAfterButton": 4,
             "BTTTouchBarScriptUpdateInterval": 2
           },
