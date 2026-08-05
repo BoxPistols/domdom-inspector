@@ -36,6 +36,12 @@ test('popup が開き主要 UI が描画される', async () => {
   await expect(page.locator('#toggleTree')).toHaveCount(0);
   await expect(page.locator('#toggleRender')).toHaveCount(0);
 
+  // v1 の配線から外したブロックが復活していないこと (実装は温存しているので、
+  // 掲載文と申告を戻さずに UI だけ生えると単一目的の宣言と食い違う)
+  await expect(page.locator('#coverageMeasure')).toHaveCount(0); // issue #10
+  await expect(page.locator('#aiSection')).toHaveCount(0); // issue #11
+  await expect(page.locator('#badgeDetail')).toHaveCount(0); // issue #12
+
   // デザイントークン貼り付け欄 (中核機能) が存在する
   await expect(page.locator('#tokensJson')).toBeVisible();
 
@@ -45,13 +51,15 @@ test('popup が開き主要 UI が描画される', async () => {
   expect(label).not.toContain('popupToggleInspect');
 });
 
-test('未有効化のページではモード切替と測定が disabled になる', async () => {
+test('未有効化のページではモード切替と有効化が disabled になる', async () => {
   // 「押せるのに何も起きない」を防ぐ設計 (動かない機能は disabled + 理由を表示)。
   // popup 単体で開くと対象タブが http(s) でないため、判定は notInspectable 側に落ちる。
+  // 以前は #coverageMeasure も assert していたが、カバレッジ UI は v1 の配線から外した
+  // (issue #10)。規律は残る 2 つの導線で機械的に守る
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/popup.html`);
   await expect(page.locator('#toggle')).toBeDisabled();
-  await expect(page.locator('#coverageMeasure')).toBeDisabled();
+  await expect(page.locator('#enableSite')).toBeDisabled();
   const notice = page.locator('#modeUnavailable');
   await expect(notice).toBeVisible();
   expect((await notice.textContent())?.trim().length ?? 0).toBeGreaterThan(0);

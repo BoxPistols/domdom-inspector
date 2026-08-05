@@ -1,11 +1,10 @@
-import { AI_SESSION_CALL_LIMIT, estimateTokens } from '../../src/aiCost';
-import { buildAuditPrompt, type AuditPrompt } from '../../src/aiPrompt';
-import { AI_PROVIDERS, migrateModelId, type AiProviderId } from '../../src/aiProviders';
-import { formatCoverageMarkdown, LOW_SAMPLE_THRESHOLD, ratePercent } from '../../src/coverage';
-import type { DesignScan } from '../../src/designScan';
+// v1 の popup は「入口 (権限・モード) + トークン貼り付け + エディタ設定」に絞る。
+// トークンカバレッジ計測 / AI デザイン監査 / 表示設定は v1 の配線から外した (実装は温存):
+//   - カバレッジ: https://github.com/BoxPistols/domdom-inspector/issues/10 (side panel として再導入)
+//   - AI 監査:    https://github.com/BoxPistols/domdom-inspector/issues/11
+//   - 表示設定:   https://github.com/BoxPistols/domdom-inspector/issues/12 (計測条件として率の隣へ)
 import { parseMappings } from '../../src/mappings';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
-import { DEFAULT_GRID_PX } from '../../src/tokenLint';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -35,9 +34,8 @@ function applyI18n() {
 
 // 職域スイッチ (designer/engineer) は機能差が無いため除去済みの単一モード
 // (Settings.role 型は dormant で温存)。render/tree は issue #4/#5 で再配線済み。
-const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
-const showVarNamesEl = $<HTMLInputElement>('showVarNames');
-const autoThemeEl = $<HTMLInputElement>('autoTheme');
+// 表示設定 (badgeDetail / showVarNames / autoTheme) の UI は v1 で外した (issue #12)。
+// Settings の値は既定のまま効き続けるので、動作は変わらない
 const editorEl = $<HTMLSelectElement>('editor');
 const customTemplateRowEl = $<HTMLElement>('customTemplateRow');
 const customTemplateEl = $<HTMLInputElement>('customTemplate');
@@ -108,448 +106,10 @@ tokensClearEl.addEventListener('click', () => {
   void saveTokens();
 });
 
-// ---- トークンカバレッジ (決定論・AI 不要) ----------------------------------
-const coverageMeasureEl = $<HTMLButtonElement>('coverageMeasure');
-const coverageStatusEl = $('coverageStatus');
-const coverageResultEl = $('coverageResult');
-const coverageScopeEl = $('coverageScope');
-const coverageTruncatedEl = $('coverageTruncated');
-const coverageFamiliesEl = $('coverageFamilies');
-const coverageOverallEl = $('coverageOverall');
-const coverageMeasurableEl = $('coverageMeasurable');
-const coverageOriginEl = $('coverageOrigin');
-const coverageOffGridEl = $('coverageOffGrid');
-const coverageTopEl = $('coverageTop');
-const coverageCopyEl = $<HTMLButtonElement>('coverageCopy');
-
-const FAMILY_LABEL: Record<string, string> = {
-  color: 'coverageFamilyColor',
-  spacing: 'coverageFamilySpacing',
-  radius: 'coverageFamilyRadius',
-  font: 'coverageFamilyFont',
-};
-
-/** 直近のスキャン結果。AI セクションと共有して二重スキャンを避ける */
-let lastScan: DesignScan | null = null;
-
-function fillTemplate(key: Parameters<typeof msg>[0], vars: Record<string, string | number>): string {
-  let s = msg(key);
-  for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
-  return s;
-}
-
-function el(tag: string, cls?: string, text?: string): HTMLElement {
-  const node = document.createElement(tag);
-  if (cls) node.className = cls;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
-
-function renderCoverage(scan: DesignScan) {
-  const cov = scan.coverage;
-  coverageResultEl.hidden = false;
-
-  coverageScopeEl.textContent = fillTemplate('coverageScope', {
-    elements: scan.elementCount,
-    colors: scan.tokenCounts.colors,
-    sizes: scan.tokenCounts.sizes,
-  });
-  coverageTruncatedEl.hidden = !scan.truncated;
-  if (scan.truncated) {
-    // candidateCount (DOM 全ノード数) は elementCount (可視要素) と母集団が違うので並べない。
-    // 並べると打ち切りが起きていないページでも「部分計測」に見える (§6-4)
-    coverageTruncatedEl.textContent = fillTemplate('coverageTruncated', {
-      shown: scan.elementCount,
-    });
-  }
-
-  // 辞書が空なら率を一切出さない (0% は「何にも準拠していない」と誤読される)
-  const dictEmpty = scan.tokenCounts.colors === 0 && scan.tokenCounts.sizes === 0;
-  coverageFamiliesEl.replaceChildren();
-  if (dictEmpty) {
-    coverageFamiliesEl.append(el('div', 'hint', msg('coverageEmptyDict')));
-    coverageOverallEl.textContent = '';
-    coverageMeasurableEl.textContent = '';
-  } else {
-    for (const f of cov.families) {
-      const row = el('div', 'cov-row');
-      row.append(el('span', 'cov-name', msg(FAMILY_LABEL[f.family] as Parameters<typeof msg>[0])));
-      const rate = ratePercent(f.hit, f.judged);
-      if (rate === null) {
-        // 率が出ない理由は「該当トークンが無い」だけではない (値を解析できなかった分もある)。
-        // 無条件に「該当トークンなし」と書くと、解析不能しか無いファミリで嘘になる
-        row.append(
-          el(
-            'span',
-            'cov-rate cov-none',
-            f.unmeasurable > 0
-              ? fillTemplate('coverageNotJudged', {
-                  noDict: f.noDict,
-                  unmeasurable: f.unmeasurable,
-                })
-              : msg('coverageNoDict'),
-          ),
-        );
-      } else {
-        const low = f.judged < LOW_SAMPLE_THRESHOLD ? ` (${msg('coverageLowSample')})` : '';
-        row.append(el('span', 'cov-rate', `${rate}% (${f.hit}/${f.judged})${low}`));
-        const bar = el('div', 'cov-bar');
-        bar.title = `${f.hit} / ${f.near} / ${f.far}`;
-        for (const [cls, n] of [['cov-hit', f.hit], ['cov-near', f.near], ['cov-far', f.far]] as const) {
-          if (n > 0) {
-            const seg = el('i', cls);
-            seg.style.width = `${(n / f.judged) * 100}%`;
-            bar.append(seg);
-          }
-        }
-        row.append(bar);
-      }
-      row.setAttribute('aria-label', `${f.family}: ${f.hit}/${f.judged}`);
-      coverageFamiliesEl.append(row);
-    }
-    const overall = ratePercent(cov.overall.hit, cov.overall.judged);
-    coverageOverallEl.textContent =
-      overall === null
-        ? ''
-        : `${fillTemplate('coverageOverall', { rate: overall, hit: cov.overall.hit, judged: cov.overall.judged })} ${msg('coverageOverallNote')}`;
-    const mRate = ratePercent(cov.measurable.judged, cov.measurable.total);
-    coverageMeasurableEl.textContent =
-      mRate === null
-        ? ''
-        : fillTemplate('coverageMeasurable', {
-            judged: cov.measurable.judged,
-            total: cov.measurable.total,
-            rate: mRate,
-          });
-  }
-
-  // 来歴 (ハードコード検出の本体)。判定できなければ率を出さず理由を書く
-  coverageOriginEl.replaceChildren();
-  if (scan.styleSource === 'css-in-js') {
-    // MUI の sx={{ p: 2 }} は theme 由来でも出力は padding: 16px になる。
-    // これを「ベタ書き = トークン変更に追従しない」と報告するのは誤りなので主張を止める。
-    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginCssInJs')));
-  } else if (scan.originBudgetExceeded) {
-    // 「スタイルシートを読めない」ではなく「時間がかかりすぎて打ち切った」。
-    // 同じ originAvailable=false に 2 つの理由があり、取り違えると理由が嘘になる
-    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginBudget')));
-  } else if (!scan.originAvailable || cov.originKnown === 0) {
-    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginUnavailable')));
-  } else {
-    coverageOriginEl.append(el('div', 'hint', msg('coverageOriginTitle')));
-    const grid = el('div', 'cov-quad');
-    const cells: [string, string, number][] = [
-      ['good', 'coverageOriginVarHit', cov.matrix.varHit],
-      ['warn', 'coverageOriginVarMiss', cov.matrix.varMiss],
-      ['warn', 'coverageOriginLiteralHit', cov.matrix.literalHit],
-      ['bad', 'coverageOriginLiteralMiss', cov.matrix.literalMiss],
-    ];
-    for (const [tone, key, n] of cells) {
-      const cell = el('div', `cov-cell ${tone}`);
-      cell.append(el('b', undefined, String(n)));
-      cell.append(document.createTextNode(msg(key as Parameters<typeof msg>[0])));
-      grid.append(cell);
-    }
-    coverageOriginEl.append(grid);
-    if (cov.matrix.literalHit > 0) {
-      coverageOriginEl.append(
-        el('div', 'hint', fillTemplate('coverageOriginNote', { n: cov.matrix.literalHit })),
-      );
-    }
-    // 「該当トークンが無い」を来歴の問題として出さない (この文言は継承・ブラウザ既定・
-    // stylesheet が読めない、の 3 つを名指ししている)。判定できなかった分は判定カバー率で申告済み
-    if (cov.matrix.originUnknown > 0) {
-      coverageOriginEl.append(
-        el('div', 'hint', fillTemplate('coverageOriginExcluded', { n: cov.matrix.originUnknown })),
-      );
-    }
-    const varRate = ratePercent(cov.originVar, cov.originKnown);
-    if (varRate !== null) {
-      coverageOriginEl.append(
-        el('div', 'hint', fillTemplate('coverageVarRate', {
-          rate: varRate, vars: cov.originVar, known: cov.originKnown,
-        })),
-      );
-    }
-  }
-
-  const offRate = ratePercent(cov.offGrid.off, cov.offGrid.total);
-  coverageOffGridEl.textContent =
-    offRate === null
-      ? ''
-      : fillTemplate('coverageOffGrid', {
-          grid: scan.grid, rate: offRate, off: cov.offGrid.off, total: cov.offGrid.total,
-        });
-
-  coverageTopEl.replaceChildren();
-  if (cov.top.length) {
-    coverageTopEl.append(el('div', 'hint', msg('coverageTopTitle')));
-    for (const t of cov.top) {
-      coverageTopEl.append(
-        el('div', undefined, t.nearest
-          ? fillTemplate('coverageTopLine', { value: t.value, count: t.count, token: t.nearest })
-          : fillTemplate('coverageTopLineFar', { value: t.value, count: t.count })),
-      );
-    }
-  }
-}
-
-/** design-scan を投げて結果を取る。shape を検証してから返す (不正 payload で popup を壊さない) */
-async function requestScan(): Promise<DesignScan | null> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id == null) return null;
-  let scan: unknown = null;
-  try {
-    // frameId: 0 = トップフレームのみ (指定しないと iframe の結果が本文を置き換える)
-    scan = await browser.tabs.sendMessage(tab.id, { type: 'design-scan' }, { frameId: 0 });
-  } catch {
-    return null;
-  }
-  const s = scan as DesignScan | null;
-  if (!s || typeof s.elementCount !== 'number' || !s.elementCount) return null;
-  if (!s.coverage || !Array.isArray(s.coverage.families)) return null;
-  if (typeof s.stats !== 'object' || s.stats === null) return null;
-  // 拡張を更新した直後のタブでは **古い content script が残ったまま応答する**。
-  // 後から足したフィールドが欠けるので、型が保証する形へ正規化してから返す
-  // (欠けたまま描くと "Off the undefinedpx grid" のような表示になる)。
-  if (typeof s.grid !== 'number') s.grid = DEFAULT_GRID_PX;
-  if (s.tokenSources === undefined) s.tokenSources = null;
-  return s;
-}
-
-coverageMeasureEl.addEventListener('click', async () => {
-  coverageMeasureEl.disabled = true;
-  coverageStatusEl.textContent = msg('coverageMeasuring');
-  const scan = await requestScan();
-  coverageMeasureEl.disabled = false;
-  if (!scan) {
-    coverageStatusEl.textContent = msg('aiStatusScanFail');
-    return;
-  }
-  lastScan = scan;
-  coverageStatusEl.textContent = '';
-  coverageMeasureEl.className = 'secondary';
-  renderCoverage(scan);
-});
-
-coverageCopyEl.addEventListener('click', async () => {
-  if (!lastScan) return;
-  // 来歴を出すかは report.originTrusted が持つ (ここで styleSource を渡し忘れて
-  // 「画面では主張しないがコピー出力では主張する」状態になっていたのを構造で塞いだ)
-  const md = formatCoverageMarkdown(lastScan.coverage, {
-    elementCount: lastScan.elementCount,
-    truncated: lastScan.truncated,
-    grid: lastScan.grid,
-    tokenCounts: lastScan.tokenCounts,
-    tokenSources: lastScan.tokenSources,
-  });
-  try {
-    await navigator.clipboard.writeText(md);
-    coverageStatusEl.textContent = msg('aiStatusCopied');
-  } catch {
-    coverageStatusEl.textContent = msg('statsCopyFail');
-  }
-});
-
 // 「開発者向け」折りたたみの開閉状態を保持 (エンジニアは開きっぱなしにできる)
 const devSectionEl = $<HTMLElement>('devSection') as HTMLDetailsElement;
 devSectionEl.addEventListener('toggle', () => {
   void browser.storage.local.set({ popupDevOpen: devSectionEl.open });
-});
-
-// ---- AI デザイン監査 (BYOK / FR-24〜27) ----------------------------------
-// 設定は Settings に混ぜず専用キーに置く: settings は bridge → MAIN world へ
-// postMessage されるため、キーはもちろんプロバイダ設定もページ側に流さない。
-const aiEnabledEl = $<HTMLInputElement>('aiEnabled');
-const aiProviderEl = $<HTMLSelectElement>('aiProvider');
-const aiModelEl = $<HTMLInputElement>('aiModel');
-const aiKeyEl = $<HTMLInputElement>('aiKey');
-const aiCollectEl = $<HTMLButtonElement>('aiCollect');
-const aiPreviewEl = $<HTMLTextAreaElement>('aiPreview');
-const aiPreviewLabelEl = $('aiPreviewLabel');
-const aiEstimateEl = $('aiEstimate');
-const aiSendEl = $<HTMLButtonElement>('aiSend');
-const aiStatusEl = $('aiStatus');
-const aiResultWrapEl = $('aiResultWrap');
-const aiResultEl = $<HTMLTextAreaElement>('aiResult');
-const aiCopyEl = $<HTMLButtonElement>('aiCopy');
-
-interface AiConfig {
-  /** ハード無効化トグル (FR-27)。false で AI 機能全体を inert にする */
-  enabled: boolean;
-  provider: AiProviderId;
-  /** モデル ID はハードコードせず設定値 (FR-24)。既定は最安クラス */
-  models: Record<AiProviderId, string>;
-}
-const DEFAULT_AI_CONFIG: AiConfig = {
-  enabled: true,
-  provider: 'openai',
-  models: {
-    openai: AI_PROVIDERS.openai.defaultModel,
-    gemini: AI_PROVIDERS.gemini.defaultModel,
-  },
-};
-let aiConfig: AiConfig = DEFAULT_AI_CONFIG;
-let aiKeys: Record<AiProviderId, string> = { openai: '', gemini: '' };
-/** 直近の「収集 → プレビュー」結果。送信はこの内容以外を送らない (FR-26) */
-let auditPrompt: AuditPrompt | null = null;
-
-function syncAiState() {
-  const on = aiConfig.enabled;
-  for (const el of [aiProviderEl, aiModelEl, aiKeyEl, aiCollectEl, aiSendEl, aiCopyEl]) {
-    el.disabled = !on;
-  }
-  aiModelEl.value = aiConfig.models[aiConfig.provider];
-  aiKeyEl.value = aiKeys[aiConfig.provider];
-}
-
-async function saveAiConfig() {
-  await browser.storage.local.set({ aiConfig, aiKeys });
-}
-
-aiEnabledEl.addEventListener('change', () => {
-  aiConfig.enabled = aiEnabledEl.checked;
-  syncAiState();
-  void saveAiConfig();
-});
-aiProviderEl.addEventListener('change', () => {
-  aiConfig.provider = aiProviderEl.value as AiProviderId;
-  syncAiState();
-  void saveAiConfig();
-});
-aiModelEl.addEventListener('change', () => {
-  aiConfig.models[aiConfig.provider] =
-    aiModelEl.value.trim() || AI_PROVIDERS[aiConfig.provider].defaultModel;
-  aiModelEl.value = aiConfig.models[aiConfig.provider];
-  void saveAiConfig();
-});
-// change (blur) だけだと、キーを貼り付けてフォーカスを残したまま popup を閉じた時に
-// 保存されず入力が消える (トークン欄と同じ対策のデバウンス保存)
-let aiKeySaveTimer: ReturnType<typeof setTimeout> | undefined;
-const saveAiKey = () => {
-  aiKeys[aiConfig.provider] = aiKeyEl.value.trim();
-  void saveAiConfig();
-};
-aiKeyEl.addEventListener('input', () => {
-  clearTimeout(aiKeySaveTimer);
-  aiKeySaveTimer = setTimeout(saveAiKey, 400);
-});
-aiKeyEl.addEventListener('change', () => {
-  clearTimeout(aiKeySaveTimer);
-  saveAiKey();
-});
-
-// storage.session が使えない環境でも上限が無言で無効化されないよう、
-// popup のライフタイム内のカウントを保持してフォールバックにする
-let localCallCount = 0;
-
-async function sessionCalls(): Promise<number> {
-  try {
-    const { aiCalls } = await browser.storage.session.get('aiCalls');
-    return Math.max(typeof aiCalls === 'number' ? aiCalls : 0, localCallCount);
-  } catch {
-    return localCallCount;
-  }
-}
-
-/** 上限カウントは送信の成否によらず消費する (失敗連打で上限を回避させない) */
-async function countCall(current: number): Promise<void> {
-  localCallCount = current + 1;
-  try {
-    await browser.storage.session.set({ aiCalls: localCallCount });
-  } catch {
-    // storage.session 非対応環境では localCallCount のみで運用する
-  }
-}
-
-// 収集 → プレビュー (FR-26: 送信前に全文を見せる。この段階では何も送らない)
-aiCollectEl.addEventListener('click', async () => {
-  aiStatusEl.textContent = '';
-  // 既に測定済みならその結果を使い、重いスキャンを 2 回走らせない
-  const scan = lastScan ?? (await requestScan());
-  if (!scan) {
-    aiStatusEl.textContent = msg('aiStatusScanFail');
-    return;
-  }
-  lastScan = scan;
-  const locale = browser.i18n.getUILanguage().toLowerCase().startsWith('ja') ? 'ja' : 'en';
-  auditPrompt = buildAuditPrompt(scan, locale);
-  // プレビュー = 実際に送信する全文 (system + user)。ページ由来データは user 側のみ
-  aiPreviewEl.value = `[system]\n${auditPrompt.system}\n\n[user]\n${auditPrompt.user}`;
-  aiPreviewLabelEl.hidden = false;
-  aiPreviewEl.hidden = false;
-  aiSendEl.hidden = false;
-  const tokens = estimateTokens(auditPrompt.system + auditPrompt.user);
-  aiEstimateEl.textContent = msg('aiEstimateLine')
-    .replace('{tokens}', String(tokens))
-    .replace('{n}', String(await sessionCalls()))
-    .replace('{cap}', String(AI_SESSION_CALL_LIMIT));
-  aiEstimateEl.hidden = false;
-});
-
-// 送信 (FR-25: 明示ボタン起点のみ / FR-24: 通信は background から公式エンドポイントへ)
-aiSendEl.addEventListener('click', async () => {
-  if (!auditPrompt) return;
-  const provider = AI_PROVIDERS[aiConfig.provider];
-  const apiKey = aiKeys[aiConfig.provider];
-  if (!apiKey) {
-    aiStatusEl.textContent = msg('aiStatusNoKey');
-    return;
-  }
-  // gesture 内で最初に権限 request (前に await を挟むと権限ダイアログが無言拒否される)
-  let granted = false;
-  try {
-    granted = await browser.permissions.request({ origins: [provider.originPattern] });
-  } catch {
-    aiStatusEl.textContent = msg('permError');
-    return;
-  }
-  if (!granted) {
-    aiStatusEl.textContent = msg('permDenied');
-    return;
-  }
-  const calls = await sessionCalls();
-  if (calls >= AI_SESSION_CALL_LIMIT) {
-    aiStatusEl.textContent = msg('aiStatusCap').replace('{cap}', String(AI_SESSION_CALL_LIMIT));
-    return;
-  }
-  aiSendEl.disabled = true;
-  aiStatusEl.textContent = msg('aiStatusSending');
-  await countCall(calls); // 送信を試みた時点で消費 (失敗連打での上限回避を防ぐ)
-  const res = (await browser.runtime
-    .sendMessage({
-      type: 'ai-review',
-      provider: aiConfig.provider,
-      model: aiConfig.models[aiConfig.provider],
-      apiKey,
-      system: auditPrompt.system,
-      user: auditPrompt.user,
-    })
-    .catch((e: unknown) => ({ ok: false as const, error: String(e) }))) as
-    | { ok: true; text: string }
-    | { ok: false; error: string }
-    | undefined;
-  aiSendEl.disabled = false;
-  if (res?.ok && typeof res.text === 'string') {
-    aiResultEl.value = res.text;
-    aiResultWrapEl.hidden = false;
-    aiStatusEl.textContent = '';
-  } else {
-    // 応答自体が届かない (SW 未応答) 場合も含めて定型エラーにする
-    aiStatusEl.textContent = msg('aiStatusError').replace(
-      '{error}',
-      res && !res.ok ? res.error : 'no response',
-    );
-  }
-});
-
-aiCopyEl.addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(aiResultEl.value);
-    aiStatusEl.textContent = msg('aiStatusCopied');
-  } catch {
-    aiStatusEl.textContent = msg('statsCopyFail');
-  }
 });
 
 async function load() {
@@ -557,9 +117,6 @@ async function load() {
   const settings: Settings = { ...DEFAULT_SETTINGS, ...(stored.settings ?? {}) };
   const { popupDevOpen } = await browser.storage.local.get('popupDevOpen');
   devSectionEl.open = popupDevOpen === true;
-  badgeDetailEl.value = settings.badgeDetail;
-  showVarNamesEl.checked = settings.showVarNames;
-  autoThemeEl.checked = settings.autoTheme;
   editorEl.value = settings.editor;
   customTemplateEl.value = settings.customUrlTemplate;
   // 保存形は PathMapping[]。編集は 1 行 1 件のテキストで行う (parseMappings と対)
@@ -577,33 +134,6 @@ async function load() {
   } else {
     tokensStatusEl.textContent = msg('tokensEmpty');
   }
-  // AI 設定 (専用キー — settings と違い bridge へは流れない)
-  const stored2 = (await browser.storage.local.get(['aiConfig', 'aiKeys'])) as {
-    aiConfig?: Partial<AiConfig>;
-    aiKeys?: Partial<Record<AiProviderId, string>>;
-  };
-  aiConfig = {
-    ...DEFAULT_AI_CONFIG,
-    ...(stored2.aiConfig ?? {}),
-    models: { ...DEFAULT_AI_CONFIG.models, ...(stored2.aiConfig?.models ?? {}) },
-  };
-  // 破損値で AI セクションが静かに壊れないよう既知の provider に丸める
-  if (!(aiConfig.provider in AI_PROVIDERS)) aiConfig.provider = DEFAULT_AI_CONFIG.provider;
-  // 旧既定のまま保存されているモデル ID を現在の既定へ移行する。
-  // これが無いと、既定を差し替えても一度でも AI 設定を触った利用者には反映されない。
-  let migrated = false;
-  for (const id of Object.keys(AI_PROVIDERS) as AiProviderId[]) {
-    const next = migrateModelId(id, aiConfig.models[id]);
-    if (next !== aiConfig.models[id]) {
-      aiConfig.models[id] = next;
-      migrated = true;
-    }
-  }
-  if (migrated) void saveAiConfig();
-  aiKeys = { openai: '', gemini: '', ...(stored2.aiKeys ?? {}) };
-  aiEnabledEl.checked = aiConfig.enabled;
-  aiProviderEl.value = aiConfig.provider;
-  syncAiState();
   void applyShortcutHints();
 }
 
@@ -615,9 +145,6 @@ function syncEditorRows() {
 async function save() {
   const settings: Settings = {
     ...DEFAULT_SETTINGS,
-    badgeDetail: badgeDetailEl.value as Settings['badgeDetail'],
-    showVarNames: showVarNamesEl.checked,
-    autoTheme: autoThemeEl.checked,
     editor: editorEl.value as Settings['editor'],
     // 空なら既定に戻す (空テンプレートを保存するとジャンプが無言で壊れる)
     customUrlTemplate: customTemplateEl.value.trim() || DEFAULT_SETTINGS.customUrlTemplate,
@@ -627,14 +154,7 @@ async function save() {
   void applyShortcutHints();
 }
 
-for (const el of [
-  badgeDetailEl,
-  showVarNamesEl,
-  autoThemeEl,
-  editorEl,
-  customTemplateEl,
-  pathMappingsEl,
-]) {
+for (const el of [editorEl, customTemplateEl, pathMappingsEl]) {
   el.addEventListener('change', () => {
     // エディタ種別を変えたら URL テンプレート欄の出し入れを即反映する
     // (選べない設定を見せない / custom を選んだのに入力欄が無い、を作らない)
@@ -686,7 +206,6 @@ function canInjectUrl(urlStr: string): boolean {
 async function applyAvailability(origin: string | null, injectable = false) {
   const notice = $('modeUnavailable');
   const toggleBtn = $<HTMLButtonElement>('toggle');
-  const measureBtn = $<HTMLButtonElement>('coverageMeasure');
 
   let available = false;
   // 注入を試せるタブ (URL が読めないだけ) は「検査できない」ではなく「まだ有効化していない」。
@@ -715,7 +234,6 @@ async function applyAvailability(origin: string | null, injectable = false) {
   }
 
   toggleBtn.disabled = !available;
-  measureBtn.disabled = !available;
   notice.hidden = available;
   if (!available) {
     notice.textContent = msg(reason === 'notEnabled' ? 'modeNotEnabledHere' : 'modeNotInspectable');

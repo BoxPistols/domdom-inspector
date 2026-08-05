@@ -13,13 +13,24 @@ React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeSc
   (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
 - ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
 
-現状: **v0.4.0**。**v1 の配線は inspect 一本**に絞ってある:
+現状: **v0.4.3**。**v1 の配線は「ホバーした要素を計測し、利用者のトークンと照合する」一本**:
 inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優先表示** (`cssVars.ts` Tier1)
-+ **Cmd/Ctrl+Click エディタジャンプ** (dev の実ソースのみ / minified は `isBundledSource` で抑制))
-/ **MUI テーマ自動取得** (`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換 →
-手動貼り付け優先で併合) / **トークンカバレッジパネル** (`coverage.ts` 集計 → popup。一致と来歴を
-直交させて出す) / **BYOK AI デザイン監査** (`designScan.ts` 集計 → popup で送信前プレビュー →
-background から OpenAI/Gemini 公式エンドポイントへ fetch)。
++ **⌘/Ctrl+Click / 右クリックメニュー からのエディタジャンプ** (dev の実ソースのみ /
+minified は `isBundledSource` で抑制 / 開かなければパスのコピー導線) + **Alt+Click の描画元リスト**
++ **shadow DOM 貫通** (open root は最内要素まで / closed はホストで止まる)) /
+**MUI テーマ自動取得** (`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換 →
+手動貼り付け優先で併合) / **トークン JSON 貼り付け** (popup)。
+
+**外部送信はゼロ** (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件)。この事実に
+`SECURITY.md` / `PRIVACY.md` / `STORE_LISTING.md` / `PUBLISHING.md` の申告が依存しているので、
+送信経路を足すときは 4 文書を同時に直す。
+
+**トークンカバレッジ計測 / BYOK AI デザイン監査 / 表示設定 (3 つ) も v1 の配線から外した**
+(2026-08-06。実装は `coverage.ts` / `designScan.ts` / `aiProviders.ts` / `aiPrompt.ts` /
+`aiCost.ts` に温存)。カバレッジは popup では率の意味を保てず検算もできないため side panel として
+再導入する (issues [#10](https://github.com/BoxPistols/domdom-inspector/issues/10) /
+[#11](https://github.com/BoxPistols/domdom-inspector/issues/11) /
+[#12](https://github.com/BoxPistols/domdom-inspector/issues/12))。
 
 **コンポーネントツリー (旧 Alt+Shift+T) / レンダープロファイリング v2 (旧 Alt+Shift+R) /
 Page Vitals / Markdown レポートは v1 の配線から外した**(実装は `treeView.ts` / `tree.ts` /
@@ -89,10 +100,10 @@ popup/ ── 設定 UI (browser.* 可)
 
 ## セキュリティ / リリース
 
-- セキュリティ: `SECURITY.md`(要点: 読むが送らない。送信経路はオプトイン BYOK AI の 1 本のみ
-  (background fetch・明示操作起点・集計スタイル値のみ・プレビュー必須)。リモートコード/
-  ページ内容保存なし。**API キーは aiConfig/aiKeys 専用ストレージキー — Settings に混ぜない**
-  (settings は bridge → MAIN world へ流れるため))。
+- セキュリティ: `SECURITY.md`(要点: 読むが**送らない**。v1 は送信経路ゼロで、
+  `fetch`/XHR/WebSocket/beacon の発生箇所が 0 件であることを grep で再現証明できる。
+  リモートコード/ページ内容保存なし。**AI を再導入するなら API キーは aiConfig/aiKeys 専用
+  ストレージキー — Settings に混ぜない** (settings は bridge → MAIN world へ流れるため))。
 - 配布: `PUBLISHING.md`(A=ローカル zip / B=Chrome Web Store の2通り)。`pnpm zip` → 更新は version を上げる。
 
 ## 保留バックログ(次回以降 1つずつ)

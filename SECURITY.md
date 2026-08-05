@@ -5,31 +5,26 @@
 ## TL;DR
 
 **この拡張はページを「読む」が、「送らない・保存しない・外部コードを実行しない」。**
-- ネットワーク送信経路は**オプトインの BYOK AI 監査 1 本のみ**(下記)。それ以外に
-  fetch/XHR/WebSocket/beacon は皆無で、キー未設定なら送信コードは一切実行されない。
-- BYOK AI 経路の条件: ユーザー自身の API キー + 毎回の明示 2 段操作(収集 → プレビュー →
-  送信)+ 送信内容は集計済みスタイル値のみ(プレビュー = 送信内容そのもの)。宛先は
-  ユーザーが選んだ公式エンドポイント(OpenAI / Gemini)だけで、ハード無効化トグルあり。
-- リモートコード実行なし(動的コード評価・外部 script 皆無、MV3 準拠。AI 応答は
-  テキストとして表示するだけでコードとして評価しない)。
-- ページの内容(DOM/テキスト/入力値/スクショ)を保存・送信しない。保存するのは設定・
-  ユーザーが貼り付けたデザイントークン・(AI 利用時の)API キーのみ。
+- **ネットワーク送信経路がゼロ。** `fetch` / `XMLHttpRequest` / `WebSocket` /
+  `sendBeacon` / `EventSource` の**発生箇所が 1 つも無い**ことを grep で再現証明できる
+  (下記の監査手順)。v0.4.2 までは BYOK AI 監査が唯一の送信経路だったが、v1 の配線から
+  外した (実装は温存 / 再導入時は申告も戻す —
+  https://github.com/BoxPistols/domdom-inspector/issues/11)。
+- リモートコード実行なし(動的コード評価・外部 script 皆無、MV3 準拠)。
+- ページの内容(DOM/テキスト/入力値/スクショ)を保存・送信しない。保存するのは設定と
+  ユーザーが貼り付けたデザイントークンのみ。**認証情報を一切保存しない。**
 - テレメトリなし。オープンソースで全コード監査可能。
 
 ## 脅威モデル
 
 - **ページ→拡張**: MAIN world は同一信頼境界。ページが postMessage を偽装しても発火するのは
-  UI トグルと自ページのスタイル集計のみ(特権操作なし)。API キーは bridge/MAIN world に
-  一切流れないため、ページからの持ち出しは構造上不可能。
-- **拡張→外部**: 送信経路は BYOK AI の 1 本のみ。background (SW) から公式エンドポイントへの
-  直接 fetch で、ユーザーの明示操作起点でしか実行されず、内容は送信前プレビューに表示した
-  集計スタイル値と完全一致する。キー未設定・ハード無効化時のデータ流出面はゼロ。
+  UI トグルと自ページのスタイル集計のみ(特権操作なし)。拡張は認証情報を保存しないため、
+  ページからの持ち出し対象がそもそも存在しない。
+- **拡張→外部**: **送信経路が存在しない。** 送信コードが無いため、データ流出面はゼロ。
 - **拡張→ページ**: 表示オーバーレイは closed Shadow DOM で隔離。ページを改変しない
   (読み取り専用のインスペクト)。
 - **広い権限の悪用**: `*://*/*` は「読める」capability だが、読んだページ内容を保存する経路も、
-  自動で送信する経路も持たない(唯一の送信は AI エンドポイントへの明示操作起点の
-  集計スタイル値のみで、宛先はユーザーが選んだプロバイダに限られる)。
-  opt-in + オープンソースで監査可能。
+  送信する経路も持たない。opt-in + オープンソースで監査可能。
 
 ## 何を読むか / 何をするか
 
@@ -51,15 +46,16 @@
 
 誰でも再現できる (src / entrypoints を検索):
 ```sh
-# ① ネットワーク送信系 API の使用有無 — ヒットは entrypoints/background.ts の
-#    BYOK AI ハンドラ (handleAiReview) 1 箇所のみ。ユーザー明示操作起点でしか呼ばれない
-grep -rniE "fetch\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|axios" src entrypoints
+# ① ネットワーク送信系 API の使用有無 — **テストを除けばヒット 0 件**
+grep -rniE "fetch\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|axios" src entrypoints \
+  --include="*.ts" | grep -v "\.test\.ts"
 # ② 動的コード評価・外部 script 注入の有無 — ヒットなし
 grep -rniE "importScripts|createElement\(.script" src entrypoints
-# ③ 外部ホスト参照 — ヒットは src/aiProviders.ts の公式エンドポイント 2 つ
-#    (api.openai.com / generativelanguage.googleapis.com) とコメント内の例のみ
+# ③ 外部ホスト参照 — ヒットは温存してある src/aiProviders.ts の公式エンドポイント 2 つ
+#    (api.openai.com / generativelanguage.googleapis.com) とコメント内の例のみ。
+#    **どこからも呼ばれていない** (①が 0 件であることが上位の証拠)
 grep -rniE "https?://[a-z0-9.-]+" src entrypoints
-# ④ 永続化するもの(settings / tokenDict・tokenJson / aiConfig・aiKeys / popupDevOpen のみ)
+# ④ 永続化するもの(settings / tokenDict・tokenJson / popupDevOpen のみ)
 grep -rnE "storage\.(local|sync)\.set" src entrypoints
 ```
 
@@ -75,11 +71,9 @@ CI では console.log の混入検知・型検査・テスト・ビルドを毎 
 | `scripting` | 許可オリジンへインスペクタを動的注入 | ユーザー明示許可のオリジンのみ |
 | `contextMenus` | 右クリックに「この要素を検査 / ソースをエディタで開く」を追加 | **ページへのアクセス権限は増えない**。メニューは実際に動作する範囲(localhost + 許可済みオリジン)にのみ表示する |
 | `optional_host_permissions: *://*/*` | デプロイ済みサイトを検査可能にする | **既定では未付与**。localhost 以外はユーザーが「有効化」で明示許可した時のみ |
-| 同上 (AI エンドポイント) | BYOK AI 監査の公式 API 呼び出し (`api.openai.com` / `generativelanguage.googleapis.com`) | **既定では未付与**。「AI に送信」を初めて押した gesture 内でのみ要求 |
 
 **単一目的**: ページ要素のデザイン値(色/余白/角丸/タイポグラフィ)をローカルで計測・表示し、
-ユーザーのデザイントークンと照合する(任意で、その集計結果への AI 講評を BYOK で取得できる)。
-それ以外の目的なし。
+ユーザーのデザイントークンと照合する。それ以外の目的なし。外部送信は無い。
 
 ## 企業導入の推奨運用
 

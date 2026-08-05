@@ -13,8 +13,6 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON into the popup; matched values are annotated with the token name, unmatched values flagged as rogue (`tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
-- **Token coverage panel** — measure the whole screen and get a per-family match rate (color / spacing / radius / font size) with real counts, plus the values worth fixing first. Deterministic, no AI required (`coverage.ts`)
-- **AI design audit (BYOK, optional)** — collect aggregated style values from the page, preview exactly what will be sent, and get an AI-written audit (rogue values, consolidation, next steps) using your own OpenAI / Gemini API key. Inert until you configure a key; hard-disable toggle for client work
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
 - **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
@@ -53,7 +51,7 @@ Permissions are minimized. Only `localhost` / `127.0.0.1` are enabled automatica
 2. Inspecting starts right away (the permission is permanent for that origin from then on; it can also be revoked from the popup)
 3. A toggle to allow all sites at once is also available in the popup (optional)
 
-The extension only reads the page — it never stores page content or executes remote code. The only outbound path is the opt-in BYOK AI audit (aggregated style values only, with a mandatory pre-send preview). See [`SECURITY.md`](./SECURITY.md) for details.
+The extension only reads the page — it never stores page content, executes remote code, or **makes any network request at all** (zero occurrences of `fetch`/XHR/WebSocket/beacon). See [`SECURITY.md`](./SECURITY.md) for details.
 
 ## Shortcuts
 
@@ -84,7 +82,7 @@ entrypoints/
   inspector.content.ts  MAIN world / document_start. Establishes the hook + inspector core
   bridge.content.ts     ISOLATED world. Relays settings/tokens/toggle commands + injects i18n
   background.ts         Keyboard shortcuts → toggle commands to tabs
-  popup/                Site enablement, token pasting, display settings, AI audit, help
+  popup/                Site enablement, token pasting, editor settings, help
 src/
   hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ shim (installed before React loads)
   fiber.ts       Element info resolution (3-tier fallback: design-only / safe / dev)

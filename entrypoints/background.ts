@@ -1,9 +1,3 @@
-import {
-  buildAiRequest,
-  parseAiError,
-  parseAiResponse,
-  type AiProviderId,
-} from '../src/aiProviders';
 import { DEV_MATCHES } from '../src/matches';
 
 // v1 はデザイン計測のみ (tree/render は配線外し、実装は温存)
@@ -85,43 +79,11 @@ async function relayToTab(tabId: number, frameId: number, type: string): Promise
   }
 }
 
-/** popup からの AI 講評依頼 (FR-24)。キーは載せ替えるだけで保存しない */
-interface AiReviewMessage {
-  type: 'ai-review';
-  provider: AiProviderId;
-  model: string;
-  apiKey: string;
-  system: string;
-  user: string;
-}
-
-type AiReviewResult = { ok: true; text: string } | { ok: false; error: string };
-
-/**
- * BYOK AI 通信 (FR-24)。公式エンドポイントへ background (SW) から直接 fetch する。
- * optional host permission は popup が送信ボタンの gesture 内で request 済み。
- * 呼び出しは常にユーザーの明示操作起点 (FR-25) — background から自発的に呼ばない。
- */
-async function handleAiReview(msg: AiReviewMessage): Promise<AiReviewResult> {
-  try {
-    const req = buildAiRequest(msg.provider, msg.model, msg.apiKey, msg.system, msg.user);
-    const res = await fetch(req.url, {
-      method: 'POST',
-      headers: req.headers,
-      body: JSON.stringify(req.body),
-    });
-    const json: unknown = await res.json().catch(() => null);
-    if (!res.ok) {
-      const detail = parseAiError(json);
-      return { ok: false, error: detail ? `HTTP ${res.status}: ${detail}` : `HTTP ${res.status}` };
-    }
-    const text = parseAiResponse(msg.provider, json);
-    return text ? { ok: true, text } : { ok: false, error: 'empty response' };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
-  }
-}
-
+// **AI 中継 (fetch) は v1 の配線から外した。** これが拡張内で唯一の fetch 発生源だったため、
+// 外すと「ネットワークリクエストを 1 つも発行しない」が grep で再現証明できる状態になる
+// (SECURITY.md / PRIVACY.md / STORE_LISTING.md の申告がこれに依存している)。
+// 再導入するときは申告も同時に戻すこと: https://github.com/BoxPistols/domdom-inspector/issues/11
+// 実装本体 (src/aiProviders.ts / aiPrompt.ts / aiCost.ts) は温存してある。
 
 /**
  * 許可済みオリジンへの content script 動的登録を復元する。
@@ -226,11 +188,4 @@ export default defineBackground(() => {
     }
   });
 
-  // 非同期応答は sendResponse + return true で返す (Chrome ネイティブ API では
-  // リスナから Promise を返しても応答にならない。polyfill 非導入のため必須)
-  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== 'ai-review') return false;
-    void handleAiReview(message as AiReviewMessage).then(sendResponse);
-    return true;
-  });
 });

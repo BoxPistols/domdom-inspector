@@ -3,18 +3,25 @@
 配信形態: **Unlisted(限定公開)** — 検索非掲載・リンク共有のみ。
 このファイルは CWS デベロッパーダッシュボードに貼り付ける下書きです。
 
-> ⚠️ **2026-08-03 改稿 — 提出前に要ユーザーレビュー(対外文面のため)。**
-> **v1 の掲載範囲を「デザイン計測 + トークン照合」に絞った。** コンポーネントツリーと
-> レンダープロファイリングは v1 の配線から外した(実装は温存)ため、掲載文からも
-> 単一目的からも落としている。理由: production ビルドでは React がコンポーネント名を
-> minify するため原理的に判読不能 / dev ビルドなら React DevTools が優れる /
-> レンダー可視化は react-scan の拡張が同じ土俵にいる / 「React 開発者向け」を名乗ると
-> 単一目的の説明が広がり審査リスクが上がる。
-> **「Single purpose」と「Data usage disclosure」は決着済み**(下記が確定文言)。
-> `PUBLISHING.md` §4-2 / `PRIVACY.md` と三者同一の内容になっていること。文言を直す場合は
-> 3 ファイルすべてを同時に直す。
-> `PUBLISHING.md` §4-2 / `SECURITY.md` との同期は 2026-08-06 に確認済み(3 者すべて
-> ツリー/レンダーを申告に含めず、v1 の単一目的で一致している)。
+> ⚠️ **提出前に要ユーザーレビュー(対外文面のため)。**
+>
+> **v1 の掲載範囲 = 「ホバーした要素のデザイン値を計測し、利用者のトークンと照合する」。**
+> 次のものは v1 の配線から外してある(実装は温存 = 到達不能)ので、掲載文・単一目的・
+> データ申告のいずれにも含めない:
+> - コンポーネントツリー / レンダープロファイリング (2026-08-03)。production では React が
+>   名前を minify するため原理的に判読不能 / dev なら React DevTools が優れる /
+>   react-scan の拡張が同じ土俵にいる
+> - **トークンカバレッジ計測 (ページ全体の集計) — 2026-08-06。**
+>   popup では率の意味を保つ情報が入りきらず、検算ループも作れない。side panel として
+>   再導入する → https://github.com/BoxPistols/domdom-inspector/issues/10
+> - **BYOK AI デザイン監査 — 2026-08-06。** これがあるだけで Data usage 申告に
+>   Website content と Authentication information の 2 カテゴリが必要になり審査が重くなる。
+>   外した結果、**申告は「収集なし」に戻った** →
+>   https://github.com/BoxPistols/domdom-inspector/issues/11
+>
+> **「Single purpose」と「Data usage disclosure」は下記が確定文言。**
+> `PUBLISHING.md` §4-2 / `PRIVACY.md` / `SECURITY.md` と**四者同一**であること。
+> 文言を直すときは 4 ファイルすべてを同時に直す (2026-08-06 に同期を確認済み)。
 
 ---
 
@@ -58,21 +65,6 @@ MUI THEME AUTO-DETECTION
   font sizes) is read from its ThemeProvider and merged into token matching
   automatically — no JSON pasting needed. Pasted tokens take precedence.
 
-TOKEN COVERAGE FOR THE WHOLE SCREEN
-- One click measures every visible element and reports a match rate per family
-  (color / spacing / radius / font size) with the real counts behind it.
-- Values that are off-token are listed most-used first, so you know what to fix
-  for the biggest effect.
-- Deterministic and local. No AI needed.
-
-OPTIONAL AI DESIGN AUDIT (BYOK)
-- Bring your own OpenAI or Gemini API key and get an AI-written audit of the
-  page's aggregated style values (rogue values, consolidation, next steps).
-- Off until you configure a key. Every call needs two explicit steps:
-  Collect (builds a preview of exactly what will be sent) and Send.
-- Only aggregated style values are sent — never URLs, text, or page content.
-  A hard on/off switch disables all AI features.
-
 WORKS ANYWHERE
 - Any site, any styling method. React apps (dev or production build) and
   non-React pages alike. When React is present, component names are shown
@@ -81,11 +73,11 @@ WORKS ANYWHERE
 PRIVACY
 - No telemetry, no servers of our own, no tracking. Settings stay in local
   storage.
+- **Nothing is sent anywhere.** The extension has no backend and makes no network
+  requests at all.
 - Localhost dev servers work out of the box. Any other site is inspected only
   after you explicitly enable it ("Enable on current site"), and even then the
-  extension only reads the page — it never stores page content or runs remote
-  code, and sends nothing unless you explicitly use the optional BYOK AI audit
-  (aggregated style values only, previewed before sending).
+  extension only reads the page — it never stores page content or runs remote code.
 ```
 
 **Permission justification (for review):**
@@ -97,43 +89,35 @@ PRIVACY
   shown only where the inspector actually runs (localhost plus origins you enabled).
 - `optional_host_permissions` (`*://*/*`): not granted by default; requested only when
   you click "Enable on current site" / "Enable on all sites" so deployed apps can be
-  inspected. localhost is covered by a static content script. Access to
-  `api.openai.com` / `generativelanguage.googleapis.com` is requested only when the
-  user first presses "Send to AI" in the optional BYOK audit.
-- No remote code. Nothing leaves the device except the opt-in BYOK AI audit:
-  aggregated style values only, previewed before sending, to the official endpoint
-  of the provider the user configured with their own key.
+  inspected. localhost is covered by a static content script.
+- No remote code, and no network requests of any kind. Nothing leaves the device.
 
 **Single purpose:** Measure the design values of a web page's UI and check them against the
-user's own design system — read the values of page elements (colors, spacing, border-radius,
-typography) and match them against the user's design tokens, element by element or
-aggregated for the whole page. Every feature serves that one purpose: MUI theme
-auto-detection builds the token dictionary from the page itself so nothing has to be pasted;
-"open in editor" opens the source of the element being measured (React dev builds only);
-the optional AI audit comments on the aggregated measurements. All inspection is local and
-read-only; the only outbound data is the user-initiated AI commentary, sent with the user's
-own key.
+user's own design system — read the values of the element the user points at (colors,
+spacing, border-radius, typography) and match them against the user's design tokens.
+Every feature serves that one purpose: MUI theme auto-detection builds the token dictionary
+from the page itself so nothing has to be pasted; the right-click menu and "open in editor"
+reach the element and its source while it is being measured (React dev builds only).
+All inspection is local and read-only, and the extension sends nothing anywhere.
 
-**Data usage disclosure (CWS form):** — v0.4.0 は BYOK AI で端末外送信と API キー保存を
-行う。**「収集なし」と申告してはならない**(虚偽申告)。以下をそのまま選択・記入する。
+**Data usage disclosure (CWS form):** — v1 は**外部送信を一切持たない**
+(BYOK AI 監査を v1 の配線から外したため。issue #11)。以下をそのまま選択・記入する。
 
-- **Website content — YES (collected).** The optional BYOK AI audit sends *aggregated
-  style values* derived from the page (computed style values, usage counts, matched token
-  names) to the AI provider the user configured. Sent only after two explicit user actions
-  (Collect → Send), and only exactly what the preview shows. Never URLs, page text, DOM,
-  class names, form input, or screenshots.
-- **Authentication information — YES (collected).** The user's own AI provider API key is
-  stored locally in `chrome.storage.local` and used only as the authentication header of
-  that user's own API calls. Never synced, never sent anywhere else, never exposed to web
-  pages. Credentials (logins, cookies, session tokens) of visited sites are never read.
-- All other categories — **No**: personally identifiable information, health information,
-  financial and payment information, personal communications, location, web history,
-  user activity.
+- **すべてのカテゴリを「収集しない」** — website content / personally identifiable
+  information / authentication information / health / financial and payment /
+  personal communications / location / web history / user activity。
+  拡張はページの DOM と computed style を**メモリ内で読むだけ**で、保存も送信もしない。
+  保存するのは利用者自身の設定と、利用者が貼り付けたデザイントークン JSON のみ
+  (`chrome.storage.local`、端末内)。
+- **ネットワークリクエストを一切行わない。** `fetch` / `XMLHttpRequest` /
+  WebSocket の発行箇所がゼロであることを grep で再現証明できる (`SECURITY.md` の監査手順)。
 - Sold to third parties? No. Used for unrelated purposes? No. Used for creditworthiness? No.
-- Data is used only for the disclosed single purpose, and is transferred to no one other
-  than the AI provider the user themselves selected.
 - Privacy policy URL: _(host PRIVACY.md at a public URL and paste it here — see
   `PUBLISHING.md` §2)_
+
+> **AI 監査を再導入するときは、この申告を必ず戻すこと**
+> (Website content = YES / Authentication information = YES)。
+> https://github.com/BoxPistols/domdom-inspector/issues/11
 
 ---
 
@@ -177,20 +161,6 @@ MUI テーマの自動検出
   角丸 / フォントサイズ) を読み取り、JSON 貼り付けなしでトークン照合に
   自動併合します (貼り付けトークン優先)。
 
-画面全体のトークンカバレッジ
-- ワンクリックで表示中の全要素を計測し、色 / 余白 / 角丸 / 文字サイズごとの
-  一致率を実数つきで表示します。
-- トークンから外れた値は使用回数の多い順に並ぶので、どこから直せば効くかが分かります。
-- 決定論的でローカル完結。AI は不要です。
-
-任意の AI デザイン監査 (BYOK)
-- 自分の OpenAI / Gemini API キーで、ページの集計スタイル値への AI 講評
-  (野良値・統合候補・次の一手) を取得できます。
-- キーを設定するまで無効。毎回「収集」(送信内容のプレビュー生成) と「送信」の
-  2 段の明示操作が必要です。
-- 送信されるのは集計済みスタイル値のみ — URL・テキスト・ページ内容は送信しません。
-  AI 全体のハード OFF スイッチもあります。
-
 どこでも動作
 - サイト・スタイル手法を問いません。React アプリ (開発・本番ビルドとも) でも
   React を使わないページでも動作します。React がある場合はコンポーネント名も
@@ -198,26 +168,25 @@ MUI テーマの自動検出
 
 プライバシー
 - テレメトリ・独自サーバー・トラッキングなし。設定はローカル保存のみ。
+- **外部送信は一切ありません。** バックエンドを持たず、ネットワークリクエストを
+  1 つも発行しません。
 - localhost の開発サーバはそのまま動作。その他のサイトは「現在のサイトで有効化」
   した時のみ検査対象になり、その場合もページを読むだけで、ページ内容の保存・
-  リモートコード実行は行いません。外部送信は任意の BYOK AI 監査 (集計スタイル値
-  のみ・送信前プレビュー必須) を明示的に使った時だけです。
+  リモートコード実行は行いません。
 ```
 
 **単一目的 (Single purpose — 上記英文の対訳。CWS への入力は英文):**
 web ページの UI のデザイン値を計測し、利用者自身のデザインシステムと照合する —
-ページ要素の値 (色 / 余白 / 角丸 / タイポグラフィ) を読み取り、利用者のデザイントークンと
-要素単位またはページ全体の集計で照合する。全機能がこの単一目的に奉仕する: MUI テーマ
-自動取得はページ自身からトークン辞書を組み立てて貼り付けを不要にし、エディタジャンプは
-計測中の要素のソースを開き (React の開発ビルドのみ)、任意の AI 監査は集計済み計測値に
-講評を付ける。検査はすべてローカルの読み取り専用で、外部送信は利用者が起動する AI 講評
-(利用者自身のキー) のみ。
+利用者が指した要素の値 (色 / 余白 / 角丸 / タイポグラフィ) を読み取り、利用者の
+デザイントークンと照合する。全機能がこの単一目的に奉仕する: MUI テーマ自動取得は
+ページ自身からトークン辞書を組み立てて貼り付けを不要にし、右クリックメニューと
+エディタジャンプは計測中の要素とそのソースへ到達する (React の開発ビルドのみ)。
+検査はすべてローカルの読み取り専用で、外部送信は一切ない。
 
-**データ利用の申告 (対訳):** Website content = **収集する** (BYOK AI 監査で集計スタイル値を
-利用者設定のプロバイダへ送信。2 段の明示操作 + プレビュー必須。URL・テキスト・DOM・
-クラス名・スクリーンショットは送らない)。Authentication information = **収集する**
-(利用者自身の API キーを端末内保存し、本人の API 呼び出しの認証ヘッダにのみ使用。
-訪問先サイトの認証情報は読まない)。その他のカテゴリはすべて「なし」。
+**データ利用の申告 (対訳):** **全カテゴリを「収集しない」**。v1 は外部送信を一切持たず
+(BYOK AI 監査は v1 の配線から外した — issue #11)、ページの DOM と computed style は
+メモリ内で読むだけで保存も送信もしない。端末内に保存するのは利用者自身の設定と、
+利用者が貼り付けたデザイントークン JSON のみ。
 「販売しない / 無関係な用途に使わない / 信用調査に使わない」の 3 つにチェック。
 
 ---
@@ -243,10 +212,18 @@ Phase 4 (セッションスキャン / UI アーキテクチャ抽出 / 課題�
 Phase 3 の残り (リントエンジン FR-15〜18) は `docs/ROADMAP.md` で管理し、搭載時に
 リスティングを更新する。
 
-**コンポーネントツリー / レンダープロファイリング / Page Vitals は v1 の配線から外した**
-(実装は `src/treeView.ts` / `src/renderDebug.ts` / `src/vitals.ts` などに温存。到達不能)。
-掲載文・単一目的・スクリーンショットのいずれにも含めないこと。再配線して掲載に戻す場合は
-単一目的の申告も同時に広げる必要がある(審査リスクは上がる)。判断の根拠は
-`docs/assessment-20260802-store-readiness.md` と `docs/ROADMAP.md`。
-MUI テーマ自動取得 (旧 issue #8) と BYOK AI 監査 (旧 issue #9) は v0.4.0 で搭載済み
-→ 上記本文に反映済み。
+**v1 の配線から外してあるもの** (実装は温存 = 到達不能)。掲載文・単一目的・データ申告・
+スクリーンショットのいずれにも含めないこと。再配線して掲載に戻すときは、単一目的と
+データ申告も同時に広げる必要がある (審査リスクは上がる):
+
+- コンポーネントツリー / レンダープロファイリング / Page Vitals
+  (`src/treeView.ts` / `src/renderDebug.ts` / `src/vitals.ts`)
+- トークンカバレッジ計測 (`src/coverage.ts` / `src/designScan.ts`) —
+  https://github.com/BoxPistols/domdom-inspector/issues/10
+- BYOK AI デザイン監査 (`src/aiProviders.ts` / `src/aiPrompt.ts` / `src/aiCost.ts`) —
+  https://github.com/BoxPistols/domdom-inspector/issues/11
+
+**搭載しているもの**: ホバーバッジ (デザイン値 + トークン照合注釈 + 野良値警告) /
+右クリックメニュー / エディタジャンプ / ↑↓ 親子ナビ / MUI テーマ自動取得 /
+トークン JSON 貼り付け。判断の根拠は `docs/assessment-20260802-store-readiness.md` と
+`docs/ROADMAP.md`。

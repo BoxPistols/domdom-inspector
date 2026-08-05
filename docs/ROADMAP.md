@@ -28,6 +28,22 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 >   PRIVACY/SECURITY 改訂済み。
 > - 残: FR-15〜18(リントエンジン/パネル)、Phase 4(FR-19〜22)、FR-23。
 >
+> **v1 スコープ決定 第 2 弾(2026-08-06)— カバレッジ計測 / AI 監査 / 表示設定も外す**
+> オーナー判断。popup の下半分 (トークンカバレッジ・AI 監査・表示設定) を v1 の配線から外した
+> (実装は温存)。v1 = 「ホバーした要素を計測し、利用者のトークンと照合する」一本。
+> - **カバレッジ**: popup では率の意味を保つ情報 (分母・母集団・但し書き・凡例) が入りきらず、
+>   popup が外側クリックで必ず閉じるため検算ループも作れない。side panel として再導入する。
+>   設計は `docs/design-coverage-screen.md` に確定済み (Phase E は 2026-08-06 完了) →
+>   [#10](https://github.com/BoxPistols/domdom-inspector/issues/10)
+> - **AI 監査**: これがあるだけで CWS の Data usage 申告に Website content と
+>   Authentication information の 2 カテゴリが必要になる。外したことで**申告は「収集なし」に戻り**、
+>   `fetch` の発生箇所が 0 件になった →
+>   [#11](https://github.com/BoxPistols/domdom-inspector/issues/11)
+> - **表示設定**: 「設定」ではなく**計測条件**。率の隣に出すべき情報だった →
+>   [#12](https://github.com/BoxPistols/domdom-inspector/issues/12)
+> 外した結果、対外文書 4 点 (STORE_LISTING / PRIVACY / SECURITY / PUBLISHING) の単一目的と
+> データ申告を同時に狭めた。再導入時は 4 文書を同時に広げること。
+
 > **v1 スコープ決定(2026-08-03)— 上記「Phase 1 機能の再配線」を v1 では巻き戻す**
 > コンポーネントツリー / レンダープロファイリング v2 / Page Vitals / Markdown レポートを
 > **再び v1 の配線から外した。実装は温存(削除ではなく到達不能)** — `src/treeView.ts` /

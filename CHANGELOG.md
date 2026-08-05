@@ -11,6 +11,57 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.3 (2026-08-06)
+
+### 変更 — v1 のスコープを絞る (オーナー判断)
+
+popup の下半分を v1 の配線から外した。**実装は温存** (削除ではなく到達不能) で、
+次期リリースのアイデアストックとして issue に積んである。
+
+- **トークンカバレッジ計測**を外した →
+  [#10](https://github.com/BoxPistols/domdom-inspector/issues/10)。
+  popup (340×600px) では率の意味を保つ情報 (分母・母集団・但し書き・凡例) が入りきらず、
+  popup は外側クリックで必ず閉じるため「率 → その率を作った要素をページ上で指す」検算ループも
+  作れない。side panel として再導入する (設計は `docs/design-coverage-screen.md` に確定済み)
+- **BYOK AI デザイン監査**を外した →
+  [#11](https://github.com/BoxPistols/domdom-inspector/issues/11)。
+  **これがあるだけで CWS の Data usage 申告に Website content と Authentication information の
+  2 カテゴリが必要**になり、審査が重くなる。キーが無ければ何もしない機能で初回体験にも寄与しない
+- **表示設定 3 つ** (CSS 変数名優先 / MUI テーマ自動検出 / バッジの情報量) を外した →
+  [#12](https://github.com/BoxPistols/domdom-inspector/issues/12)。
+  既定値は据え置きなので**動作は変わらない**。これらは「設定」ではなく**計測条件**で、
+  率の隣に出すべき情報だった
+- **`background.ts` から AI 中継 (fetch) を外した。** これが拡張内で唯一の `fetch` 発生源
+  だったため、**`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件**になった (grep で再現証明可能)
+
+### 対外文書 — 単一目的とデータ申告を同時に狭めた
+
+コードだけ狭めて文書を放置すると「存在しない機能を宣言している」状態になるため、4 文書を同時に直した。
+
+- **Data usage 申告が「収集なし」に戻った** (全カテゴリ未チェック)。以前は Website content と
+  Authentication information を YES で申告する必要があった
+- `STORE_LISTING.md`: 掲載文 (en/ja) からカバレッジと AI のブロックを削除 / Single purpose から
+  「aggregated for the whole page」と AI 節を削除 / 権限正当化から AI エンドポイントを削除
+- `PRIVACY.md`: AI 節を全削除 (en/ja)。**AI の言及がゼロ**になった。保存データ表から API キーの行を
+  削除、「認証情報を一切保存しない」に変更。クリップボード経路は実在するもの (エディタが開かなかった
+  ときのパスコピー) に差し替え
+- `SECURITY.md`: TL;DR / 脅威モデル / 監査手順 / 権限表を更新。**grep 手順を実際に回して 0 件を確認**
+  してから申告を書いた
+- `PUBLISHING.md`: §4-2 のデータ申告を全カテゴリ未チェックに / 審査官メモから AI 行を削除 /
+  「データを収集しない拡張ではない」という注記を反転
+- `README.md` / `README.en.md` / `CLAUDE.md` / `docs/ROADMAP.md` も同期
+
+### 内部
+
+- e2e に「外した UI が復活していないこと」の assert を追加 (`#coverageMeasure` /
+  `#aiSection` / `#badgeDetail` の count 0)。掲載文と申告を戻さずに UI だけ生えると
+  単一目的の宣言と食い違うため、機械で止める
+- 既存の回帰ガード (`#coverageMeasure` が disabled) は `#enableSite` へ移した
+  (`docs/design-coverage-screen.md` §6-7 が予告していた通り)
+- 成果物サイズ 167 kB → 148 kB (AI/カバレッジ経路が tree-shake された)
+
+---
+
 ## 0.4.2 (2026-08-06)
 
 ### 修正

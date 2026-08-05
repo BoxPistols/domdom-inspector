@@ -58,9 +58,10 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
    §5-0 の文例をそのまま使う
 6. 実機 QA(M1/M2/M3・一発ON の③目視)
 
-> **v0.4.0 以降は「データを一切収集しない」拡張ではない。** BYOK AI 監査が集計スタイル値を
-> 端末外へ送信し、API キーをローカル保存する。データ申告は §4-2 のとおり正直に行うこと
-> (`STORE_LISTING.md` / `PRIVACY.md` と三者同一)。
+> **v1 は「データを一切収集しない」拡張である。** BYOK AI 監査 (唯一の送信経路だった) を
+> v1 の配線から外したため、`fetch` の発生箇所が 0 件になった。データ申告は §4-2 のとおり
+> 全カテゴリ「収集しない」で出す (`STORE_LISTING.md` / `PRIVACY.md` / `SECURITY.md` と四者同一)。
+> **再導入するときは申告を戻すこと**: https://github.com/BoxPistols/domdom-inspector/issues/11
 
 ---
 
@@ -168,8 +169,8 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
   ページ要素の色/余白/角丸/タイポグラフィを読み取り、ユーザーのデザイントークンと
   要素単位およびページ全体の集計で突合する。」
   - **v1 の搭載機能はすべてこの 1 目的に奉仕する**ことを示す: MUI テーマ自動取得は
-    貼り付け無しで照合辞書を作るため / エディタジャンプは計測中の要素のソースを開くため /
-    任意の AI 監査は集計結果に講評を付けるため。
+    貼り付け無しで照合辞書を作るため / 右クリックメニューとエディタジャンプは計測中の要素と
+    そのソースへ到達するため。
   - コンポーネントツリーとレンダープロファイリングは **v1 の配線から外してある**ので
     申告に含めない(実装は温存しているが到達不能)。再配線するなら、この単一目的も
     同時に広げ直すこと (2026-08-01 施行の新ポリシー: 収集データは開示済み単一目的に
@@ -182,21 +183,17 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
     (ページへのアクセス権限は増えない。メニューは実際に動作する範囲にのみ表示)
   - `optional_host_permissions` (`*://*/*`): デプロイ済みサイト検査用。既定未付与、ユーザーが
     「有効化」した時のみ要求(localhost は静的コンテンツスクリプトで対応)
-- **リモートコード**: 「使用しない」を選択(動的コード取得なし。AI 監査で取得するのは
-  データのみで、コードは実行しない)
-- **データ利用 (Data usage)** — ⚠ **「収集なし」を選んではならない(虚偽申告)。**
-  v0.4.0 の BYOK AI 監査は集計スタイル値を端末外へ送信し、API キーをローカル保存する。
-  `STORE_LISTING.md` の **Data usage disclosure** をそのまま転記する:
-  - ☑ **Website content** — BYOK AI 監査で、ページから導出した集計スタイル値
-    (computed style の値・使用回数・一致トークン名)をユーザーが設定したプロバイダへ送信する。
-    「収集」→「送信」の 2 段の明示操作が必要で、送るのはプレビュー表示と同一の内容のみ。
-    URL・ページテキスト・DOM・クラス名・入力値・スクリーンショットは送らない
-  - ☑ **Authentication information** — ユーザー自身の API キーを `chrome.storage.local` に
-    保存し、本人の API 呼び出しの認証ヘッダとしてのみ使用する。同期せず、他所へ送らず、
-    Web ページからも見えない。**訪問先サイトの認証情報(ログイン・Cookie)は読まない**
-  - ☐ 他のカテゴリはすべて未チェック(PII / 健康 / 金融・決済 / 個人的通信 / 位置情報 /
-    ウェブ履歴 / ユーザー行動)
+- **リモートコード**: 「使用しない」を選択(動的コード取得なし。そもそも
+  ネットワークリクエストを 1 つも発行しない)
+- **データ利用 (Data usage)** — **全カテゴリを「収集しない」**で申告する。
+  v1 は外部送信を持たない (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件。
+  `SECURITY.md` の grep 手順で再現証明できる)。保存するのは利用者の設定と、利用者が
+  貼り付けたデザイントークン JSON のみ (端末内)。
+  - ☐ website content / PII / authentication information / 健康 / 金融・決済 /
+    個人的通信 / 位置情報 / ウェブ履歴 / ユーザー行動 — **すべて未チェック**
   - 「第三者への販売なし」「無関係な用途に使わない」「信用調査に使わない」すべてにチェック
+  - ⚠ **AI 監査を再導入する版では、この申告を Website content = YES /
+    Authentication information = YES に戻すこと** (虚偽申告になる)
   - **プライバシーポリシー URL**: §2 で用意した URL を入力(本文 = `PRIVACY.md`。
     上記 2 カテゴリの申告と本文が一致していることを送信前に目視確認する)
 
@@ -229,7 +226,6 @@ How to test:
 6. "Open this element's source in my editor" (right-click, or Cmd/Ctrl+Click
    while inspecting) needs a React development build. On production builds the
    extension says why instead of doing nothing.
-7. The AI audit is optional and inert without an API key you supply yourself.
 Note: localhost / 127.0.0.1 works without step 2 (static content script).
 ```
 
@@ -250,9 +246,9 @@ Note: localhost / 127.0.0.1 works without step 2 (static content script).
 1. `package.json` の `version` を上げる(例 `0.1.0` → `0.1.1`)
 2. `pnpm zip` で新しい zip を生成
 3. ダッシュボードの当該アイテム → 新しいパッケージをアップロード → 送信
-4. データ送信を伴う機能(BYOK AI 監査は v0.4.0 で搭載済み)を**追加・変更する版**は、
-   §4-2 のデータ申告と `PRIVACY.md` / `STORE_LISTING.md` を先に更新し、独立したリリースとして
-   審査に出す(送信先プロバイダの追加・送信内容の拡大は申告のやり直しが必要)
+4. **データ送信を伴う機能を追加する版** (BYOK AI 監査の再導入等) は、§4-2 のデータ申告と
+   `PRIVACY.md` / `STORE_LISTING.md` / `SECURITY.md` を先に更新し、独立したリリースとして
+   審査に出す(送信経路の新設・送信内容の拡大は申告のやり直しが必要)
 
 > 段階的ロールアウト(パーセンテージ公開)を使うと、更新の影響範囲を絞れる。
 
