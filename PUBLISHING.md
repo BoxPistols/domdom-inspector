@@ -71,7 +71,7 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 ```sh
 pnpm install
 pnpm lint        # ESLint (any / @ts-ignore / console.log / 境界契約)
-pnpm test        # 228 tests (24 files) — v0.4.0 時点
+pnpm test        # 277 tests (25 files) — 2026-08-06 時点
 pnpm typecheck   # tsc --noEmit
 pnpm build       # .output/chrome-mv3
 ```
@@ -79,7 +79,8 @@ pnpm build       # .output/chrome-mv3
 - [ ] lint / test / typecheck / build が通る
 - [ ] `public/icon/{16,32,48,96,128}.png` が存在する
 - [ ] `public/_locales/{en,ja}/messages.json` が存在する
-- [ ] 本番 manifest の permissions が `storage`/`activeTab`/`scripting` + `optional_host_permissions: *://*/*`(`.output/chrome-mv3/manifest.json` で確認。正当化は SECURITY.md)
+- [ ] 本番 manifest の permissions が `storage`/`activeTab`/`scripting`/`contextMenus` + `optional_host_permissions: *://*/*`(`.output/chrome-mv3/manifest.json` で確認。正当化は SECURITY.md)
+- [ ] `minimum_chrome_version` が manifest に入っている(依存 API の下限。現在 119)
 - [ ] `package.json` の `version` が公開したい版になっている(現行 `0.4.0`)
 
 > バージョンは `package.json` の `version` が manifest に反映される。**更新のたびに必ず上げる**
@@ -177,6 +178,8 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
   - `storage`: ユーザー設定・貼り付けたデザイントークンのローカル保存
   - `activeTab`: ポップアップから現タブ origin の取得
   - `scripting`: ユーザーが有効化したオリジンへのインスペクタ動的注入
+  - `contextMenus`: 右クリックに「この要素を検査 / ソースをエディタで開く」を追加
+    (ページへのアクセス権限は増えない。メニューは実際に動作する範囲にのみ表示)
   - `optional_host_permissions` (`*://*/*`): デプロイ済みサイト検査用。既定未付与、ユーザーが
     「有効化」した時のみ要求(localhost は静的コンテンツスクリプトで対応)
 - **リモートコード**: 「使用しない」を選択(動的コード取得なし。AI 監査で取得するのは
@@ -217,14 +220,16 @@ How to test:
 2. Click the extension icon, then press "Enable on current site" and accept the
    permission prompt. (Host access is opt-in by design; without this step the
    extension intentionally does nothing on that site.)
-3. Press Alt+Shift+I and hover any element — a badge shows its measured design
-   values. Press Esc to exit.
-4. Optional: paste any design-token JSON in the popup to see values annotated
-   with token names.
-5. React-only features (component tree Alt+Shift+T, render profiling
-   Alt+Shift+R, Cmd/Ctrl+Click to open source) require a React page; source
-   jump additionally requires a development build.
-6. The AI audit is optional and inert without an API key you supply yourself.
+3. In the popup, press "Toggle inspect mode" (or Alt+Shift+I), then hover any
+   element — a badge shows its measured design values. Press Esc to exit.
+4. Or right-click any element and choose "Inspect this element" — same result
+   without the keyboard.
+5. Optional: paste any design-token JSON in the popup to see values annotated
+   with token names, then press "Measure this screen" for page-wide totals.
+6. "Open this element's source in my editor" (right-click, or Cmd/Ctrl+Click
+   while inspecting) needs a React development build. On production builds the
+   extension says why instead of doing nothing.
+7. The AI audit is optional and inert without an API key you supply yourself.
 Note: localhost / 127.0.0.1 works without step 2 (static content script).
 ```
 

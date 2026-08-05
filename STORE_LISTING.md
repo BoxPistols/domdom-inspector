@@ -13,9 +13,8 @@
 > **「Single purpose」と「Data usage disclosure」は決着済み**(下記が確定文言)。
 > `PUBLISHING.md` §4-2 / `PRIVACY.md` と三者同一の内容になっていること。文言を直す場合は
 > 3 ファイルすべてを同時に直す。
-> ⚠️ **未同期**: `PUBLISHING.md` §4-2 の単一目的要旨は改稿前(ツリー/レンダーを含む広い
-> 目的)のまま。提出前に本ファイルの Single purpose に合わせること
-> (`SECURITY.md` の「単一目的」は改稿後と同義で既に整合)。
+> `PUBLISHING.md` §4-2 / `SECURITY.md` との同期は 2026-08-06 に確認済み(3 者すべて
+> ツリー/レンダーを申告に含めず、v1 の単一目的で一致している)。
 
 ---
 
@@ -42,8 +41,9 @@ INSPECT DESIGN VALUES (Alt+Shift+I)
 - Rogue-value detection: spacing that falls outside a 4/8px grid is flagged,
   so design-system drift is visible at a glance.
 - ↑/↓ move the selection to the parent / child element.
-- Open in editor: Cmd/Ctrl+Click an element to jump to its source
-  (React dev builds only).
+- Or right-click any element and choose "Inspect this element" — no keyboard needed.
+- Open in editor: Cmd/Ctrl+Click an element (or use the right-click menu) to jump
+  to its source (React dev builds only).
 
 MATCH AGAINST YOUR DESIGN TOKENS
 - Paste your design token JSON (Figma Variables export, W3C Design Tokens,
@@ -92,6 +92,9 @@ PRIVACY
 - `storage`: persist user settings (display options, pasted design tokens) locally.
 - `activeTab`: read the current tab's origin from the popup when you open it.
 - `scripting`: inject the inspector into origins you have enabled.
+- `contextMenus`: add "Inspect this element" / "Open this element's source in my editor"
+  to the right-click menu. This grants no additional access to pages, and the items are
+  shown only where the inspector actually runs (localhost plus origins you enabled).
 - `optional_host_permissions` (`*://*/*`): not granted by default; requested only when
   you click "Enable on current site" / "Enable on all sites" so deployed apps can be
   inspected. localhost is covered by a static content script. Access to
@@ -157,8 +160,9 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 - 野良値検出: 4/8px グリッドから外れた spacing に警告が付き、
   デザインシステムからの逸脱がひと目でわかります。
 - ↑/↓ で親・子要素へ選択を移動。
-- エディタで開く: Cmd/Ctrl+クリックで要素のソースへジャンプ
-  (React の開発ビルドのみ)。
+- 要素を右クリック →「この要素を検査」でも開始できます (キーボード不要)。
+- エディタで開く: Cmd/Ctrl+クリック (または右クリックメニュー) で要素のソースへ
+  ジャンプ (React の開発ビルドのみ)。
 
 デザイントークンとの照合
 - Figma Variables のエクスポート / W3C Design Tokens / Tokens Studio の
@@ -230,7 +234,7 @@ web ページの UI のデザイン値を計測し、利用者自身のデザイ
 
 - [x] `default_locale: en` + `_locales/en`, `_locales/ja`
 - [x] アイコン 16/32/48/96/128
-- [x] permissions は `storage`/`activeTab`/`scripting`(host は localhost 静的 + `optional_host_permissions: *://*/*` はユーザー明示許可時のみ)。正当化は SECURITY.md
+- [x] permissions は `storage`/`activeTab`/`scripting`/`contextMenus`(host は localhost 静的 + `optional_host_permissions: *://*/*` はユーザー明示許可時のみ)。正当化は SECURITY.md
 - [ ] デベロッパー登録($5)・スクショ・プライバシーポリシー URL
 
 ## 将来機能 (このリスティングには含めない)

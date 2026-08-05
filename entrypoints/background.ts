@@ -4,6 +4,7 @@ import {
   parseAiResponse,
   type AiProviderId,
 } from '../src/aiProviders';
+import { DEV_MATCHES } from '../src/matches';
 
 // v1 はデザイン計測のみ (tree/render は配線外し、実装は温存)
 const COMMANDS = new Set(['toggle-inspect']);
@@ -18,22 +19,69 @@ const CONTEXT_ITEMS = [
   { id: 'open-editor-at-context', titleKey: 'ctxOpenInEditor' },
 ] as const;
 
-/** メニューを作り直す (重複 id で create が失敗するため removeAll してから) */
-function createContextMenus(): void {
+/**
+ * メニューを出してよいページ = content script が**実際に動く**範囲。
+ * http/https 全体に出すと、未許可オリジンで「メニューはあるが押しても無反応」になる
+ * (この製品で一番わかりにくい壊れ方なので構造的に避ける)。
+ */
+async function menuPatterns(): Promise<string[]> {
+  let origins: string[] = [];
   try {
-    browser.contextMenus.removeAll(() => {
-      for (const item of CONTEXT_ITEMS) {
-        browser.contextMenus.create({
-          id: item.id,
-          title: browser.i18n.getMessage(item.titleKey),
-          // 注入できないページ (chrome:// 等) では出さない。出して無反応が一番わかりにくい
-          documentUrlPatterns: ['http://*/*', 'https://*/*'],
-          contexts: ['all'],
-        });
-      }
-    });
+    origins = (await browser.permissions.getAll()).origins ?? [];
+  } catch {
+    origins = [];
+  }
+  // 全サイト許可があれば個別オリジンは不要 (包含される)
+  if (origins.some((o) => o === '*://*/*' || o === '<all_urls>')) return ['*://*/*'];
+  // 静的注入される開発サーバ + 個別に許可されたオリジンだけ
+  return [...DEV_MATCHES, ...origins];
+}
+
+/** メニューを作り直す (重複 id で create が失敗するため removeAll してから) */
+async function createContextMenus(): Promise<void> {
+  const documentUrlPatterns = await menuPatterns();
+  try {
+    await browser.contextMenus.removeAll();
+    for (const item of CONTEXT_ITEMS) {
+      browser.contextMenus.create({
+        id: item.id,
+        title: browser.i18n.getMessage(item.titleKey),
+        documentUrlPatterns,
+        contexts: ['all'],
+      });
+    }
   } catch {
     // contextMenus が使えない環境では黙って諦める (他機能は動く)
+  }
+}
+
+/**
+ * メニュー選択をタブへ中継する。
+ * 送信に失敗するのは「許可はあるが、そのタブは許可前から開いていて content script が
+ * 入っていない」ケース (registerContentScripts は以後のロードにしか効かない)。
+ * その場合だけ注入して 1 度だけ再送する — ここで諦めると無反応になる。
+ */
+async function relayToTab(tabId: number, frameId: number, type: string): Promise<void> {
+  try {
+    await browser.tabs.sendMessage(tabId, { type }, { frameId });
+    return;
+  } catch {
+    // 未注入の可能性 → 下で注入してから再送
+  }
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['/content-scripts/bridge.js'],
+    });
+    await browser.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['/content-scripts/inspector.js'],
+      world: 'MAIN',
+    });
+    await browser.tabs.sendMessage(tabId, { type }, { frameId });
+  } catch {
+    // 権限が無い等でここまで失敗したら諦める
+    // (メニュー自体は許可済み範囲にしか出していないので、通常ここには来ない)
   }
 }
 
@@ -148,21 +196,21 @@ export default defineBackground(() => {
   browser.runtime.onStartup.addListener(() => void restoreRegistrations());
   void restoreRegistrations();
 
-  // 右クリックメニューは onInstalled/onStartup で作り直す (SW が寝ても項目は残る)
-  browser.runtime.onInstalled.addListener(createContextMenus);
-  browser.runtime.onStartup.addListener(createContextMenus);
+  // 右クリックメニューは SW が起きるたびに作り直す (removeAll → create で冪等)。
+  // onInstalled/onStartup だけに頼ると、そのイベントを取り逃した SW 起動でメニューが消える
+  browser.runtime.onInstalled.addListener(() => void createContextMenus());
+  browser.runtime.onStartup.addListener(() => void createContextMenus());
+  void createContextMenus();
+  // 許可の増減でメニューを出す範囲が変わる (許可した瞬間からそのサイトで使えるように)
+  browser.permissions.onAdded.addListener(() => void createContextMenus());
+  browser.permissions.onRemoved.addListener(() => void createContextMenus());
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
     if (tab?.id == null) return;
     if (!CONTEXT_ITEMS.some((i) => i.id === info.menuItemId)) return;
     // **frameId を必ず指定する**: 未指定だと全フレームの bridge に配信され、
     // 右クリックしていない iframe 側でも検査が始まる (info.frameId は右クリックされたフレーム)
-    browser.tabs
-      .sendMessage(tab.id, { type: info.menuItemId }, { frameId: info.frameId ?? 0 })
-      .catch(() => {
-        // content script が未注入のページ (未許可オリジン) は無視。
-        // popup 側の有効化導線が同じ理由を文言で説明する
-      });
+    void relayToTab(tab.id, info.frameId ?? 0, String(info.menuItemId));
   });
 
   // キーボードショートカット (manifest commands) → アクティブタブへトグル指示 (FR-01)

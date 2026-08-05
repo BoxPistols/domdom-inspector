@@ -3,10 +3,10 @@
 _Last updated: 2026-08-03_
 
 DomDom Inspector ("the extension") is an inspector for how a web page's UI is implemented:
-it measures the design values (colors, spacing, border-radius, typography) of page elements,
-matches them against the user's design tokens, and — on React pages — visualizes the
-component structure and render behavior that produce them. This policy explains what the
-extension does and does not do with your data.
+it measures the design values (colors, spacing, border-radius, typography) of page elements
+and matches them against the user's design tokens. On React pages it additionally labels an
+element with the component that renders it, and can open that component's source file in the
+user's editor. This policy explains what the extension does and does not do with your data.
 
 ## Summary
 
@@ -37,12 +37,12 @@ information is used only to render the on-screen overlay and is **not stored, an
 transmitted** — except the aggregated style summary you explicitly send in the optional
 AI audit below.
 
-**Render report you copy yourself.** On React pages, the render-profiling panel has a
-"Copy AI report" button. The Markdown report it writes to **your clipboard** includes the
-current page's URL and title (alongside component names and measured numbers) so that the
-report identifies what was measured. It is never transmitted by the extension — it goes to
-your clipboard only, and where you paste it is entirely your choice. This is separate from
-the AI audit below, whose payload never contains URLs or page titles.
+**Measurement summary you copy yourself.** The popup has a "Copy measurement" button. The
+Markdown it writes to **your clipboard** contains only aggregated numbers: match rates per
+family, counts, the token names it matched, the values that were off (e.g. `13px`), and the
+thresholds used to judge them. It contains **no URL, no page title, no page text, no class
+names and no DOM**. It is never transmitted by the extension — it goes to your clipboard
+only, and where you paste it is entirely your choice.
 
 ## Data the extension does NOT collect
 
@@ -105,7 +105,8 @@ _最終更新: 2026-08-03_
 
 DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を検査するツールです。
 ページ上の要素のデザイン値(色・余白・角丸・タイポグラフィ)を計測し、利用者のデザイン
-トークンと照合し、React ページではそれを生むコンポーネント構造とレンダー挙動を可視化します。
+トークンと照合します。React ページでは、その要素を描画しているコンポーネント名を併記し、
+そのソースファイルを利用者のエディタで開くこともできます。
 本ポリシーは、本拡張機能がデータをどう扱うか(扱わないか)を説明します。
 
 ## 要約
@@ -136,12 +137,12 @@ React を使用している場合は、コンポーネント名の補足表示�
 画面オーバーレイの描画にのみ使用し、**保存しません。送信もしません** — 唯一の例外は、下記の
 任意 AI 監査であなたが明示的に送信する集計済みスタイル要約です。
 
-**あなた自身がコピーするレンダーレポート**: React ページでは、レンダープロファイリング
-パネルに「AI レポートをコピー」ボタンがあります。ここで**あなたのクリップボード**へ書き出す
-Markdown レポートには、計測対象を特定できるよう、現在のページの URL とタイトルが含まれます
-(コンポーネント名・計測数値も同様)。本拡張機能がこれを送信することはありません — 出力先は
-クリップボードのみで、どこに貼るかは完全にあなたの判断です。後述の AI 監査とは別経路であり、
-AI 監査の送信内容に URL やページタイトルが含まれることはありません。
+**あなた自身がコピーする計測サマリ**: ポップアップに「計測結果をコピー」ボタンがあります。
+ここで**あなたのクリップボード**へ書き出す Markdown に含まれるのは集計値だけです —
+カテゴリ別の一致率・件数・一致したトークン名・外れていた値 (`13px` 等)・判定に使った閾値。
+**URL・ページタイトル・ページのテキスト・クラス名・DOM は一切含みません。**
+本拡張機能がこれを送信することはありません — 出力先はクリップボードのみで、
+どこに貼るかは完全にあなたの判断です。
 
 ## 収集しないもの
 

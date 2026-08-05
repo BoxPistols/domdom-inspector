@@ -43,4 +43,4 @@ DomDom Inspector is a Chrome extension for **designers and engineers** working o
 - **Works on production** — React (dev + production builds) and non-React pages alike
 - **Bilingual** — English / Japanese, switches with the browser locale
 
-Render profiling, component tree, source jump, and AI-assisted reports are planned for future releases ([issues #4–#9](https://github.com/BoxPistols/domdom-inspector/issues)).
+Render profiling and the component tree are **not** part of v1 — the implementation is kept in the repository but is deliberately unreachable, because production builds strip component names, so the tree is unreadable exactly where this extension is meant to be used ([issues #4–#9](https://github.com/BoxPistols/domdom-inspector/issues)).

@@ -5,6 +5,11 @@ export default defineConfig({
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
     default_locale: 'en',
+    // 依存 API の下限。**最大値を採る**: matchOriginAsFallback (Chrome 119、静的/動的登録の
+    // 全箇所で使用) がボトルネックで、world:'MAIN' (111) / checkVisibility (105・ガード付き) /
+    // storage.session (102・try/catch 付き) はこれより下。宣言しないと古い Chrome で
+    // 「入るのに動かない」になる (審査提出物にも下限を書く義務がある)
+    minimum_chrome_version: '119',
     // storage: 設定保存 / activeTab: ポップアップから現タブ origin 取得 /
     // scripting: 許可オリジンへ MAIN world document_start フックを動的登録 (M1)
     // contextMenus: 右クリックから「この要素を検査 / ソースをエディタで開く」を出す。
