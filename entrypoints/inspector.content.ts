@@ -125,18 +125,37 @@ export default defineContentScript({
     // インスペクトモードの ON/OFF と無関係に常時観測する必要があるが、
     // preventDefault は一切しない (ページのカスタムメニューを壊さない)。
     let contextTarget: Element | null = null;
+    let contextAt = 0;
+    /**
+     * 控えた対象を使ってよい時間。**MAIN world は同一信頼境界で、ページ側の JS は
+     * bridge からの postMessage を偽装できる** (source 文字列を真似るだけ)。
+     * `open-editor-at-context` を偽装されると、ページが自前で偽装した `__reactFiber$` の
+     * `_debugSource` を使ってユーザーのエディタで任意のパスを開かせられる。
+     * 実際の右クリック (信頼済みイベント) の直後だけ有効にすることで、
+     * 「ユーザーが右クリックした要素に対してしか作用しない」に絞る。
+     */
+    const CONTEXT_TARGET_TTL_MS = 15000;
     window.addEventListener(
       'contextmenu',
       (event) => {
+        // **信頼済みイベントに限る。** ページは dispatchEvent で contextmenu を合成できるが
+        // isTrusted は付けられないので、合成イベントで対象を仕込むことはできない
+        if (!event.isTrusted) return;
         // composedPath()[0] は open shadow root の内側の実要素を返す。event.target は
         // shadow 境界で再ターゲットされてホストになるため、これが無いと Web Components の
         // 内部を右クリックしてもホストの値が出る (closed root では仕様上ホストのまま)
         const inner = event.composedPath?.()[0];
         const t = inner instanceof Element ? inner : event.target;
         contextTarget = t instanceof Element ? t : null;
+        contextAt = Date.now();
       },
       { capture: true, passive: true },
     );
+    /** 控えた対象がまだ有効か (信頼済みの右クリック直後のみ) */
+    const freshContextTarget = (): Element | null => {
+      if (!contextTarget || Date.now() - contextAt > CONTEXT_TARGET_TTL_MS) return null;
+      return contextTarget;
+    };
 
     window.addEventListener('message', (event: MessageEvent) => {
       if (event.source !== window) return;
@@ -166,14 +185,19 @@ export default defineContentScript({
         inspector.enableOnly();
         attemptThemeExtract();
       }
-      // 右クリックメニューからの 2 操作。対象要素が無い (メニューを開いた記録が無い) 場合は
-      // 何もしない — 別フレームの右クリックがここへ届いた場合に他要素を掴まないため
-      if (data.type === 'inspect-at-context' && contextTarget) {
-        inspector.inspectAt(contextTarget);
-        attemptThemeExtract();
+      // 右クリックメニューからの 2 操作。**信頼済みの右クリック直後の対象しか使わない**
+      // (別フレームの右クリックが届いた場合に他要素を掴まないため + ページによる
+      // postMessage 偽装で任意要素に作用させられないため)
+      if (data.type === 'inspect-at-context') {
+        const target = freshContextTarget();
+        if (target) {
+          inspector.inspectAt(target);
+          attemptThemeExtract();
+        }
       }
-      if (data.type === 'open-editor-at-context' && contextTarget) {
-        inspector.openEditorAt(contextTarget);
+      if (data.type === 'open-editor-at-context') {
+        const target = freshContextTarget();
+        if (target) inspector.openEditorAt(target);
       }
       // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
       // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。

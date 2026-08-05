@@ -142,3 +142,42 @@ test('「ソースをエディタで開く」は開けない要素でも理由�
 
   await page.close();
 });
+
+/**
+ * 【セキュリティ】ページが合成した contextmenu では対象を掴まない。
+ *
+ * MAIN world は同一信頼境界で、**ページ側の JS は bridge からの postMessage を偽装できる**
+ * (source 文字列を真似るだけ)。`open-editor-at-context` を偽装されると、ページが自前で
+ * 偽装した `__reactFiber$` の `_debugSource` を使って**ユーザーのエディタで任意のパスを
+ * 開かせられる**。対象要素を「信頼済みの contextmenu 直後」に限ることで、
+ * 合成イベントで仕込む経路を塞いでいる (isTrusted はページから付けられない)。
+ */
+test('ページが合成した contextmenu + 偽装メッセージでは何も起きない', async () => {
+  const page = await openFixture();
+
+  // ページ自身が contextmenu を合成して対象を仕込もうとする (isTrusted=false)
+  await page.evaluate(() => {
+    document
+      .querySelector('#target')
+      ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true }));
+  });
+  // そのうえで bridge を騙った postMessage を投げる
+  await page.evaluate(
+    (src) =>
+      new Promise<void>((resolve) => {
+        window.postMessage({ source: src, type: 'inspect-at-context' }, '*');
+        window.postMessage({ source: src, type: 'open-editor-at-context' }, '*');
+        setTimeout(resolve, 200);
+      }),
+    BRIDGE_SOURCE,
+  );
+
+  // 何も起きない = overlay が生成されない (toast も出ない)
+  await expect(page.locator('domdom-inspector-overlay')).not.toBeAttached();
+
+  // 対照: 本物の右クリックなら動く (テスト自体が無意味になっていないことの確認)
+  await rightClickThen(page, '#target', 'inspect-at-context');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  await page.close();
+});
