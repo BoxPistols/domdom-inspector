@@ -661,6 +661,12 @@ let siteTabId: number | null = null;
 // blob: top-level タブ (新規タブで開いたプレビュー等) は registerContentScripts 不可。
 // executeScript のみで注入する専用パスを使う。
 let isBlobTab = false;
+/**
+ * URL がまったく読めないタブ (Chrome が blob: 等をスクラブして tab.url を返さない場合)。
+ * **「http/https でない」と断定してはいけない** — 読めないだけで注入は成功しうる。
+ * 全サイト許可がある場合のみ「試す」導線に倒す (拒否ではなく試行 + 結果の明示)。
+ */
+let isUnknownUrlTab = false;
 
 // blob:https://example.com/uuid 形式を含む URL が executeScript 可能か判定
 function canInjectUrl(urlStr: string): boolean {
@@ -677,13 +683,17 @@ function canInjectUrl(urlStr: string): boolean {
  * **動かない機能は disabled にし、理由を書く** — 押せるのに何も起きないのが一番わかりにくい。
  * 判定材料: http(s) のページか / localhost か (静的注入) / このオリジンが許可済みか。
  */
-async function applyAvailability(origin: string | null) {
+async function applyAvailability(origin: string | null, injectable = false) {
   const notice = $('modeUnavailable');
   const toggleBtn = $<HTMLButtonElement>('toggle');
   const measureBtn = $<HTMLButtonElement>('coverageMeasure');
 
   let available = false;
-  let reason: 'ok' | 'notEnabled' | 'notInspectable' = 'notInspectable';
+  // 注入を試せるタブ (URL が読めないだけ) は「検査できない」ではなく「まだ有効化していない」。
+  // 理由を取り違えると、上のボタンで解決できるのに諦めさせてしまう
+  let reason: 'ok' | 'notEnabled' | 'notInspectable' = injectable
+    ? 'notEnabled'
+    : 'notInspectable';
   if (origin) {
     // localhost / 127.0.0.1 は静的 content script の対象なので許可不要
     const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
@@ -716,10 +726,15 @@ async function detectSite() {
   const status = $('siteStatus');
   const btn = $<HTMLButtonElement>('enableSite');
   isBlobTab = false;
+  isUnknownUrlTab = false;
   try {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     siteTabId = tab?.id ?? null;
-    const url = tab?.url ? new URL(tab.url) : null;
+    // Chrome は blob: トップレベルタブ等で url / pendingUrl を返さないことがある。
+    // その場合「URL 不明」であって「http/https でない」ではない
+    const raw = tab?.url || tab?.pendingUrl || '';
+    isUnknownUrlTab = !raw && siteTabId != null;
+    const url = raw ? new URL(raw) : null;
     if (url?.protocol === 'blob:') {
       // blob:https://origin/uuid → pathname が親 URL
       try {
@@ -746,6 +761,10 @@ async function detectSite() {
     status.textContent = allSitesGranted
       ? msg('siteTarget').replace('{origin}', `blob: (${siteOrigin})`)
       : msg('siteUnavailable');
+  } else if (isUnknownUrlTab && allSitesGranted) {
+    // URL が読めないので許可の要求先が決められない。全サイト許可済みなら注入だけ試せる
+    btn.disabled = false;
+    status.textContent = msg('siteUnknownUrl');
   } else if (!siteOrigin || siteTabId == null) {
     btn.disabled = true;
     status.textContent = msg('siteUnavailable');
@@ -753,11 +772,34 @@ async function detectSite() {
     btn.disabled = false;
     status.textContent = msg('siteTarget').replace('{origin}', siteOrigin);
   }
-  await applyAvailability(siteOrigin);
+  await applyAvailability(siteOrigin, isUnknownUrlTab && allSitesGranted);
 }
 
 async function enableCurrentSite() {
   const status = $('siteStatus');
+  // URL が読めないタブ (blob: 等をスクラブされた場合) は origin が無くても注入を試せる。
+  // 全サイト許可済みが前提。**拒否ではなく試行 + 結果の明示**にする
+  if (isUnknownUrlTab && allSitesGranted && siteTabId != null) {
+    const tabId = siteTabId;
+    try {
+      await browser.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: ['/content-scripts/bridge.js'],
+      });
+      await browser.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: ['/content-scripts/inspector.js'],
+        world: 'MAIN',
+      });
+    } catch {
+      // 本当に注入できないページだった (chrome:// 等)。理由を出して閉じない
+      status.textContent = msg('injectError');
+      return;
+    }
+    browser.tabs.sendMessage(tabId, { type: 'inspect-on' }).catch(() => {});
+    window.close();
+    return;
+  }
   if (!siteOrigin || siteTabId == null) return;
   const tabId = siteTabId;
 

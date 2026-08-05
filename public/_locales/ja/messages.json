@@ -80,6 +80,9 @@
   "siteUnavailable": {
     "message": "このページ(http/https 以外、または URL 不明)では有効化できません。"
   },
+  "siteUnknownUrl": {
+    "message": "このタブは URL を返しません (blob: プレビュー等)。全サイト許可があれば注入は試せます — ボタンを押すと試行します。"
+  },
   "siteTarget": {
     "message": "対象: {origin}"
   },

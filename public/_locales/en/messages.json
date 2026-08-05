@@ -80,6 +80,9 @@
   "siteUnavailable": {
     "message": "This page (non-http/https or unknown URL) can't be enabled."
   },
+  "siteUnknownUrl": {
+    "message": "This tab does not report a URL (a blob: preview, for example). With all-sites access granted, the inspector can still be injected — press the button to try."
+  },
   "siteTarget": {
     "message": "Target: {origin}"
   },
