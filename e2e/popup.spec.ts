@@ -1,7 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromium, expect, test, type BrowserContext } from '@playwright/test';
+import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 // popup スモーク (ST-4): ビルド済み拡張を実 Chromium にロードし、
 // popup が開いて主要 UI (inspect ボタン / トークン欄) が描画されることを確認する。
@@ -57,3 +57,45 @@ test('未有効化のページではモード切替と測定が disabled にな�
   expect((await notice.textContent())?.trim().length ?? 0).toBeGreaterThan(0);
   await page.close();
 });
+
+/**
+ * エディタ関連の設定が到達可能で、選べない設定は見せないこと。
+ *
+ * これらは Settings 型と src/mappings.ts に実装がありながら popup に UI が無く、
+ * **設定できない = 到達不能**だった (パスが違う環境ではエディタ起動が外れるのに直せない)。
+ * あわせて「custom を選んだのに URL 入力欄が無い」を作らないことを機械で固定する。
+ */
+test('エディタ設定: パスマッピングが編集でき、custom URL 欄は選択時だけ出る', async () => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  // 開発者向けセクションを開く。**click ではなく open を直接立てる**:
+  // 開閉状態は storage に保存されるため、click だと 2 回目に閉じてしまう (テストが不安定)
+  await openDevSection(page);
+
+  await expect(page.locator('#pathMappings')).toBeVisible();
+  // 既定 (cursor) では custom URL 欄は隠れている
+  await expect(page.locator('#customTemplateRow')).toBeHidden();
+
+  await page.locator('#editor').selectOption('custom');
+  await expect(page.locator('#customTemplateRow')).toBeVisible();
+  await expect(page.locator('#customTemplate')).toBeVisible();
+
+  // 保存されて復元されること (パスマッピングは 1 行 1 件のテキストで往復する)
+  await page.locator('#pathMappings').fill('/app=/Users/me/project');
+  await page.locator('#pathMappings').blur();
+  await page.reload();
+  await openDevSection(page);
+  await expect(page.locator('#pathMappings')).toHaveValue('/app=/Users/me/project');
+  // エディタ種別も復元され、URL 欄が出たままであること
+  await expect(page.locator('#editor')).toHaveValue('custom');
+  await expect(page.locator('#customTemplateRow')).toBeVisible();
+
+  await page.close();
+});
+
+/** 開発者向け details を冪等に開く (開閉状態が永続化されるので click は使わない) */
+async function openDevSection(page: Page) {
+  await page.locator('#devSection').evaluate((el) => {
+    (el as HTMLDetailsElement).open = true;
+  });
+}

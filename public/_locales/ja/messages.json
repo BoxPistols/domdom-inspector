@@ -204,7 +204,7 @@
     "message": "クリックしてもファイルが開かない時、dev サーバのパスをローカルの絶対パスに変換(例: /src=/Users/you/app/src)。1 行 1 件。"
   },
   "labelPathMappings": {
-    "message": "パスマッピング (1 行 1 件: from=to)"
+    "message": "パスマッピング"
   },
   "hintTarget": {
     "message": "localhost はそのまま使えます。他のサイトは上の「このサイトで使う」で有効化。設定は自動保存されます。"
@@ -556,7 +556,19 @@
     "message": "コンポーネントツリーは開発ビルドが必要です — このページは本番ビルドで、React がコンポーネント名を削っています。デザイン計測とトークン照合は引き続き使えます。"
   },
   "hintEditorUsage": {
-    "message": "インスペクト中に要素を ⌘/Ctrl+クリックするとソースが開きます。開発ビルド専用です — 本番ビルドはコード位置を持たないため何も起きません。"
+    "message": "インスペクト中に ⌘/Ctrl+クリック、または右クリックメニューで要素のソースを開きます。開発ビルドのみ — 本番ビルドはソース位置を持たないため、開かずに理由を表示します。"
+  },
+  "editorCustom": {
+    "message": "カスタム URL…"
+  },
+  "labelCustomTemplate": {
+    "message": "カスタムエディタ URL"
+  },
+  "hintCustomTemplate": {
+    "message": "プレースホルダ: {file} (先頭スラッシュ込みの絶対パス) / {line} / {column}。"
+  },
+  "hintPathMappings": {
+    "message": "1 行 1 件、from=to 形式。ブラウザが報告するパスと手元のディスク上のパスが違うとき (Docker・リモート開発・monorepo) に必要です。最初に一致した prefix を置換します。"
   },
   "modeNotEnabledHere": {
     "message": "このサイトはまだ有効化されていません — 上の「現在のサイトで有効化…」を先に押してください。(localhost は不要です)"

@@ -204,7 +204,7 @@
     "message": "If clicking doesn't open the file, map the dev-server path to your local absolute path (e.g. /src=/Users/you/app/src), one per line."
   },
   "labelPathMappings": {
-    "message": "Path mappings (one per line: from=to)"
+    "message": "Path mappings"
   },
   "hintTarget": {
     "message": "Localhost works out of the box; enable any other site in “Use on this site” above. Settings save automatically."
@@ -556,7 +556,19 @@
     "message": "Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work."
   },
   "hintEditorUsage": {
-    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source. Development builds only — production builds carry no source location, so nothing happens there."
+    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Development builds only — production builds carry no source location, so the extension tells you why instead."
+  },
+  "editorCustom": {
+    "message": "Custom URL…"
+  },
+  "labelCustomTemplate": {
+    "message": "Custom editor URL"
+  },
+  "hintCustomTemplate": {
+    "message": "Placeholders: {file} (absolute path, leading slash included), {line}, {column}."
+  },
+  "hintPathMappings": {
+    "message": "One per line, from=to. Needed when the path the browser reports is not the path on your disk (Docker, remote dev, monorepo). The first matching prefix is replaced."
   },
   "modeNotEnabledHere": {
     "message": "Not enabled on this site yet — use \"Enable on current site…\" above first. (localhost works without this.)"

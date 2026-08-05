@@ -3,6 +3,7 @@ import { buildAuditPrompt, type AuditPrompt } from '../../src/aiPrompt';
 import { AI_PROVIDERS, migrateModelId, type AiProviderId } from '../../src/aiProviders';
 import { formatCoverageMarkdown, LOW_SAMPLE_THRESHOLD, ratePercent } from '../../src/coverage';
 import type { DesignScan } from '../../src/designScan';
+import { parseMappings } from '../../src/mappings';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
 import { DEFAULT_GRID_PX } from '../../src/tokenLint';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
@@ -38,6 +39,9 @@ const badgeDetailEl = $<HTMLSelectElement>('badgeDetail');
 const showVarNamesEl = $<HTMLInputElement>('showVarNames');
 const autoThemeEl = $<HTMLInputElement>('autoTheme');
 const editorEl = $<HTMLSelectElement>('editor');
+const customTemplateRowEl = $<HTMLElement>('customTemplateRow');
+const customTemplateEl = $<HTMLInputElement>('customTemplate');
+const pathMappingsEl = $<HTMLTextAreaElement>('pathMappings');
 
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
@@ -557,6 +561,10 @@ async function load() {
   showVarNamesEl.checked = settings.showVarNames;
   autoThemeEl.checked = settings.autoTheme;
   editorEl.value = settings.editor;
+  customTemplateEl.value = settings.customUrlTemplate;
+  // 保存形は PathMapping[]。編集は 1 行 1 件のテキストで行う (parseMappings と対)
+  pathMappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
+  syncEditorRows();
   // 保存済みトークンの復元 (raw テキスト + 解析結果の件数表示)
   const { tokenJson, tokenDict } = (await browser.storage.local.get([
     'tokenJson',
@@ -599,6 +607,11 @@ async function load() {
   void applyShortcutHints();
 }
 
+/** editor=custom のときだけ URL テンプレート欄を出す (選べない設定を見せない) */
+function syncEditorRows() {
+  customTemplateRowEl.hidden = editorEl.value !== 'custom';
+}
+
 async function save() {
   const settings: Settings = {
     ...DEFAULT_SETTINGS,
@@ -606,13 +619,26 @@ async function save() {
     showVarNames: showVarNamesEl.checked,
     autoTheme: autoThemeEl.checked,
     editor: editorEl.value as Settings['editor'],
+    // 空なら既定に戻す (空テンプレートを保存するとジャンプが無言で壊れる)
+    customUrlTemplate: customTemplateEl.value.trim() || DEFAULT_SETTINGS.customUrlTemplate,
+    pathMappings: parseMappings(pathMappingsEl.value),
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
 }
 
-for (const el of [badgeDetailEl, showVarNamesEl, autoThemeEl, editorEl]) {
+for (const el of [
+  badgeDetailEl,
+  showVarNamesEl,
+  autoThemeEl,
+  editorEl,
+  customTemplateEl,
+  pathMappingsEl,
+]) {
   el.addEventListener('change', () => {
+    // エディタ種別を変えたら URL テンプレート欄の出し入れを即反映する
+    // (選べない設定を見せない / custom を選んだのに入力欄が無い、を作らない)
+    syncEditorRows();
     void save();
   });
 }
