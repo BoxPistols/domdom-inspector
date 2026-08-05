@@ -10,18 +10,17 @@ Touch Bar から domdom-inspector を操作するための BTT ウィジェッ�
 | ボタン | 送るもの | 幅 |
 |--------|----------|----|
 | 🔍 Inspect | `⌃I` (`59,34`) | 104 |
-| 🌳 Tree | `⌥⇧T` (`58,56,17`) | 90 |
 | ▲ 親 | `↑` (`126`) | 62 |
 | ▼ 子 | `↓` (`125`) | 62 |
-| esc | ESC アクション (`189`) | 62 |
+| esc | ESC (`53`) | 62 |
 | ⚙︎ | `⌃D` (`59,2`) — popup を開く | 62 |
 
 キーはすべて **Chrome の実バインド** (`~/Library/Application Support/Google/Chrome/Default/Preferences`
 の `extensions.commands`) に一致させてある。manifest の `suggested_key` は当てにならない。
 
-**⚡︎ Render は未収録。** `toggle-render` は ⌥⇧R を Screencastify が予約しているため Chrome が
-割り当てておらず、送るキーが存在しない。`chrome://extensions/shortcuts` で ⌃E 等を割り当てれば
-追加できる。
+**🌳 Tree / ⚡︎ Render は収録しない。** v1 では両モードを配線から外したため、送る先の
+コマンドが存在しない (経緯は [`../docs/ROADMAP.md`](../docs/ROADMAP.md))。復活させるなら
+`CLAUDE.md` の 4 点配線を戻したうえで、order 101 / 106 に足す。
 
 記号だけのボタン (▲ / ▼ / esc / ⚙) は 62px の固定幅。Touch Bar は物理フィードバックが無く、
 細いボタンはタップしづらいため。
