@@ -76,7 +76,7 @@ popup のショートカット表示は `chrome.commands.getAll()` の実バイ�
 
 ## Store distribution / ストア配信 (Chrome Web Store)
 
-限定公開 (Unlisted) 前提。**公開手順の全ステップは [`PUBLISHING.md`](./PUBLISHING.md) に集約**。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシー本文は `PRIVACY.md`。アイコンは `public/icon/{16,32,48,96,128}.png`。
+一般公開 (Public) + 全地域 前提。**公開手順の全ステップは [`PUBLISHING.md`](./PUBLISHING.md) に集約**。掲載文・権限説明の下書きは `STORE_LISTING.md`、プライバシーポリシー本文は `PRIVACY.md`。アイコンは `public/icon/{16,32,48,96,128}.png`。
 
 配布用 zip は `pnpm zip`(→ `.output/domdom-inspector-<version>-chrome.zip`)。
 

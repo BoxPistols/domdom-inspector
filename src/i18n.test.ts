@@ -58,3 +58,28 @@ describe('i18n locale coverage', () => {
     }
   });
 });
+
+/**
+ * popup の `data-i18n` / `data-i18n-title` が指すキーが両 locale に実在すること。
+ *
+ * これが無いと、キー名を打ち間違えた/リネームした時に `browser.i18n.getMessage` が空を返し、
+ * **HTML に書いた英語のフォールバックが日本語 UI でも出る**という形で静かに壊れる
+ * (applyI18n は空なら textContent を書き換えないため、エラーにならない)。
+ * v1 のスコープ整理で popup のセクションを削除した際、参照だけ残る事故も防ぐ。
+ */
+describe('popup の data-i18n キーは両 locale に実在する', () => {
+  const html = readFileSync('entrypoints/popup/index.html', 'utf8');
+  const keys = [...html.matchAll(/data-i18n(?:-title)?="([A-Za-z0-9_]+)"/g)].map((m) => m[1]);
+
+  it('参照キーを 1 つ以上検出できている (正規表現が壊れていないことの確認)', () => {
+    expect(keys.length).toBeGreaterThan(10);
+  });
+
+  it.each(['en', 'ja'])('%s に全キーが存在する', (locale) => {
+    const messages = JSON.parse(
+      readFileSync(`public/_locales/${locale}/messages.json`, 'utf8'),
+    ) as Record<string, { message: string }>;
+    const missing = [...new Set(keys)].filter((k) => !messages[k]);
+    expect(missing).toEqual([]);
+  });
+});
