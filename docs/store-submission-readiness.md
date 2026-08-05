@@ -1,6 +1,9 @@
 # Chrome Web Store 提出可否 — 2026-08-06 実測
 
-配信形態: **Public(一般公開)+ 全地域**。対象版: **v0.4.6**。
+配信形態: **Public(一般公開)+ 全地域**。対象版: **v0.4.7**。
+
+> 版数を上げたらこのファイルの「対象版」と zip 名も直す。**判定書が古い版を指していると、
+> 旧 zip をアップロードする事故になる** (`.output/` には過去の zip が残る)。
 
 このファイルは「何が終わっていて、あと何をすれば送信できるか」を**実測値**で示す。
 ✅ は機械で確認済み、⬜ は人間の操作が必要。手順の詳細は [`PUBLISHING.md`](../PUBLISHING.md)。
@@ -16,14 +19,14 @@
 | ✅ typecheck (`tsc --noEmit`) | pass |
 | ✅ build | `.output/chrome-mv3` 147 kB |
 | ✅ e2e (実 Chromium に拡張をロード) | **16 passed** |
-| ✅ 提出 zip | `domdom-inspector-0.4.6-chrome.zip` **19 ファイル / 60.6 kB** |
+| ✅ 提出 zip | `domdom-inspector-0.4.7-chrome.zip` **19 ファイル / 60.6 kB** |
 | ✅ zip の危険物 (source map / .env / テスト / .DS_Store) | **0 件** |
 
 ## 2. manifest (ビルド成果物の実測)
 
 | 項目 | 値 |
 |---|---|
-| ✅ version | `0.4.6` (`package.json` と一致) |
+| ✅ version | `0.4.7` (`package.json` と一致) |
 | ✅ permissions | `storage` / `activeTab` / `scripting` / `contextMenus` |
 | ✅ optional_host_permissions | `*://*/*` (**既定では未付与**) |
 | ✅ minimum_chrome_version | `119` (依存 API の下限の最大値 = `matchOriginAsFallback`) |
@@ -100,7 +103,7 @@ https://chrome.google.com/webstore/devconsole/
 
 ### ⬜ 手順 5: アップロードと入力
 
-1. `.output/domdom-inspector-0.4.6-chrome.zip` をアップロード
+1. `.output/domdom-inspector-0.4.7-chrome.zip` をアップロード
    (`.output/` には旧版の zip も残っているので**版数を確認して選ぶ**)
 2. 掲載情報 = `STORE_LISTING.md` から転記 (英文が正)
 3. スクリーンショット = `docs/store-assets/en/` の 4 枚
