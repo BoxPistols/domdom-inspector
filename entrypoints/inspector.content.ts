@@ -151,8 +151,15 @@ export default defineContentScript({
       // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
       // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
       if (data.type === 'design-scan' && typeof data.id === 'string') {
+        // 辞書の出所内訳は 2 辞書を持つここでしか作れない (併合後の合計だけでは
+        // 「自動テーマの密なラダーで一致率が上がっている」ことが読み取れない)
+        const themeInUse = autoTheme ? themeTokens : EMPTY_TOKEN_DICT;
         const scan = scanDesign(document, currentTokens(), {
           skip: (el) => overlay.containsTarget(el),
+          tokenSources: {
+            pasted: { colors: pastedTokens.colors.length, sizes: pastedTokens.sizes.length },
+            theme: { colors: themeInUse.colors.length, sizes: themeInUse.sizes.length },
+          },
         });
         window.postMessage(
           { source: PAGE_SOURCE, type: 'design-scan-result', id: data.id, payload: scan },

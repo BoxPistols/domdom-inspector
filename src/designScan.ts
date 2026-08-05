@@ -1,7 +1,12 @@
-import { buildCoverage, type CoverageReport, type Occurrence } from './coverage';
+import {
+  buildCoverage,
+  type CoverageReport,
+  type Occurrence,
+  type TokenSourceCounts,
+} from './coverage';
 import { extractDesignStyle } from './designStyle';
 import { annotateProp, type TokenDict } from './tokenDict';
-import { lintSpacing } from './tokenLint';
+import { DEFAULT_GRID_PX, lintSpacing } from './tokenLint';
 import type { DesignProp } from './types';
 
 /**
@@ -42,9 +47,17 @@ export type StyleSource = 'css-in-js' | 'stylesheet';
 export interface DesignScan {
   /** 実際に計測した要素数 (可視のみ) */
   elementCount: number;
-  /** 走査候補だった要素数。elementCount と違えば打ち切られている */
+  /**
+   * DOM 全ノード数 (`querySelectorAll('*')`)。**elementCount と比較してはいけない**:
+   * head 配下・display:none 配下・SVG の子まで含む別の母集団で、並べると打ち切りが
+   * 起きていないページでも部分計測に見える。**打ち切りの申告には truncated を使う。**
+   */
   candidateCount: number;
-  /** MAX_ELEMENTS で打ち切ったか。true のとき率はページ全体の値ではない */
+  /**
+   * 上限に当たって走査を途中でやめたか。true のとき率はページ全体の値ではない。
+   * 「可視要素がちょうど上限だが最後まで回せた」を打ち切り扱いにしない
+   * (以前は candidateCount と比べていたため、非可視要素が多いページで偽陽性が出た)。
+   */
   truncated: boolean;
   /** 来歴 (var/literal) を判定できたか。false なら来歴の率を出してはいけない */
   originAvailable: boolean;
@@ -52,6 +65,14 @@ export interface DesignScan {
   styleSource: StyleSource;
   /** 照合に使ったトークン辞書の規模 (0 なら未設定 = グリッド検査のみ) */
   tokenCounts: { colors: number; sizes: number };
+  /**
+   * 辞書の出所内訳 (手動貼り付け / アプリのテーマ由来)。渡されなければ null。
+   * 自動テーマは密なラダーを作るため一致率が構造的に上がる (§6-5) ので、内訳を伏せると
+   * 率の意味が変わっていることに気づけない。**併合は重複排除しないので合計は上限値。**
+   */
+  tokenSources: TokenSourceCounts | null;
+  /** グリッド判定に使った刻み幅。表示側にリテラルを書かせない */
+  grid: number;
   /** label → 使用値の頻度順リスト (上位 MAX_VALUES_PER_LABEL 件のサンプル) */
   stats: Record<string, ScanValueStat[]>;
   /** label → 切り捨て前の総数 (サンプルが全部だと誤読させないため) */
@@ -94,20 +115,36 @@ const SCAN_LABELS = new Set(['color', 'bg', 'font', 'padding', 'margin', 'gap', 
 export function scanDesign(
   root: ParentNode,
   dict: TokenDict,
-  opts: { skip?: (el: Element) => boolean; grid?: number; now?: () => number } = {},
+  opts: {
+    skip?: (el: Element) => boolean;
+    grid?: number;
+    now?: () => number;
+    /** 走査要素数の上限 (既定 MAX_ELEMENTS)。将来のハイライト側と述語を共有するため受ける */
+    max?: number;
+    /** 辞書の出所内訳。呼び出し側 (inspector.content) だけが 2 辞書を知っている */
+    tokenSources?: TokenSourceCounts;
+  } = {},
 ): DesignScan {
-  const grid = opts.grid ?? 4;
+  const grid = opts.grid ?? DEFAULT_GRID_PX;
   const now = opts.now ?? (() => Date.now());
+  const max = opts.max ?? MAX_ELEMENTS;
   const counts = new Map<string, Occurrence>();
   let elementCount = 0;
   let originAvailable = true;
   let originBudgetExceeded = false;
+  /** 上限に当たって走査を打ち切ったか (最後まで回せたかで判定する) */
+  let truncated = false;
 
   const all = root.querySelectorAll('*');
   const candidateCount = all.length;
   const started = now();
 
-  for (let i = 0; i < all.length && elementCount < MAX_ELEMENTS; i += 1) {
+  for (let i = 0; i < all.length; i += 1) {
+    if (elementCount >= max) {
+      // 未走査の要素を残して抜けた = 打ち切り。ここでしか true にしない
+      truncated = true;
+      break;
+    }
     const el = all[i];
     if (opts.skip?.(el)) continue;
     // 不可視要素 (display:none 配下等) はデザイン監査の対象外
@@ -124,7 +161,12 @@ export function scanDesign(
       originBudgetExceeded = true;
       originAvailable = false;
     }
-    for (const prop of extractDesignStyle(el, { withOrigin: !originBudgetExceeded })) {
+    // withVars: false — 集計は変数名を持たない (Occurrence は label/value/count/origin のみ)。
+    // 予算切れ後は withOrigin も false になり、CSSOM 全走査自体が行われなくなる
+    for (const prop of extractDesignStyle(el, {
+      withOrigin: !originBudgetExceeded,
+      withVars: false,
+    })) {
       if (!SCAN_LABELS.has(prop.label)) continue;
       const origin = originBudgetExceeded ? 'unknown' : (prop.origin ?? 'unknown');
       const key = `${prop.label} ${prop.value} ${origin}`;
@@ -140,8 +182,16 @@ export function scanDesign(
     originAvailable = false;
   }
 
-  // カバレッジは切り捨て前の全件から
-  const coverage = buildCoverage(occurrences, dict, grid);
+  const styleSource = detectStyleSource(
+    (root as Document).querySelectorAll ? ((root as Document).ownerDocument ?? (root as Document)) : document,
+  );
+
+  // カバレッジは切り捨て前の全件から。来歴を主張してよいかは **ここで 1 度だけ**決める
+  // (CSS-in-JS は theme 由来でも出力が常にリテラルになるため来歴から判定できない)
+  const coverage = buildCoverage(occurrences, dict, {
+    grid,
+    originTrusted: originAvailable && styleSource !== 'css-in-js',
+  });
 
   // 表示用サンプル: 同一 label+value を来歴を跨いで束ね、頻度順に上位だけ残す
   const merged = new Map<string, { label: string; value: string; count: number }>();
@@ -178,12 +228,12 @@ export function scanDesign(
   return {
     elementCount,
     candidateCount,
-    truncated: elementCount >= MAX_ELEMENTS && candidateCount > elementCount,
+    truncated,
     originAvailable,
-    styleSource: detectStyleSource(
-      (root as Document).querySelectorAll ? ((root as Document).ownerDocument ?? (root as Document)) : document,
-    ),
+    styleSource,
     tokenCounts: { colors: dict.colors.length, sizes: dict.sizes.length },
+    tokenSources: opts.tokenSources ?? null,
+    grid,
     stats,
     statsTotals,
     coverage,

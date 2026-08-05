@@ -105,10 +105,19 @@ test('実ページの computed style と CSSOM からカバレッジ数値が出
     elementCount: number;
     truncated: boolean;
     originAvailable: boolean;
+    styleSource: string;
+    grid: number;
     coverage: {
       families: { family: string; judged: number; hit: number }[];
       matrix: { varHit: number; literalHit: number; literalMiss: number };
       overall: { judged: number; hit: number };
+      originTrusted: boolean;
+      top: {
+        label: string;
+        value: string;
+        count: number;
+        origins: { var: number; literal: number; other: number } | null;
+      }[];
     };
   };
 
@@ -125,6 +134,19 @@ test('実ページの computed style と CSSOM からカバレッジ数値が出
   expect(s.coverage.matrix.varHit, 'var(--brand) 経由の一致が拾えている').toBeGreaterThan(0);
   expect(s.coverage.matrix.literalHit, 'ベタ書きだが一致 が var と別に数えられている').toBeGreaterThan(0);
   expect(s.coverage.matrix.literalMiss, 'ベタ書きの野良値が拾えている').toBeGreaterThan(0);
+
+  // 来歴ゲート (§6-1) が **過剰発火していない** こと。false に倒れると数値が静かに
+  // 消えるだけで気づけないため、素の stylesheet で true になることを機械で固定する
+  expect(s.styleSource).toBe('stylesheet');
+  expect(s.coverage.originTrusted).toBe(true);
+
+  // 野良値の来歴内訳が実 CSSOM から埋まっていること (13px はベタ書き)
+  const rogue = s.coverage.top.find((t) => t.value === '13px');
+  expect(rogue, '13px の padding が「直すと効く値」に出ている').toBeTruthy();
+  expect(rogue?.origins?.literal, '13px がベタ書きとして数えられている').toBeGreaterThan(0);
+
+  // グリッド刻み幅が結果に載っていること (popup がリテラルの 4 を書かないための前提)
+  expect(s.grid).toBe(4);
 
   await page.close();
 });

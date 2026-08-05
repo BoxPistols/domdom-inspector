@@ -27,11 +27,24 @@ function statLine(s: ScanValueStat): string {
 
 /** DesignScan を Markdown 要約に整形する (プレビュー = 送信内容そのもの) */
 export function formatScanForPrompt(scan: DesignScan): string {
+  // 打ち切りと辞書の出所を **AI 入力にも** 申告する。ここを落とすと、部分計測を
+  // 全体として講評させたり、自動テーマの密なラダーによる高い一致率を
+  // 「準拠している」と結論させたりする (画面より下流の出力の方が不誠実になる類型)
   const lines: string[] = [
-    `Elements scanned: ${scan.elementCount}`,
+    scan.truncated
+      ? `Elements scanned: ${scan.elementCount} (scan limit reached — this is only part of the page)`
+      : `Elements scanned: ${scan.elementCount}`,
     `Design tokens available: ${scan.tokenCounts.colors} colors / ${scan.tokenCounts.sizes} sizes`,
-    '',
   ];
+  const src = scan.tokenSources;
+  if (src && src.theme.colors + src.theme.sizes > 0) {
+    lines.push(
+      `Token sources: pasted ${src.pasted.colors}/${src.pasted.sizes}, ` +
+        `auto-detected from the app theme ${src.theme.colors}/${src.theme.sizes} ` +
+        '(merged without de-duplication; a dense generated scale makes values match more easily)',
+    );
+  }
+  lines.push('');
   for (const [label, title] of Object.entries(LABEL_TITLES)) {
     const stats = scan.stats[label];
     if (!stats?.length) continue;

@@ -285,9 +285,14 @@ function colorDistance(
   return d + Math.abs(a.a - b.a) * 255;
 }
 
-/** 一致とみなす距離 (丸め誤差レベル) と、最近傍サジェストを出す距離の上限 */
-const COLOR_HIT = 3;
-const COLOR_NEAR = 64;
+/**
+ * 一致とみなす距離 (丸め誤差レベル) と、最近傍サジェストを出す距離の上限。
+ * **export する理由**: 「一致」「近い」の定義を出力側 (パネル / Markdown / AI 入力) が
+ * 開示できるようにするため。Lighthouse が重みと色境界を公開しているのと同じ扱い。
+ * 定数を private にしたまま説明文を別に書くと、閾値を変えたとき説明だけが古くなる。
+ */
+export const COLOR_HIT = 3;
+export const COLOR_NEAR = 64;
 
 export interface ColorMatch {
   /** 一致したトークン名 (距離 ≤ COLOR_HIT) */
@@ -316,8 +321,9 @@ export function matchColor(dict: TokenDict, cssValue: string): ColorMatch | null
   return { hit: null, nearest: bestD <= COLOR_NEAR ? best.name : null };
 }
 
-const SIZE_HIT = 0.25;
-const SIZE_NEAR = 4;
+/** サイズ (px) の一致許容と最近傍サジェストの上限。COLOR_* と同じ理由で export する */
+export const SIZE_HIT = 0.25;
+export const SIZE_NEAR = 4;
 
 export interface SizeMatch {
   hit: string | null;

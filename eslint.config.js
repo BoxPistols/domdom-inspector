@@ -44,6 +44,7 @@ export default tseslint.config(
       'src/classify.ts',
       'src/overlayFormat.ts',
       'src/designScan.ts',
+      'src/coverage.ts',
       'src/aiPrompt.ts',
       'src/aiProviders.ts',
       'src/aiCost.ts',

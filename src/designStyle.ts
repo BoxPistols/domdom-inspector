@@ -90,24 +90,32 @@ export function pickDesignStyle(
  * 実 DOM 要素の computed style から主要デザインプロパティを抽出。
  * 併せて「宣言された CSS 変数名」(Tier1 authored) を回収し添える。CSSOM 走査が
  * 失敗しても computed のみで縮退する (production/クロスオリジンで壊さない)。
+ *
+ * withVars / withOrigin を**別々に**受ける理由: 両者の供給元は同じ CSSOM 全走査
+ * (cssVars.collectAuthoredInfo) で、これが計測の最大コスト。以前は withOrigin=false でも
+ * 常に走査しており、来歴予算 (ORIGIN_BUDGET_MS) を超えた後もコストを払って結果だけ
+ * 捨てていた = 「遅い上に来歴が消える」二重損。どちらも不要なら走査自体を行わない。
  */
 export function extractDesignStyle(
   element: Element,
-  opts: { withOrigin?: boolean } = {},
+  opts: { withOrigin?: boolean; withVars?: boolean } = {},
 ): DesignProp[] {
   const cs = getComputedStyle(element);
+  // 既定は従来動作 (バッジ表示は変数名を必要とし、来歴は使わない)
+  const withVars = opts.withVars ?? true;
+  const withOrigin = opts.withOrigin ?? false;
   let info: Map<string, { origin: DesignProp['origin']; varMatch: VarMatch | null }> | null = null;
-  try {
-    info = collectAuthoredInfo(element);
-  } catch {
-    info = null;
+  if (withVars || withOrigin) {
+    try {
+      info = collectAuthoredInfo(element);
+    } catch {
+      info = null;
+    }
   }
   return pickDesignStyle(
     (prop) => cs.getPropertyValue(prop),
-    info ? (label) => info.get(label)?.varMatch ?? null : undefined,
+    withVars && info ? (label) => info.get(label)?.varMatch ?? null : undefined,
     // 来歴はページ全体スキャンでのみ使う。バッジ表示では不要なので既定では付けない
-    opts.withOrigin
-      ? (label) => info?.get(label)?.origin ?? 'unknown'
-      : undefined,
+    withOrigin ? (label) => info?.get(label)?.origin ?? 'unknown' : undefined,
   );
 }

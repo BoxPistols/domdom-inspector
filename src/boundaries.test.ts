@@ -20,6 +20,7 @@ const DESIGN_PATH = [
   'classify',
   'overlayFormat',
   'designScan',
+  'coverage',
   'aiPrompt',
   'aiProviders',
   'aiCost',

@@ -4,6 +4,7 @@ import { AI_PROVIDERS, migrateModelId, type AiProviderId } from '../../src/aiPro
 import { formatCoverageMarkdown, LOW_SAMPLE_THRESHOLD, ratePercent } from '../../src/coverage';
 import type { DesignScan } from '../../src/designScan';
 import { parseTokens, type TokenDict } from '../../src/tokenDict';
+import { DEFAULT_GRID_PX } from '../../src/tokenLint';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -233,9 +234,11 @@ function renderCoverage(scan: DesignScan) {
         el('div', 'hint', fillTemplate('coverageOriginNote', { n: cov.matrix.literalHit })),
       );
     }
-    if (cov.matrix.excluded > 0) {
+    // 「該当トークンが無い」を来歴の問題として出さない (この文言は継承・ブラウザ既定・
+    // stylesheet が読めない、の 3 つを名指ししている)。判定できなかった分は判定カバー率で申告済み
+    if (cov.matrix.originUnknown > 0) {
       coverageOriginEl.append(
-        el('div', 'hint', fillTemplate('coverageOriginExcluded', { n: cov.matrix.excluded })),
+        el('div', 'hint', fillTemplate('coverageOriginExcluded', { n: cov.matrix.originUnknown })),
       );
     }
     const varRate = ratePercent(cov.originVar, cov.originKnown);
@@ -253,7 +256,7 @@ function renderCoverage(scan: DesignScan) {
     offRate === null
       ? ''
       : fillTemplate('coverageOffGrid', {
-          grid: 4, rate: offRate, off: cov.offGrid.off, total: cov.offGrid.total,
+          grid: scan.grid, rate: offRate, off: cov.offGrid.off, total: cov.offGrid.total,
         });
 
   coverageTopEl.replaceChildren();
@@ -284,6 +287,11 @@ async function requestScan(): Promise<DesignScan | null> {
   if (!s || typeof s.elementCount !== 'number' || !s.elementCount) return null;
   if (!s.coverage || !Array.isArray(s.coverage.families)) return null;
   if (typeof s.stats !== 'object' || s.stats === null) return null;
+  // 拡張を更新した直後のタブでは **古い content script が残ったまま応答する**。
+  // 後から足したフィールドが欠けるので、型が保証する形へ正規化してから返す
+  // (欠けたまま描くと "Off the undefinedpx grid" のような表示になる)。
+  if (typeof s.grid !== 'number') s.grid = DEFAULT_GRID_PX;
+  if (s.tokenSources === undefined) s.tokenSources = null;
   return s;
 }
 
@@ -304,11 +312,14 @@ coverageMeasureEl.addEventListener('click', async () => {
 
 coverageCopyEl.addEventListener('click', async () => {
   if (!lastScan) return;
+  // 来歴を出すかは report.originTrusted が持つ (ここで styleSource を渡し忘れて
+  // 「画面では主張しないがコピー出力では主張する」状態になっていたのを構造で塞いだ)
   const md = formatCoverageMarkdown(lastScan.coverage, {
     elementCount: lastScan.elementCount,
-    candidateCount: lastScan.candidateCount,
     truncated: lastScan.truncated,
-    originAvailable: lastScan.originAvailable,
+    grid: lastScan.grid,
+    tokenCounts: lastScan.tokenCounts,
+    tokenSources: lastScan.tokenSources,
   });
   try {
     await navigator.clipboard.writeText(md);
