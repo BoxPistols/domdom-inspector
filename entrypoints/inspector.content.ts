@@ -128,7 +128,11 @@ export default defineContentScript({
     window.addEventListener(
       'contextmenu',
       (event) => {
-        const t = event.target;
+        // composedPath()[0] は open shadow root の内側の実要素を返す。event.target は
+        // shadow 境界で再ターゲットされてホストになるため、これが無いと Web Components の
+        // 内部を右クリックしてもホストの値が出る (closed root では仕様上ホストのまま)
+        const inner = event.composedPath?.()[0];
+        const t = inner instanceof Element ? inner : event.target;
         contextTarget = t instanceof Element ? t : null;
       },
       { capture: true, passive: true },

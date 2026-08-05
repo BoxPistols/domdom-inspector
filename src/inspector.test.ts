@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { HookState } from './hook';
-import { Inspector, resolveOuterElement } from './inspector';
+import { drillToInnermost, Inspector, resolveOuterElement } from './inspector';
 import type { Overlay } from './overlay';
 import { DEFAULT_STRINGS, type InspectInfo } from './types';
 
@@ -113,6 +113,101 @@ describe('resolveOuterElement (↑ の親解決 + DOM フォールバック)', (
     expect(step1).toBe(div);
     const step2 = resolveOuterElement(step1 as Element, () => null);
     expect(step2).toBe(document.body);
+  });
+});
+
+describe('drillToInnermost — shadow root を貫通してカーソル直下の要素まで降りる', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  /** open shadow root を張り、elementFromPoint が inner を返すようにする */
+  function withOpenShadow(host: Element, inner: Element) {
+    const root = host.attachShadow({ mode: 'open' });
+    root.appendChild(inner);
+    Object.defineProperty(root, 'elementFromPoint', {
+      configurable: true,
+      value: () => inner,
+    });
+    return root;
+  }
+
+  it('1 段の shadow root を貫通する (ホストの値を誤って出さない)', () => {
+    const host = document.createElement('div');
+    const inner = document.createElement('button');
+    document.body.appendChild(host);
+    withOpenShadow(host, inner);
+
+    expect(drillToInnermost(host, 10, 10)).toBe(inner);
+  });
+
+  it('入れ子の shadow root を最内まで降りる', () => {
+    const host = document.createElement('div');
+    const mid = document.createElement('div');
+    const inner = document.createElement('span');
+    document.body.appendChild(host);
+    withOpenShadow(host, mid);
+    withOpenShadow(mid, inner);
+
+    expect(drillToInnermost(host, 10, 10)).toBe(inner);
+  });
+
+  it('closed shadow root ではホストで止まる (限界であって誤りではない)', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'closed' });
+    root.appendChild(document.createElement('button'));
+
+    // closed root は element.shadowRoot が null なので外から辿れない
+    expect(drillToInnermost(host, 10, 10)).toBe(host);
+  });
+
+  it('shadow root が無い普通の要素はそのまま返す', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    expect(drillToInnermost(el, 10, 10)).toBe(el);
+  });
+
+  it('elementFromPoint が自分自身を返しても止まる (無限ループにしない)', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'open' });
+    Object.defineProperty(root, 'elementFromPoint', {
+      configurable: true,
+      value: () => host,
+    });
+
+    expect(drillToInnermost(host, 10, 10)).toBe(host);
+  });
+
+  it('深さ上限で打ち切る (病的な入れ子で暴走しない)', () => {
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    const c = document.createElement('div');
+    document.body.appendChild(a);
+    withOpenShadow(a, b);
+    withOpenShadow(b, c);
+
+    // maxDepth=1 なら 1 段だけ降りて b で止まる
+    expect(drillToInnermost(a, 10, 10, 1)).toBe(b);
+  });
+});
+
+describe('resolveOuterElement — shadow 境界を越える', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('shadow root の直下要素は ↑ でホストへ抜ける (行き止まりにしない)', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const inner = document.createElement('button');
+    root.appendChild(inner);
+
+    // shadow root の子は parentElement が null になる
+    expect(inner.parentElement).toBeNull();
+    expect(resolveOuterElement(inner, () => null)).toBe(host);
   });
 });
 

@@ -20,7 +20,40 @@ export function resolveOuterElement(
   element: Element,
   componentParent: (el: Element) => Element | null,
 ): Element | null {
-  return componentParent(element) ?? element.parentElement;
+  // shadow root の内側では parentElement が null になる (境界で行き止まる)。
+  // その場合はホスト要素へ抜ける = 利用者から見た「1 つ外側」と一致する
+  return componentParent(element) ?? element.parentElement ?? shadowHostOf(element);
+}
+
+/** element が shadow root の中にあれば、そのホスト要素 */
+function shadowHostOf(element: Element): Element | null {
+  const root = element.getRootNode?.();
+  return root && root !== document && 'host' in root
+    ? ((root as ShadowRoot).host ?? null)
+    : null;
+}
+
+/**
+ * カーソル直下の**最も内側**の要素まで shadow root を貫通して降りる。
+ *
+ * `document.elementFromPoint` は shadow 境界で止まりホスト要素を返すため、これを入れないと
+ * Web Components のページで**カーソル下の要素ではなくホストの計測値を出す** (利用者には
+ * 区別がつかないので、欠測ではなく誤答になる)。
+ *
+ * closed shadow root は仕様上外から辿れないのでホストで止まる。これは限界であって誤りでは
+ * ない (ホストの値を、ホストの値として出す)。深さ上限は病的な入れ子での暴走防止。
+ */
+export function drillToInnermost(element: Element, x: number, y: number, maxDepth = 16): Element {
+  let current = element;
+  for (let depth = 0; depth < maxDepth; depth += 1) {
+    const root = current.shadowRoot;
+    if (!root) return current;
+    const inner = root.elementFromPoint?.(x, y) ?? null;
+    // 自分自身が返る / 何も無い = これ以上内側は無い
+    if (!inner || inner === current) return current;
+    current = inner;
+  }
+  return current;
 }
 
 /**
@@ -119,8 +152,11 @@ export class Inspector {
     this.lastPointer = { x: event.clientX, y: event.clientY };
     cancelAnimationFrame(this.rafId);
     this.rafId = requestAnimationFrame(() => {
-      const element = document.elementFromPoint(event.clientX, event.clientY);
-      if (!element || element === this.currentElement) return;
+      const hit = document.elementFromPoint(event.clientX, event.clientY);
+      if (!hit) return;
+      // shadow root を貫通してカーソル直下の要素まで降りる (ホストの値を誤って出さない)
+      const element = drillToInnermost(hit, event.clientX, event.clientY);
+      if (element === this.currentElement) return;
       this.select(element);
     });
   };

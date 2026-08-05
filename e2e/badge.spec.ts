@@ -123,7 +123,10 @@ async function badgeText(page: Page): Promise<string> {
       | (Element & { __openRoot?: ShadowRoot })
       | null;
     const root = host?.__openRoot ?? host?.shadowRoot ?? null;
-    return root?.textContent ?? '';
+    // **バッジ要素だけ**を読む。shadow root 全体の textContent には overlay 自身の CSS
+    // (<style> のテキスト) が含まれ、'8px' 等の px 値が CSS 側に多数あるため、
+    // バッジが空でも px の assert が通ってしまう (偽陽性でテストが無意味になる)
+    return root?.querySelector('.badge')?.textContent ?? '';
   });
 }
 
