@@ -73,9 +73,11 @@ UI を変えたら **`pnpm shots` を回し直す**。popup の画像だけは�
 
 ### ⬜ 手順 1: push する 【最優先・他の手順の前提】
 
-**未 push のコミットが 17 件ある** (60 ファイル / +4045 −1297)。
+**未 push のコミットがある。** 件数は数字を書かずに実測する (書くとすぐ古くなる):
 
 ```sh
+git log --oneline origin/main..HEAD | wc -l   # 未 push の件数
+git diff --stat origin/main..HEAD | tail -1   # 変更規模
 git push origin main
 ```
 
