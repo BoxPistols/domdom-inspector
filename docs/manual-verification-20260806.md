@@ -6,10 +6,15 @@
 
 各項目は実施後 `- [ ]` を `- [x]` にし、FAIL なら理由を追記する。**勝手に PASS にしない。**
 
-## 前提: 拡張の再読込が必要
+## 前提: `pnpm build:sync` → ⟳ の順に必要
 
-`contextMenus` 権限と `minimum_chrome_version` を追加したので、
-`chrome://extensions` で拡張の **⟳ (更新)** を押すまで右クリックメニューは出ない。
+1. **`pnpm build:sync`** を実行する。`pnpm build` は `.output/chrome-mv3` にしか書かず、
+   **Chrome が読んでいるのは同期フォルダ側**なので、build だけでは実機に何も反映されない。
+2. `chrome://extensions` で拡張の **⟳ (更新)** を押す。`contextMenus` 権限を追加したので、
+   これをしないと右クリックメニューは出ない。
+
+> 実績: build だけで実機確認を依頼し、3 日前のビルドを見せて「右クリックが出ない」と
+> 報告された。**権限を追加した回は ⟳ だけでは絶対に動かない** (manifest が古いまま)。
 
 ---
 
