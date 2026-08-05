@@ -255,7 +255,16 @@
     "message": "⌘/Ctrl+Click to open in editor"
   },
   "editorOpening": {
-    "message": "Opening the source in your editor…"
+    "message": "Sent to your editor: {file}"
+  },
+  "editorNotOpened": {
+    "message": "Nothing opened — your editor may not be installed, or its URL scheme is not registered."
+  },
+  "editorCopyPath": {
+    "message": "Copy path"
+  },
+  "editorPathCopied": {
+    "message": "Path copied"
   },
   "ownerPanelTitle": {
     "message": "Rendered by (click to open editor)"
@@ -559,7 +568,7 @@
     "message": "Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work."
   },
   "hintEditorUsage": {
-    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Development builds only — production builds carry no source location, so the extension tells you why instead."
+    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Development builds only — production builds carry no source location, so the extension tells you why instead. The editor you pick must be installed; if nothing opens, the extension offers the path to copy."
   },
   "editorCustom": {
     "message": "Custom URL…"

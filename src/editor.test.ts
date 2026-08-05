@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEditorUrl } from './editor';
+import { buildEditorUrl, formatSourceRef } from './editor';
 import { DEFAULT_SETTINGS, type Settings } from './types';
 
 const loc = {
@@ -64,5 +64,36 @@ describe('buildEditorUrl', () => {
         columnNumber: 2,
       }),
     ).toBe('vscode://file/src/App.tsx:3:2');
+  });
+});
+
+describe('formatSourceRef (エディタが開かなかったときに渡す場所)', () => {
+  it('パス:行 の形にする', () => {
+    expect(
+      formatSourceRef(DEFAULT_SETTINGS, {
+        fileName: 'http://localhost:5173/src/App.tsx',
+        lineNumber: 42,
+        columnNumber: 7,
+      }),
+    ).toBe('/src/App.tsx:42');
+  });
+
+  it('パスマッピングを適用する (手元のディスク上のパスを渡せるように)', () => {
+    expect(
+      formatSourceRef(
+        { ...DEFAULT_SETTINGS, pathMappings: [{ from: '/src', to: '/Users/me/app/src' }] },
+        { fileName: '/src/App.tsx', lineNumber: 3, columnNumber: 1 },
+      ),
+    ).toBe('/Users/me/app/src/App.tsx:3');
+  });
+
+  it('webpack-internal スキームも実パスに直す', () => {
+    expect(
+      formatSourceRef(DEFAULT_SETTINGS, {
+        fileName: 'webpack-internal:///./src/components/Card.tsx',
+        lineNumber: 10,
+        columnNumber: 2,
+      }),
+    ).toBe('/src/components/Card.tsx:10');
   });
 });

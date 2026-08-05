@@ -144,8 +144,13 @@ export interface UiStrings {
   sourceMinified: string;
   /** file:line 行に添える「エディタで開く」操作ヒント */
   editorHint: string;
-  /** エディタ起動の実行確認 (押した結果が何も起きないように見えるのを防ぐ) */
+  /** エディタへ送った直後の通知。{file} = パス:行。**成功は主張しない** (成否が取れないため) */
   editorOpening: string;
+  /** 猶予時間内に何も起きなかったとき。エディタ未インストール / scheme 未登録の可能性 */
+  editorNotOpened: string;
+  /** フォールバックのコピーボタン */
+  editorCopyPath: string;
+  editorPathCopied: string;
   ownerPanelTitle: string;
   /** 描画元リストが空 (素の DOM / production ビルド) のときの説明 */
   chainEmpty: string;
@@ -233,7 +238,11 @@ export const DEFAULT_STRINGS: UiStrings = {
   prodSafeMode: 'production build (safe mode)',
   sourceMinified: 'bundled output · run a dev build to jump',
   editorHint: '⌘/Ctrl+Click to open in editor',
-  editorOpening: 'Opening the source in your editor…',
+  editorOpening: 'Sent to your editor: {file}',
+  editorNotOpened:
+    'Nothing opened — your editor may not be installed, or its URL scheme is not registered.',
+  editorCopyPath: 'Copy path',
+  editorPathCopied: 'Path copied',
   ownerPanelTitle: 'Rendered by (click to open editor)',
   chainEmpty: 'Nothing to show — this element has no React owner (plain DOM, or a production build with names stripped).',
   noSourceDom: 'This element is not a React component, so it has no source file to open.',

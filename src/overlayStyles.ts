@@ -72,6 +72,26 @@ export const OVERLAY_CSS = `
         font-size: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.35);
       }
+      /* 操作可能トースト (エディタが開かなかったときのコピー導線)。
+         既定の .toast は pointer-events: none なので、この時だけ有効化する */
+      .toast.interactive {
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: min(560px, 90vw);
+      }
+      .toast.interactive button {
+        flex: none;
+        font: inherit;
+        color: #fff;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.28);
+        border-radius: 6px;
+        padding: 3px 10px;
+        cursor: pointer;
+      }
+      .toast.interactive button:hover { background: rgba(255,255,255,0.24); }
       .panel {
         display: none;
         pointer-events: auto;

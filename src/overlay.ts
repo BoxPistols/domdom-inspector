@@ -1,5 +1,5 @@
 import { isColorValue } from './designStyle';
-import { buildEditorUrl } from './editor';
+import { buildEditorUrl, formatSourceRef } from './editor';
 import { isBundledSource } from './source';
 import { el } from './overlayDom';
 import {
@@ -29,6 +29,13 @@ interface Flash {
   born: number;
   heat: number;
 }
+
+/**
+ * エディタ起動の成否を判定するまでの猶予。外部アプリが立ち上がればページは blur するので、
+ * この時間内に blur も visibilitychange も来なければ「開かなかった」と見なす。
+ * 短すぎると起動が遅いエディタで誤検知し、長すぎると気づくのが遅れる。
+ */
+const EDITOR_LAUNCH_GRACE_MS = 1200;
 
 export class Overlay {
   private host: HTMLElement | null = null;
@@ -343,14 +350,55 @@ export class Overlay {
    */
   openEditor(loc: { fileName: string; lineNumber: number; columnNumber: number }) {
     const url = buildEditorUrl(this.settings, loc);
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('data-domdom-editor', '1');
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => a.remove(), 0);
-    this.toast(this.strings.editorOpening);
+    const ref = formatSourceRef(this.settings, loc);
+
+    // 外部アプリが起動するとページはフォーカスを失う。それを**イベントで捕まえてフラグに残し**、
+    // 遅延側ではフラグだけで判定する (遅延の中で document.hasFocus() を読み直すと、
+    // その間に別の理由で変わった状態を見てしまう)。
+    let leftPage = false;
+    const mark = () => {
+      leftPage = true;
+    };
+    window.addEventListener('blur', mark, { once: true });
+    document.addEventListener('visibilitychange', mark, { once: true });
+
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.setAttribute('data-domdom-editor', '1');
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => a.remove(), 0);
+    } catch {
+      // scheme を開けない環境。下のフォールバックで拾う
+    }
+    // 「開いています」と断定しない (成否が取れないため)。送った先と場所だけ言う
+    this.toast(this.strings.editorOpening.replace('{file}', ref));
+
+    setTimeout(() => {
+      window.removeEventListener('blur', mark);
+      document.removeEventListener('visibilitychange', mark);
+      if (leftPage) return;
+      // 何も起きなかった = エディタ未インストール / scheme 未登録の可能性。
+      // 黙って終わらせず、手で辿れるパスとコピー導線を出す
+      this.toastAction(
+        `${this.strings.editorNotOpened} ${ref}`,
+        this.strings.editorCopyPath,
+        () => void this.copyToClipboard(ref, this.strings.editorPathCopied),
+      );
+    }, EDITOR_LAUNCH_GRACE_MS);
+  }
+
+  /** クリップボードへコピーし、結果をトーストで返す (失敗を黙らせない) */
+  private async copyToClipboard(text: string, okMessage: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.toast(okMessage);
+    } catch {
+      // 権限やフォーカスで失敗しうる。文字列は操作可能なトーストに残っているので選択できる
+      this.toast(this.strings.statsCopyFail, 4000);
+    }
   }
 
   /** レンダーデバッグ: 再描画した要素群をヒートマップ色で明滅させる */
@@ -673,11 +721,37 @@ export class Overlay {
 
   toast(message: string, ms = 2600) {
     this.ensureMounted();
+    // 前回の操作可能トーストの残骸 (ボタン / pointer-events) を必ず落とす
+    this.toastEl.classList.remove('interactive');
     this.toastEl.textContent = message;
     this.toastEl.style.display = 'block';
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => {
       this.toastEl.style.display = 'none';
+    }, ms);
+  }
+
+  /**
+   * 操作できるトースト (本文 + ボタン 1 つ)。押せる要素を出すので既定より長く出す。
+   * ハイライト枠やバッジと違い pointer-events を有効にする必要があるため class で切り替える。
+   */
+  toastAction(message: string, actionLabel: string, onAction: () => void, ms = 9000) {
+    this.ensureMounted();
+    this.toastEl.classList.add('interactive');
+    this.toastEl.replaceChildren();
+    this.toastEl.append(el('span', undefined, message));
+    const button = el('button', undefined, actionLabel) as HTMLButtonElement;
+    button.type = 'button';
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      onAction();
+    });
+    this.toastEl.append(button);
+    this.toastEl.style.display = 'block';
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => {
+      this.toastEl.style.display = 'none';
+      this.toastEl.classList.remove('interactive');
     }, ms);
   }
 }

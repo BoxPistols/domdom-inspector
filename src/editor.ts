@@ -11,15 +11,29 @@ const EDITOR_TEMPLATES: Record<Exclude<Settings['editor'], 'custom'>, string> = 
   webstorm: 'webstorm://open?file={file}&line={line}',
 };
 
+/** パスマッピング適用後の絶対パス (先頭スラッシュ 1 つに正規化) */
+function absPath(settings: Settings, loc: SourceLocation): string {
+  return '/' + normalizeSourcePath(loc.fileName, settings.pathMappings).replace(/^\/+/, '');
+}
+
 /** 設定とソース位置からエディタ起動 URL を組み立てる (FR-08) */
 export function buildEditorUrl(settings: Settings, loc: SourceLocation): string {
   const template =
     settings.editor === 'custom'
       ? settings.customUrlTemplate
       : EDITOR_TEMPLATES[settings.editor];
-  const file = '/' + normalizeSourcePath(loc.fileName, settings.pathMappings).replace(/^\/+/, '');
+  const file = absPath(settings, loc);
   return template
     .replaceAll('{file}', file)
     .replaceAll('{line}', String(loc.lineNumber))
     .replaceAll('{column}', String(loc.columnNumber || 1));
+}
+
+/**
+ * 人が読める「場所」の文字列 (`/src/App.tsx:42`)。
+ * **エディタが開かなかったときのフォールバック**に使う: scheme の起動は投げっぱなしで
+ * 成否が取れないため、開かなかったときに手で辿れる情報を渡せるようにしておく。
+ */
+export function formatSourceRef(settings: Settings, loc: SourceLocation): string {
+  return `${absPath(settings, loc)}:${loc.lineNumber}`;
 }
