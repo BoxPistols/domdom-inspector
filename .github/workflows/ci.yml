@@ -46,6 +46,14 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # 提出前チェックを毎 push で実測する。掲載文の文字数・permissions・版数の一致・
+      # **送信 API の発生箇所が 0 件** (Data usage「収集しない」の根拠) ・スクリーンショットの
+      # 実寸 (PNG ヘッダ) まで見る。対外文書 4 点の申告がコードとずれたらここで落ちる。
+      - name: Package
+        run: pnpm zip
+      - name: Submission check
+        run: pnpm check:submission
+
   # e2e (playwright) は unit と別ジョブ。フレークが unit マージを止めない構造。
   e2e:
     runs-on: ubuntu-latest
@@ -64,6 +72,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Build
         run: pnpm build
-      # badge / framework-matrix (非React↑↓・MUI・Tailwind) / popup を実 Chromium で検証
+      # badge / framework-matrix (非React↑↓・MUI・Tailwind・Web Components) /
+      # contextmenu (偽装への防御を含む) / coverage / popup を実 Chromium で検証
       - name: E2E
         run: pnpm e2e
+
+      # 提出用スクリーンショットの生成ハーネスが壊れていないか (画像の比較はしない)。
+      # **ピクセル比較は載せない**: フォント描画がマシン依存で、macOS で作った画像と
+      # Ubuntu の描画は一致しない (偽の失敗になる)。ここで見るのは「撮れるか」だけ。
+      # セレクタやフローが変わってスクショが撮れなくなる退行を止める。
+      - name: Screenshot harness smoke
+        run: pnpm shots

@@ -177,11 +177,17 @@ try {
 } catch {
   unpushed = null;
 }
-check(
-  '未 push のコミットが無い (Pages で公開するポリシーが最新になる)',
-  unpushed === 0,
-  unpushed === null ? 'origin/main を解決できない' : `${unpushed} コミット`,
-);
+if (process.env.CI) {
+  // CI では意味を持たない。PR の checkout は merge commit なので origin/main より必ず先に進み、
+  // 常に非ゼロになる (偽の失敗になる)。これはローカルの公開手順の項目
+  check('未 push のコミット (CI では判定しない)', true, 'skipped (CI)', { warn: true });
+} else {
+  check(
+    '未 push のコミットが無い (Pages で公開するポリシーが最新になる)',
+    unpushed === 0,
+    unpushed === null ? 'origin/main を解決できない' : `${unpushed} コミット`,
+  );
+}
 
 // ---- 出力 ------------------------------------------------------------------
 const pad = Math.max(...rows.map((r) => [...r.name].length)) + 2;
