@@ -73,12 +73,12 @@ popup/ ── 設定 UI (browser.* 可)
 - **①機械(自動)**: 純ロジックは vitest+happy-dom。mock 手本は fiber/tree/renderTracker.test.ts。
   DOM 依存は `// @vitest-environment happy-dom`。数値は既知正解値で校正。
 - **③目視(人間)**: 見た目/60fps/操作感/双方向連動/実権限フロー。勝手に PASS にしない。
-- **実機確認を頼む前は patch を上げて `pnpm build:sync`**。版数が変わらないと、拡張カードを
-  見ても ⟳ が効いたのか古いビルドを見ているのか区別できない (`CHANGELOG.md` に追記する)。
-  **`pnpm build` だけでは実機に反映されない**。`pnpm build` は `.output/chrome-mv3` にしか書かず、
-  **Chrome が読んでいるのは同期フォルダ側**(`scripts/sync-extension.mjs` の展開先)。
-  build だけで「⟳ を押して確認して」と頼むと、3 日前のビルドを見せて「出ない」と言われる(実績あり)。
-  権限を追加した回は特に、⟳ を押しても manifest が古いままなので絶対に動かない。
+- **実機確認を頼む前に patch を上げる** (`CHANGELOG.md` に追記)。版数が変わらないと、拡張カードを
+  見ても ⟳ が効いたのか古いビルドを見ているのか区別できない。**Chrome が読むのは同期フォルダ側**
+  (`scripts/sync-extension.mjs` の展開先) で、`pnpm build` が自動で展開する
+  (内容が同じときは書かない / 展開先が無い環境では警告のみで build は成功する)。
+  以前は build と同期が別コマンドで、3 日前のビルドを見せて「機能が出ない」と報告された実績がある。
+  権限を追加した回は特に、同期していないと ⟳ を押しても manifest が古いままで絶対に動かない。
 - **コミット前ゲート**: `pnpm lint && pnpm test && pnpm typecheck && pnpm build` 全 green(locale を触ったら先に `pnpm wxt prepare`)。ESLint は any 禁止(Fiber allowlist)/ @ts-ignore 禁止 / console.log 禁止 / design 経路の Fiber import 禁止(境界契約)を機械強制。e2e は `pnpm e2e`(別ゲート)。
 
 ## ワークフロー(fable-emu)
