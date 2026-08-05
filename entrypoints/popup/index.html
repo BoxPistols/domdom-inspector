@@ -261,14 +261,18 @@
         <span class="legend lg-custom">green = your code</span> /
         <span class="legend lg-third">gray = other libraries</span>.
         The badge shows the design values of the element — color, background, spacing,
-        border-radius, typography — with names resolved against your pasted design tokens.</p>
+        border-radius, typography. Where a value comes from a CSS custom property, the
+        <b>declared variable name</b> is shown instead of the raw value.</p>
         <table>
           <tr><td>↑ / ↓</td><td>move selection to parent / child component</td></tr>
+          <tr><td>⌘/Ctrl+Click</td><td>open the element's source in your editor (React dev builds)</td></tr>
+          <tr><td>Alt+Click</td><td>list the components that rendered it</td></tr>
           <tr><td>Esc</td><td>exit mode</td></tr>
         </table>
-        <p><b>Design tokens</b>: paste your Figma Variables / W3C / Tokens Studio JSON above.
-        Matched values show the token name; unmatched "rogue" values are flagged so you can
-        spot design-system drift on any site — MUI, Tailwind, CSS Modules, or plain CSS.</p>
+        <p><b>Design tokens</b>: no setup. On a page built with MUI, the theme is read from its
+        <code>ThemeProvider</code> automatically — matched values show the token name, and values
+        that miss are flagged with the nearest token. On pages without a theme you still get the
+        declared CSS variable names and the off-grid spacing warnings.</p>
         <p><b>Works anywhere</b>: React apps (dev or production build) and non-React pages
         alike. Component names appear when React is present; design measurement never needs it.</p>
       </div>
@@ -282,15 +286,18 @@
         <span class="legend lg-mui">青 = MUI</span> /
         <span class="legend lg-custom">緑 = 自作</span> /
         <span class="legend lg-third">グレー = その他ライブラリ</span>。
-        バッジには要素のデザイン値 — 色・背景・余白・角丸・タイポグラフィ — が表示され、
-        貼り付けたデザイントークンと照合した名前が併記されます。</p>
+        バッジには要素のデザイン値 — 色・背景・余白・角丸・タイポグラフィ — が表示されます。
+        値が CSS カスタムプロパティ由来なら、生値ではなく<b>宣言された変数名</b>が出ます。</p>
         <table>
           <tr><td>↑ / ↓</td><td>親コンポーネント ⇔ 子へ選択を移動 (Card の中身から Card 本体へ等)</td></tr>
+          <tr><td>⌘/Ctrl+クリック</td><td>要素のソースをエディタで開く (React の開発ビルド)</td></tr>
+          <tr><td>Alt+クリック</td><td>その要素を描画したコンポーネントの一覧</td></tr>
           <tr><td>Esc</td><td>モード解除</td></tr>
         </table>
-        <p><b>デザイントークン</b>: 上の欄に Figma Variables / W3C / Tokens Studio の JSON を
-        貼り付けると、一致した値にはトークン名が表示され、一致しない「野良値」には警告が付きます。
-        MUI / Tailwind / CSS Modules / 素の CSS を問わず、デザインシステムからの逸脱を発見できます。</p>
+        <p><b>デザイントークン</b>: 設定は不要です。MUI で作られたページなら
+        <code>ThemeProvider</code> のテーマを自動で読み取り、一致した値にはトークン名、
+        外れた値には最近傍トークン付きの警告が出ます。テーマが無いページでも、宣言された
+        CSS 変数名とグリッド外の余白警告は表示されます。</p>
         <p><b>どこでも動作</b>: React アプリ (開発・本番ビルドとも) でも、React を使わないページ
         でも動きます。React があればコンポーネント名も表示されます (デザイン計測自体は React 不要)。</p>
       </div>

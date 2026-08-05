@@ -1,0 +1,556 @@
+{
+  "note": "v1 の配線から外した機能の文言。再導入時 (issues #10-#13) にここから戻す。",
+  "removedAt": "2026-08-06",
+  "keys": {
+    "en": {
+      "cmdToggleRender": {
+        "message": "Toggle render visualization mode"
+      },
+      "cmdToggleTree": {
+        "message": "Toggle component tree mode"
+      },
+      "sectionDisplay": {
+        "message": "Display"
+      },
+      "popupToggleTree": {
+        "message": "Component tree (React only)"
+      },
+      "popupToggleTreeHint": {
+        "message": "Shortcut: {key} / Exit: Esc"
+      },
+      "optBadgeCompact": {
+        "message": "Minimal — element name and location only"
+      },
+      "optBadgeNormal": {
+        "message": "Standard — plus design values (color, spacing, radius, typography)"
+      },
+      "optBadgeDetailed": {
+        "message": "Detailed — plus React props (dev builds only)"
+      },
+      "popupToggleRender": {
+        "message": "Render visualization (React only)"
+      },
+      "popupToggleRenderHint": {
+        "message": "Shortcut: {key} / Record: {rec} / Exit: Esc"
+      },
+      "labelCustomUrl": {
+        "message": "Custom URL template"
+      },
+      "labelMuiSkip": {
+        "message": "Skip MUI internals and jump to your own code"
+      },
+      "labelOpenEditor": {
+        "message": "Open editor on click"
+      },
+      "labelBadgeDetail": {
+        "message": "Badge detail level"
+      },
+      "labelShowVarNames": {
+        "message": "Prefer CSS variable names over raw values"
+      },
+      "tipShowVarNames": {
+        "message": "ON: when a value is declared with a CSS variable (e.g. var(--text)), the badge shows the variable name so you can verify the UI uses your design tokens. OFF: always shows the raw value (#hex/px). Only same-origin CSS variables can be read precisely; others fall back to the raw value."
+      },
+      "labelAutoTheme": {
+        "message": "Auto-detect MUI theme tokens"
+      },
+      "sectionAi": {
+        "message": "AI design audit (BYOK)"
+      },
+      "labelAiEnabled": {
+        "message": "Enable AI features"
+      },
+      "tipAiEnabled": {
+        "message": "Hard on/off switch for everything AI. Turn OFF for client work where no external AI may be used — all AI controls become inert. All core features work without AI."
+      },
+      "labelAiProvider": {
+        "message": "Provider"
+      },
+      "labelAiModel": {
+        "message": "Model ID"
+      },
+      "tipAiModel": {
+        "message": "Free-text model ID sent to the provider (not hardcoded). Defaults to the cheapest class; you can enter any model your key can access."
+      },
+      "labelAiKey": {
+        "message": "API key"
+      },
+      "tipAiKey": {
+        "message": "Your own key (BYOK). Stored only in this browser's local extension storage — never synced, never shown to web pages, and only sent to the provider you selected."
+      },
+      "btnAiCollect": {
+        "message": "Collect page design data & preview"
+      },
+      "hintAiPrivacy": {
+        "message": "Only aggregated style values are sent (colors, sizes, counts, token names) — never URLs, text, or page content. Nothing is sent until you press Send."
+      },
+      "labelAiPreview": {
+        "message": "Preview — exactly what will be sent"
+      },
+      "btnAiSend": {
+        "message": "Send to AI"
+      },
+      "aiGenerated": {
+        "message": "AI-generated"
+      },
+      "btnAiCopy": {
+        "message": "Copy report"
+      },
+      "aiStatusScanFail": {
+        "message": "Could not collect design data on this tab — enable the extension on this site first"
+      },
+      "aiStatusNoKey": {
+        "message": "Enter your API key first"
+      },
+      "aiStatusSending": {
+        "message": "Asking the AI…"
+      },
+      "aiStatusCap": {
+        "message": "Session limit reached ({cap} calls) — restart the browser to reset"
+      },
+      "aiStatusError": {
+        "message": "Request failed: {error}"
+      },
+      "aiStatusCopied": {
+        "message": "Report copied"
+      },
+      "aiEstimateLine": {
+        "message": "≈ {tokens} input tokens · {n}/{cap} AI calls this session · see your provider's pricing page for cost"
+      },
+      "tipAutoTheme": {
+        "message": "ON: when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its ThemeProvider and merged into token matching — no JSON pasting needed. Pasted tokens take precedence. OFF: only pasted tokens are used."
+      },
+      "tipMuiSkip": {
+        "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
+      },
+      "tipOpenEditor": {
+        "message": "Click an element to open its source line in your editor. Dev build only — production builds have no source location, so this has no effect there."
+      },
+      "tipBadgeDetail": {
+        "message": "How much the hover badge shows. Compact = name + location; Standard = + design info (color/spacing); Detailed = everything. Design info always shows on production sites."
+      },
+      "tipRecordKey": {
+        "message": "In render-visualization mode, this key starts/stops recording re-renders (default R). It only works while render mode is ON."
+      },
+      "tipPathMappings": {
+        "message": "If clicking doesn't open the file, map the dev-server path to your local absolute path (e.g. /src=/Users/you/app/src), one per line."
+      },
+      "hintTarget": {
+        "message": "Localhost works out of the box; enable any other site in “Use on this site” above. Settings save automatically."
+      },
+      "labelRecordKey": {
+        "message": "Record key (in render mode)"
+      },
+      "sectionTokens": {
+        "message": "Design tokens (Figma)"
+      },
+      "labelTokens": {
+        "message": "Paste tokens JSON (Figma Variables / W3C / Tokens Studio)"
+      },
+      "hintTokens": {
+        "message": "If the page uses MUI, you don't need this — the theme is detected automatically. Otherwise, paste a design-token JSON exported from Figma Variables (or W3C / Tokens Studio format). Matched values then show the token name while stray values are flagged with the nearest token."
+      },
+      "tokensStatus": {
+        "message": "Loaded: {colors} colors / {sizes} sizes"
+      },
+      "tokensEmpty": {
+        "message": "No tokens loaded"
+      },
+      "tokensError": {
+        "message": "Invalid JSON — paste the exported tokens file as-is"
+      },
+      "btnTokensClear": {
+        "message": "Clear tokens"
+      },
+      "sectionCoverage": {
+        "message": "Token coverage"
+      },
+      "tipCoverage": {
+        "message": "A value counts as compliant when it equals one of your tokens, no matter how it is written. Whether it goes through a CSS variable is measured separately, as durability."
+      },
+      "btnCoverageMeasure": {
+        "message": "Measure this screen"
+      },
+      "coverageMeasuring": {
+        "message": "Measuring this screen…"
+      },
+      "coverageScope": {
+        "message": "{elements} elements measured · tokens: {colors} colors / {sizes} sizes"
+      },
+      "coverageTruncated": {
+        "message": "Stopped at the scan limit after {shown} elements — counts are exact for that part, not for the whole page."
+      },
+      "coverageFamilyColor": {
+        "message": "Color"
+      },
+      "coverageFamilySpacing": {
+        "message": "Spacing"
+      },
+      "coverageFamilyRadius": {
+        "message": "Radius"
+      },
+      "coverageFamilyFont": {
+        "message": "Font size"
+      },
+      "coverageNoDict": {
+        "message": "no tokens for this"
+      },
+      "coverageNotJudged": {
+        "message": "not judged: {noDict} without a token of that kind, {unmeasurable} unparseable"
+      },
+      "coverageLowSample": {
+        "message": "few samples"
+      },
+      "coverageOverall": {
+        "message": "All declarations: {rate}% ({hit}/{judged})"
+      },
+      "coverageOverallNote": {
+        "message": "Text color and font size exist on every element, so this single number leans on those two. Read the rows above first."
+      },
+      "coverageMeasurable": {
+        "message": "Judged {judged} of {total} values ({rate}%). The rest had no token of that kind, or a value that can't be parsed."
+      },
+      "coverageOriginTitle": {
+        "message": "Where the value comes from"
+      },
+      "coverageOriginVarHit": {
+        "message": "Variable + token"
+      },
+      "coverageOriginVarMiss": {
+        "message": "Variable, off token"
+      },
+      "coverageOriginLiteralHit": {
+        "message": "Written value, matches token"
+      },
+      "coverageOriginLiteralMiss": {
+        "message": "Written value, off token"
+      },
+      "coverageOriginNote": {
+        "message": "{n} values are right today but written as literals — they won't follow the next token change."
+      },
+      "coverageOriginExcluded": {
+        "message": "{n} values excluded: inherited, browser default, or the stylesheet can't be read."
+      },
+      "coverageOriginUnavailable": {
+        "message": "Can't tell variable from literal on this page (its stylesheets can't be read). The match rate above is unaffected."
+      },
+      "coverageOriginBudget": {
+        "message": "Reading where values come from took too long on this page, so it was stopped. The match rates above are unaffected."
+      },
+      "coverageVarRate": {
+        "message": "Via CSS variables: {rate}% ({vars}/{known})"
+      },
+      "coverageOffGrid": {
+        "message": "Off the {grid}px grid: {rate}% ({off}/{total} spacing values)"
+      },
+      "coverageTopTitle": {
+        "message": "Fix these first"
+      },
+      "coverageTopLine": {
+        "message": "{value} ×{count} · nearest {token}"
+      },
+      "coverageTopLineFar": {
+        "message": "{value} ×{count} · no token nearby"
+      },
+      "coverageEmptyDict": {
+        "message": "No tokens loaded, so compliance can't be measured — a percentage here would be meaningless. Paste your tokens above, or turn on MUI auto-detect. The checks below work without tokens."
+      },
+      "coverageStale": {
+        "message": "Tokens changed — measure again."
+      },
+      "coverageScopeNote": {
+        "message": "A snapshot of this screen as it is right now. iframes, shadow DOM and hidden elements are not included. Nothing is saved or sent."
+      },
+      "btnCoverageCopy": {
+        "message": "Copy measurement"
+      },
+      "coverageDetailsSummary": {
+        "message": "Breakdown"
+      },
+      "coverageOriginCssInJs": {
+        "message": "This page uses CSS-in-JS (emotion / styled-components), which always emits literal values — even when the source reads them from a theme. So the origin of a value can't tell hardcoded from theme-driven here, and no such claim is made. The match rate above is unaffected."
+      },
+      "hintTreeWhat": {
+        "message": "Lists the React components that build this page, as a tree. Hover a row to highlight that component on the page. Only useful on React sites, and component names are readable only in development builds."
+      },
+      "hintRenderWhat": {
+        "message": "Flashes components as they re-render, so you can see what redraws when you interact. Press R to record, then R again to get a ranking of what re-rendered most and why. For finding performance problems in React apps."
+      }
+    },
+    "ja": {
+      "cmdToggleRender": {
+        "message": "再描画の可視化モードの切替"
+      },
+      "cmdToggleTree": {
+        "message": "コンポーネントツリーモードの切替"
+      },
+      "sectionDisplay": {
+        "message": "表示設定"
+      },
+      "popupToggleTree": {
+        "message": "コンポーネントツリー (React のみ)"
+      },
+      "popupToggleTreeHint": {
+        "message": "ショートカット: {key} / 解除: Esc"
+      },
+      "optBadgeCompact": {
+        "message": "少なめ — 要素名と場所だけ"
+      },
+      "optBadgeNormal": {
+        "message": "標準 — + デザイン値 (色・余白・角丸・タイポグラフィ)"
+      },
+      "optBadgeDetailed": {
+        "message": "詳細 — + React の props (開発ビルドのみ)"
+      },
+      "popupToggleRender": {
+        "message": "再描画の可視化 (React のみ)"
+      },
+      "popupToggleRenderHint": {
+        "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc"
+      },
+      "labelCustomUrl": {
+        "message": "カスタム URL テンプレート"
+      },
+      "labelMuiSkip": {
+        "message": "MUI 内部をスキップして自作コードへジャンプ"
+      },
+      "labelOpenEditor": {
+        "message": "クリックでエディタを開く"
+      },
+      "labelBadgeDetail": {
+        "message": "バッジの情報量"
+      },
+      "labelShowVarNames": {
+        "message": "生値より CSS 変数名を優先表示"
+      },
+      "tipShowVarNames": {
+        "message": "ON: 値が CSS 変数 (例 var(--text)) で宣言されていれば変数名を表示し、UI がデザイントークンに基づくか検証できます。OFF: 常に生値 (#hex/px) を表示。変数名を精密に取れるのは same-origin の CSS のみで、それ以外は生値に縮退します。"
+      },
+      "labelAutoTheme": {
+        "message": "MUI テーマトークンを自動検出"
+      },
+      "sectionAi": {
+        "message": "AI デザイン監査 (BYOK)"
+      },
+      "labelAiEnabled": {
+        "message": "AI 機能を有効化"
+      },
+      "tipAiEnabled": {
+        "message": "AI 全体のハード ON/OFF。外部 AI を使えないクライアント案件では OFF にすると AI 関連 UI がすべて無効になります。コア機能は AI なしで完結します。"
+      },
+      "labelAiProvider": {
+        "message": "プロバイダ"
+      },
+      "labelAiModel": {
+        "message": "モデル ID"
+      },
+      "tipAiModel": {
+        "message": "プロバイダに送るモデル ID (ハードコードではなく自由入力の設定値)。既定は最安クラス。キーで使える任意のモデルを指定できます。"
+      },
+      "labelAiKey": {
+        "message": "API キー"
+      },
+      "tipAiKey": {
+        "message": "自分のキーを使います (BYOK)。このブラウザの拡張ローカルストレージにのみ保存 — 同期されず、Web ページからは見えず、選択したプロバイダ以外には送信されません。"
+      },
+      "btnAiCollect": {
+        "message": "ページのデザインデータを収集してプレビュー"
+      },
+      "hintAiPrivacy": {
+        "message": "送信されるのは集計済みスタイル値のみ (色・サイズ・件数・トークン名)。URL・テキスト・ページ内容は送信されません。「AI に送信」を押すまで何も送られません。"
+      },
+      "labelAiPreview": {
+        "message": "プレビュー — 送信される内容そのもの"
+      },
+      "btnAiSend": {
+        "message": "AI に送信"
+      },
+      "aiGenerated": {
+        "message": "AI 生成"
+      },
+      "btnAiCopy": {
+        "message": "レポートをコピー"
+      },
+      "aiStatusScanFail": {
+        "message": "このタブでデザインデータを収集できません — 先にこのサイトで拡張を有効化してください"
+      },
+      "aiStatusNoKey": {
+        "message": "先に API キーを入力してください"
+      },
+      "aiStatusSending": {
+        "message": "AI に問い合わせ中…"
+      },
+      "aiStatusCap": {
+        "message": "セッション上限 ({cap} 回) に達しました — ブラウザ再起動でリセットされます"
+      },
+      "aiStatusError": {
+        "message": "リクエスト失敗: {error}"
+      },
+      "aiStatusCopied": {
+        "message": "レポートをコピーしました"
+      },
+      "aiEstimateLine": {
+        "message": "概算入力 {tokens} トークン · このセッションの AI 呼び出し {n}/{cap} 回 · 費用はプロバイダの料金ページ参照"
+      },
+      "tipAutoTheme": {
+        "message": "ON: ページが MUI を使っていれば ThemeProvider からテーマ (palette / spacing / 角丸 / フォントサイズ) を読み取り、JSON 貼り付けなしでトークン照合に併合します (貼り付けトークン優先)。OFF: 貼り付けトークンのみ使用。"
+      },
+      "tipMuiSkip": {
+        "message": "ON: クリックで MUI ライブラリ内部ではなく、あなたが書いた JSX の該当行(例: <Card> を書いた行)へジャンプ。OFF: MUI の内部ファイルへジャンプ。"
+      },
+      "tipOpenEditor": {
+        "message": "要素クリックでソース位置をエディタで開く。開発ビルド専用 — 本番サイト(公開ビルド)ではコード位置が取れないため効果なし(見た目の検査に使う)。"
+      },
+      "tipBadgeDetail": {
+        "message": "ホバー時のバッジ表示量。少なめ=名前+場所 / 標準=+デザイン情報(色/余白) / 詳細=すべて。デザイン情報は本番サイトでは常に表示。"
+      },
+      "tipRecordKey": {
+        "message": "再描画の可視化モード中に、このキーで記録を開始/停止(既定 R)。可視化モードが ON の時だけ有効。"
+      },
+      "tipPathMappings": {
+        "message": "クリックしてもファイルが開かない時、dev サーバのパスをローカルの絶対パスに変換(例: /src=/Users/you/app/src)。1 行 1 件。"
+      },
+      "hintTarget": {
+        "message": "localhost はそのまま使えます。他のサイトは上の「このサイトで使う」で有効化。設定は自動保存されます。"
+      },
+      "labelRecordKey": {
+        "message": "記録キー(再描画の可視化モード中)"
+      },
+      "sectionTokens": {
+        "message": "デザイントークン (Figma)"
+      },
+      "labelTokens": {
+        "message": "トークン JSON を貼り付け (Figma Variables / W3C / Tokens Studio)"
+      },
+      "hintTokens": {
+        "message": "ページが MUI なら不要です — テーマを自動検出します。それ以外の場合は、Figma Variables からエクスポートしたデザイントークン JSON (W3C / Tokens Studio 形式でも可) を貼り付けてください。一致した値にはトークン名が表示され、外れた値は最近傍トークン付きで野良値として警告されます。"
+      },
+      "tokensStatus": {
+        "message": "読込済み: 色 {colors} 件 / サイズ {sizes} 件"
+      },
+      "tokensEmpty": {
+        "message": "トークン未読込"
+      },
+      "tokensError": {
+        "message": "JSON が不正です — エクスポートしたトークンファイルをそのまま貼り付けてください"
+      },
+      "btnTokensClear": {
+        "message": "トークンを削除"
+      },
+      "sectionCoverage": {
+        "message": "トークンカバレッジ"
+      },
+      "tipCoverage": {
+        "message": "トークンと同じ値なら書き方に関わらず「一致」とみなします。CSS 変数を経由しているかどうかは「壊れにくさ」として別に測ります。"
+      },
+      "btnCoverageMeasure": {
+        "message": "この画面を測定"
+      },
+      "coverageMeasuring": {
+        "message": "この画面を測定中…"
+      },
+      "coverageScope": {
+        "message": "{elements} 要素を測定 · トークン: 色 {colors} 件 / サイズ {sizes} 件"
+      },
+      "coverageTruncated": {
+        "message": "上限に達したため {shown} 要素で計測を打ち切りました。件数はその範囲では正確ですが、ページ全体の値ではありません。"
+      },
+      "coverageFamilyColor": {
+        "message": "色"
+      },
+      "coverageFamilySpacing": {
+        "message": "余白"
+      },
+      "coverageFamilyRadius": {
+        "message": "角丸"
+      },
+      "coverageFamilyFont": {
+        "message": "文字サイズ"
+      },
+      "coverageNoDict": {
+        "message": "該当トークンなし"
+      },
+      "coverageNotJudged": {
+        "message": "判定できず: 該当トークン無し {noDict} 件 / 解析不能 {unmeasurable} 件"
+      },
+      "coverageLowSample": {
+        "message": "サンプル僅少"
+      },
+      "coverageOverall": {
+        "message": "全宣言ベース: {rate}% ({hit}/{judged})"
+      },
+      "coverageOverallNote": {
+        "message": "文字色と文字サイズは全要素に出るため、この数値はその 2 つに偏ります。まず上の行を見てください。"
+      },
+      "coverageMeasurable": {
+        "message": "判定できたのは {total} 件中 {judged} 件 ({rate}%)。残りは同種のトークンが無いか、解析できない値です。"
+      },
+      "coverageOriginTitle": {
+        "message": "値の来歴"
+      },
+      "coverageOriginVarHit": {
+        "message": "変数 + 一致"
+      },
+      "coverageOriginVarMiss": {
+        "message": "変数だがトークン外"
+      },
+      "coverageOriginLiteralHit": {
+        "message": "ベタ書きだが一致"
+      },
+      "coverageOriginLiteralMiss": {
+        "message": "ベタ書きの野良値"
+      },
+      "coverageOriginNote": {
+        "message": "{n} 件は値としては合っていますがベタ書きです。次のトークン変更に追従しません。"
+      },
+      "coverageOriginExcluded": {
+        "message": "{n} 件は対象外: 継承値 / ブラウザ既定 / スタイルシートを読めない。"
+      },
+      "coverageOriginUnavailable": {
+        "message": "このページでは変数かベタ書きかを判定できません (スタイルシートを読めないため)。上の一致率には影響しません。"
+      },
+      "coverageOriginBudget": {
+        "message": "このページでは来歴の判定に時間がかかりすぎたため打ち切りました。上の一致率には影響しません。"
+      },
+      "coverageVarRate": {
+        "message": "CSS 変数経由: {rate}% ({vars}/{known})"
+      },
+      "coverageOffGrid": {
+        "message": "{grid}px グリッド外: {rate}% (余白 {total} 件中 {off} 件)"
+      },
+      "coverageTopTitle": {
+        "message": "まず直すと効く値"
+      },
+      "coverageTopLine": {
+        "message": "{value} ×{count} · 近い: {token}"
+      },
+      "coverageTopLineFar": {
+        "message": "{value} ×{count} · 近いトークンなし"
+      },
+      "coverageEmptyDict": {
+        "message": "トークン未読込のため準拠率は測れません。ここで % を出しても意味がないので表示しません。上でトークンを貼り付けるか、MUI 自動検出を ON にしてください。下のチェックはトークン無しでも動きます。"
+      },
+      "coverageStale": {
+        "message": "トークンを変更しました — もう一度測定してください。"
+      },
+      "coverageScopeNote": {
+        "message": "今この画面に出ている状態のスナップショットです。iframe / shadow DOM / 非表示要素は含みません。保存も送信もしません。"
+      },
+      "btnCoverageCopy": {
+        "message": "測定結果をコピー"
+      },
+      "coverageDetailsSummary": {
+        "message": "内訳"
+      },
+      "coverageOriginCssInJs": {
+        "message": "このページは CSS-in-JS (emotion / styled-components) を使っています。ソースがテーマから読んでいても出力は必ずリテラルになるため、来歴からハードコードかテーマ由来かは判定できません。よってここでは判定しません。上の一致率には影響しません。"
+      },
+      "hintTreeWhat": {
+        "message": "このページを構成している React コンポーネントを木構造で一覧します。行にホバーすると該当コンポーネントがページ上で光ります。React のサイトでのみ意味があり、コンポーネント名が読めるのは開発ビルドだけです。"
+      },
+      "hintRenderWhat": {
+        "message": "再描画されたコンポーネントを明滅させ、操作したときに何が描き直されているかを見ます。R を押すと記録が始まり、もう一度 R で「何が何回・なぜ再描画されたか」のランキングが出ます。React アプリの表示が重い原因を探すための機能です。"
+      }
+    }
+  }
+}

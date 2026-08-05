@@ -1,6 +1,7 @@
 # Chrome Web Store 提出可否 — 2026-08-06 実測
 
-配信形態: **Public(一般公開)+ 全地域**。対象版: **v0.4.7**。
+配信形態: **Public(一般公開)+ 全地域**。**対象版はここに書かない** — `pnpm check:submission` が
+`package.json` と manifest と zip の一致を実測する (数字を書くと必ず古くなる)。
 
 このファイルは「何が終わっていて、あと何をすれば送信できるか」を示す。
 ⬜ は人間の操作が必要。手順の詳細は [`PUBLISHING.md`](../PUBLISHING.md)。
@@ -12,8 +13,8 @@ pnpm build && pnpm shots && pnpm zip   # 成果物を作る
 pnpm check:submission                   # 20 項目を実測して PASS/FAIL
 ```
 
-**この文書に書いた数字はスナップショットで、すぐ古くなる。** 実際に「対象版 v0.4.6」
-「未 push 17 件」と書いた直後に自分のコミットで古くなった。
+**この文書に数字を書かない。** 実際に「対象版」と「未 push 件数」を書いた直後、自分の
+コミットで両方古くなった (2 回)。
 **古い判定書は旧 zip をアップロードする事故を生む**ので、判定は必ずスクリプトで測る。
 
 スクリプトが測るもの: 版数の一致 (package.json ↔ manifest) / 提出 zip が今の版で存在 /
@@ -34,14 +35,14 @@ commands / アイコン 5 サイズ / _locales / description と Summary の文�
 | ✅ typecheck (`tsc --noEmit`) | pass |
 | ✅ build | `.output/chrome-mv3` 147 kB |
 | ✅ e2e (実 Chromium に拡張をロード) | **16 passed** |
-| ✅ 提出 zip | `domdom-inspector-0.4.7-chrome.zip` **19 ファイル / 60.6 kB** |
+| ✅ 提出 zip | 版数一致・危険物ゼロを `check:submission` が実測 |
 | ✅ zip の危険物 (source map / .env / テスト / .DS_Store) | **0 件** |
 
 ## 2. manifest (ビルド成果物の実測)
 
 | 項目 | 値 |
 |---|---|
-| ✅ version | `0.4.7` (`package.json` と一致) |
+| ✅ version | `package.json` ↔ manifest ↔ zip の一致を実測 |
 | ✅ permissions | `storage` / `activeTab` / `scripting` / `contextMenus` |
 | ✅ optional_host_permissions | `*://*/*` (**既定では未付与**) |
 | ✅ minimum_chrome_version | `119` (依存 API の下限の最大値 = `matchOriginAsFallback`) |
@@ -120,7 +121,8 @@ https://chrome.google.com/webstore/devconsole/
 
 ### ⬜ 手順 5: アップロードと入力
 
-1. `.output/domdom-inspector-0.4.7-chrome.zip` をアップロード
+1. `.output/domdom-inspector-<version>-chrome.zip` をアップロード
+   (**版数は `pnpm check:submission` の出力で確認する**)
    (`.output/` には旧版の zip も残っているので**版数を確認して選ぶ**)
 2. 掲載情報 = `STORE_LISTING.md` から転記 (英文が正)
 3. スクリーンショット = `docs/store-assets/en/` の 4 枚

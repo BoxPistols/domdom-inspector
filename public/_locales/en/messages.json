@@ -8,41 +8,17 @@
   "cmdToggleInspect": {
     "message": "Toggle inspect mode"
   },
-  "cmdToggleRender": {
-    "message": "Toggle render visualization mode"
-  },
-  "cmdToggleTree": {
-    "message": "Toggle component tree mode"
-  },
   "sectionSite": {
     "message": "Use on this site"
   },
   "sectionModes": {
     "message": "Modes"
   },
-  "sectionDisplay": {
-    "message": "Display"
-  },
   "sectionDev": {
     "message": "Advanced"
   },
   "popupToggleInspect": {
     "message": "Toggle inspect mode on this tab"
-  },
-  "popupToggleTree": {
-    "message": "Component tree (React only)"
-  },
-  "popupToggleTreeHint": {
-    "message": "Shortcut: {key} / Exit: Esc"
-  },
-  "optBadgeCompact": {
-    "message": "Minimal — element name and location only"
-  },
-  "optBadgeNormal": {
-    "message": "Standard — plus design values (color, spacing, radius, typography)"
-  },
-  "optBadgeDetailed": {
-    "message": "Detailed — plus React props (dev builds only)"
   },
   "btnEnableSite": {
     "message": "Enable on current site…"
@@ -95,122 +71,11 @@
   "popupToggleInspectHint": {
     "message": "Shortcut: {key} / Exit: Esc"
   },
-  "popupToggleRender": {
-    "message": "Render visualization (React only)"
-  },
-  "popupToggleRenderHint": {
-    "message": "Shortcut: {key} / Record: {rec} / Exit: Esc"
-  },
   "labelEditor": {
     "message": "Open source in"
   },
-  "labelCustomUrl": {
-    "message": "Custom URL template"
-  },
-  "labelMuiSkip": {
-    "message": "Skip MUI internals and jump to your own code"
-  },
-  "labelOpenEditor": {
-    "message": "Open editor on click"
-  },
-  "labelBadgeDetail": {
-    "message": "Badge detail level"
-  },
-  "labelShowVarNames": {
-    "message": "Prefer CSS variable names over raw values"
-  },
-  "tipShowVarNames": {
-    "message": "ON: when a value is declared with a CSS variable (e.g. var(--text)), the badge shows the variable name so you can verify the UI uses your design tokens. OFF: always shows the raw value (#hex/px). Only same-origin CSS variables can be read precisely; others fall back to the raw value."
-  },
-  "labelAutoTheme": {
-    "message": "Auto-detect MUI theme tokens"
-  },
-  "sectionAi": {
-    "message": "AI design audit (BYOK)"
-  },
-  "labelAiEnabled": {
-    "message": "Enable AI features"
-  },
-  "tipAiEnabled": {
-    "message": "Hard on/off switch for everything AI. Turn OFF for client work where no external AI may be used — all AI controls become inert. All core features work without AI."
-  },
-  "labelAiProvider": {
-    "message": "Provider"
-  },
-  "labelAiModel": {
-    "message": "Model ID"
-  },
-  "tipAiModel": {
-    "message": "Free-text model ID sent to the provider (not hardcoded). Defaults to the cheapest class; you can enter any model your key can access."
-  },
-  "labelAiKey": {
-    "message": "API key"
-  },
-  "tipAiKey": {
-    "message": "Your own key (BYOK). Stored only in this browser's local extension storage — never synced, never shown to web pages, and only sent to the provider you selected."
-  },
-  "btnAiCollect": {
-    "message": "Collect page design data & preview"
-  },
-  "hintAiPrivacy": {
-    "message": "Only aggregated style values are sent (colors, sizes, counts, token names) — never URLs, text, or page content. Nothing is sent until you press Send."
-  },
-  "labelAiPreview": {
-    "message": "Preview — exactly what will be sent"
-  },
-  "btnAiSend": {
-    "message": "Send to AI"
-  },
-  "aiGenerated": {
-    "message": "AI-generated"
-  },
-  "btnAiCopy": {
-    "message": "Copy report"
-  },
-  "aiStatusScanFail": {
-    "message": "Could not collect design data on this tab — enable the extension on this site first"
-  },
-  "aiStatusNoKey": {
-    "message": "Enter your API key first"
-  },
-  "aiStatusSending": {
-    "message": "Asking the AI…"
-  },
-  "aiStatusCap": {
-    "message": "Session limit reached ({cap} calls) — restart the browser to reset"
-  },
-  "aiStatusError": {
-    "message": "Request failed: {error}"
-  },
-  "aiStatusCopied": {
-    "message": "Report copied"
-  },
-  "aiEstimateLine": {
-    "message": "≈ {tokens} input tokens · {n}/{cap} AI calls this session · see your provider's pricing page for cost"
-  },
-  "tipAutoTheme": {
-    "message": "ON: when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its ThemeProvider and merged into token matching — no JSON pasting needed. Pasted tokens take precedence. OFF: only pasted tokens are used."
-  },
-  "tipMuiSkip": {
-    "message": "ON: clicking jumps to the line in YOUR JSX (e.g. where you wrote <Card>), not into MUI library files. OFF: jumps into MUI's internal files."
-  },
-  "tipOpenEditor": {
-    "message": "Click an element to open its source line in your editor. Dev build only — production builds have no source location, so this has no effect there."
-  },
-  "tipBadgeDetail": {
-    "message": "How much the hover badge shows. Compact = name + location; Standard = + design info (color/spacing); Detailed = everything. Design info always shows on production sites."
-  },
-  "tipRecordKey": {
-    "message": "In render-visualization mode, this key starts/stops recording re-renders (default R). It only works while render mode is ON."
-  },
-  "tipPathMappings": {
-    "message": "If clicking doesn't open the file, map the dev-server path to your local absolute path (e.g. /src=/Users/you/app/src), one per line."
-  },
   "labelPathMappings": {
     "message": "Path mappings"
-  },
-  "hintTarget": {
-    "message": "Localhost works out of the box; enable any other site in “Use on this site” above. Settings save automatically."
   },
   "helpSummary": {
     "message": "How to use"
@@ -221,14 +86,14 @@
   "hintConfigureShortcuts": {
     "message": "Opens chrome://extensions/shortcuts, where you can assign or change the key for inspect mode. Chrome leaves a shortcut unassigned when another extension already uses the same keys."
   },
-  "labelRecordKey": {
-    "message": "Record key (in render mode)"
-  },
   "inspectOn": {
     "message": "Inspect ON — hover to inspect, Esc to exit. ⌘/Ctrl+Click: open in editor / Alt+Click: what rendered this / ↑↓: parent/child"
   },
   "inspectOnSafe": {
-    "message": "Inspect ON — production build: no component names or source jump, but design values and token matching work. Esc to exit"
+    "message": "Inspect ON — React production build: no component names or source jump, but design values and token matching work. Esc to exit"
+  },
+  "inspectOnNoReact": {
+    "message": "Inspect ON — no React on this page. Design values, CSS variable names and grid checks work. Esc to exit"
   },
   "inspectOff": {
     "message": "Inspect OFF"
@@ -428,141 +293,6 @@
   "themeTokensLoaded": {
     "message": "MUI theme detected — {colors} colors / {sizes} sizes added as tokens",
     "description": "Toast when the MUI theme is auto-extracted (FR-14). {colors}/{sizes} are counts."
-  },
-  "sectionTokens": {
-    "message": "Design tokens (Figma)"
-  },
-  "labelTokens": {
-    "message": "Paste tokens JSON (Figma Variables / W3C / Tokens Studio)"
-  },
-  "hintTokens": {
-    "message": "If the page uses MUI, you don't need this — the theme is detected automatically. Otherwise, paste a design-token JSON exported from Figma Variables (or W3C / Tokens Studio format). Matched values then show the token name while stray values are flagged with the nearest token."
-  },
-  "tokensStatus": {
-    "message": "Loaded: {colors} colors / {sizes} sizes"
-  },
-  "tokensEmpty": {
-    "message": "No tokens loaded"
-  },
-  "tokensError": {
-    "message": "Invalid JSON — paste the exported tokens file as-is"
-  },
-  "btnTokensClear": {
-    "message": "Clear tokens"
-  },
-  "sectionCoverage": {
-    "message": "Token coverage"
-  },
-  "tipCoverage": {
-    "message": "A value counts as compliant when it equals one of your tokens, no matter how it is written. Whether it goes through a CSS variable is measured separately, as durability."
-  },
-  "btnCoverageMeasure": {
-    "message": "Measure this screen"
-  },
-  "coverageMeasuring": {
-    "message": "Measuring this screen…"
-  },
-  "coverageScope": {
-    "message": "{elements} elements measured · tokens: {colors} colors / {sizes} sizes"
-  },
-  "coverageTruncated": {
-    "message": "Stopped at the scan limit after {shown} elements — counts are exact for that part, not for the whole page."
-  },
-  "coverageFamilyColor": {
-    "message": "Color"
-  },
-  "coverageFamilySpacing": {
-    "message": "Spacing"
-  },
-  "coverageFamilyRadius": {
-    "message": "Radius"
-  },
-  "coverageFamilyFont": {
-    "message": "Font size"
-  },
-  "coverageNoDict": {
-    "message": "no tokens for this"
-  },
-  "coverageNotJudged": {
-    "message": "not judged: {noDict} without a token of that kind, {unmeasurable} unparseable"
-  },
-  "coverageLowSample": {
-    "message": "few samples"
-  },
-  "coverageOverall": {
-    "message": "All declarations: {rate}% ({hit}/{judged})"
-  },
-  "coverageOverallNote": {
-    "message": "Text color and font size exist on every element, so this single number leans on those two. Read the rows above first."
-  },
-  "coverageMeasurable": {
-    "message": "Judged {judged} of {total} values ({rate}%). The rest had no token of that kind, or a value that can't be parsed."
-  },
-  "coverageOriginTitle": {
-    "message": "Where the value comes from"
-  },
-  "coverageOriginVarHit": {
-    "message": "Variable + token"
-  },
-  "coverageOriginVarMiss": {
-    "message": "Variable, off token"
-  },
-  "coverageOriginLiteralHit": {
-    "message": "Written value, matches token"
-  },
-  "coverageOriginLiteralMiss": {
-    "message": "Written value, off token"
-  },
-  "coverageOriginNote": {
-    "message": "{n} values are right today but written as literals — they won't follow the next token change."
-  },
-  "coverageOriginExcluded": {
-    "message": "{n} values excluded: inherited, browser default, or the stylesheet can't be read."
-  },
-  "coverageOriginUnavailable": {
-    "message": "Can't tell variable from literal on this page (its stylesheets can't be read). The match rate above is unaffected."
-  },
-  "coverageOriginBudget": {
-    "message": "Reading where values come from took too long on this page, so it was stopped. The match rates above are unaffected."
-  },
-  "coverageVarRate": {
-    "message": "Via CSS variables: {rate}% ({vars}/{known})"
-  },
-  "coverageOffGrid": {
-    "message": "Off the {grid}px grid: {rate}% ({off}/{total} spacing values)"
-  },
-  "coverageTopTitle": {
-    "message": "Fix these first"
-  },
-  "coverageTopLine": {
-    "message": "{value} ×{count} · nearest {token}"
-  },
-  "coverageTopLineFar": {
-    "message": "{value} ×{count} · no token nearby"
-  },
-  "coverageEmptyDict": {
-    "message": "No tokens loaded, so compliance can't be measured — a percentage here would be meaningless. Paste your tokens above, or turn on MUI auto-detect. The checks below work without tokens."
-  },
-  "coverageStale": {
-    "message": "Tokens changed — measure again."
-  },
-  "coverageScopeNote": {
-    "message": "A snapshot of this screen as it is right now. iframes, shadow DOM and hidden elements are not included. Nothing is saved or sent."
-  },
-  "btnCoverageCopy": {
-    "message": "Copy measurement"
-  },
-  "coverageDetailsSummary": {
-    "message": "Breakdown"
-  },
-  "coverageOriginCssInJs": {
-    "message": "This page uses CSS-in-JS (emotion / styled-components), which always emits literal values — even when the source reads them from a theme. So the origin of a value can't tell hardcoded from theme-driven here, and no such claim is made. The match rate above is unaffected."
-  },
-  "hintTreeWhat": {
-    "message": "Lists the React components that build this page, as a tree. Hover a row to highlight that component on the page. Only useful on React sites, and component names are readable only in development builds."
-  },
-  "hintRenderWhat": {
-    "message": "Flashes components as they re-render, so you can see what redraws when you interact. Press R to record, then R again to get a ranking of what re-rendered most and why. For finding performance problems in React apps."
   },
   "treeUnavailableProd": {
     "message": "Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work."

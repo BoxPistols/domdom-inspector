@@ -34,9 +34,10 @@ function stubOverlay() {
   return { overlay, calls };
 }
 
-function stubHook(devMode: boolean): HookState {
+function stubHook(devMode: boolean, hasReact = false): HookState {
   return {
-    renderers: new Map(),
+    // renderers が空 = React がそのページに無い (installHook は React 読み込み時に登録する)
+    renderers: hasReact ? new Map([[1, {}]]) : new Map(),
     roots: new Set(),
     devMode,
     commitListeners: new Set(),
@@ -63,9 +64,9 @@ afterEach(() => {
   for (const inspector of created.splice(0)) inspector.onEscape();
 });
 
-function make(devMode = true) {
+function make(devMode = true, hasReact = false) {
   const { overlay, calls } = stubOverlay();
-  const inspector = new Inspector(stubHook(devMode), overlay, DEFAULT_STRINGS);
+  const inspector = new Inspector(stubHook(devMode, hasReact), overlay, DEFAULT_STRINGS);
   created.push(inspector);
   return { inspector, calls };
 }
@@ -335,8 +336,98 @@ describe('案内している操作が実際に動く (画面の指示と実装�
 
     inspector.inspectAt(el);
 
-    // モード ON のトーストが出て、対象が選択されている
-    expect(calls.toasts).toContain(DEFAULT_STRINGS.inspectOn);
+    // モード ON のトーストが出て、対象が選択されている。
+    // スタブは renderers 空 = React 無しなので inspectOnNoReact が正しい
+    expect(calls.toasts).toContain(DEFAULT_STRINGS.inspectOnNoReact);
     expect(calls.shown).toEqual([el]);
+  });
+});
+
+describe('モード ON の説明が 3 状態を区別する (理由を取り違えない)', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('React が無いページでは「本番ビルド」と言わない', () => {
+    const { inspector, calls } = make(false, false);
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.inspectAt(el);
+
+    expect(calls.toasts).toContain(DEFAULT_STRINGS.inspectOnNoReact);
+    // 以前は素の HTML でも「production build」と説明していた (理由が嘘)
+    expect(calls.toasts).not.toContain(DEFAULT_STRINGS.inspectOnSafe);
+  });
+
+  it('React の production ビルドでは production と言う', () => {
+    const { inspector, calls } = make(false, true);
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.inspectAt(el);
+
+    expect(calls.toasts).toContain(DEFAULT_STRINGS.inspectOnSafe);
+    expect(calls.toasts).not.toContain(DEFAULT_STRINGS.inspectOnNoReact);
+  });
+
+  it('React の dev ビルドでは全機能の案内を出す', () => {
+    const { inspector, calls } = make(true, true);
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.inspectAt(el);
+
+    expect(calls.toasts).toContain(DEFAULT_STRINGS.inspectOn);
+  });
+});
+
+describe('クリック時に対象を引き直す (スクロール後の誤答を塞ぐ)', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  /** happy-dom の document.elementFromPoint は座標判定をしないので差し替える */
+  function stubElementFromPoint(el: Element | null) {
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: () => el,
+    });
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'elementFromPoint');
+  });
+
+  it('カーソル下が別要素に変わっていれば、クリック時にそちらを選び直す', () => {
+    const { inspector, calls } = make();
+    const a = document.createElement('div');
+    const b = document.createElement('span');
+    document.body.append(a, b);
+
+    inspector.inspectAt(a);
+    expect(calls.shown).toEqual([a]);
+
+    // スクロールや DOM 差し替えで、カーソル下が b になった状況を作る
+    stubElementFromPoint(b);
+    a.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+
+    // クリック時に b を選び直している (a のソースを開かない)
+    expect(calls.shown).toEqual([a, b]);
+  });
+
+  it('スクロールは currentInfo も落とす (残った情報でエディタを開かない)', () => {
+    const { inspector, calls } = make();
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.inspectAt(el);
+    calls.toasts.length = 0;
+
+    // ホイールスクロール相当。**Chrome はホイールで pointermove を出さない**ので
+    // 再同期の機会が無く、currentInfo が残ると決定論的に誤答していた
+    window.dispatchEvent(new Event('scroll'));
+    stubElementFromPoint(null); // カーソル下が取れない状況
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+
+    // 情報が無いので「位置を特定できない」と言う (別要素のソースを開かない)
+    expect(calls.editorOpened).toEqual([]);
+    expect(calls.toasts).toEqual([DEFAULT_STRINGS.jumpUnresolved]);
   });
 });

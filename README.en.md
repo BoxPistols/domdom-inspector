@@ -10,7 +10,7 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 ## Features
 
 - **Inspect mode** (`Alt+Shift+I`, exit with `Esc`) — hover any element to see a floating badge with its computed design values: text color, background, spacing (margin/padding), border-radius, typography
-- **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
+- **Rogue-value detection** — spacing that is not a multiple of 4px is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching (zero config)** — on MUI pages the theme is auto-detected from `ThemeProvider`; matched values are annotated with the token name, unmatched values flagged as rogue with the nearest token (`muiTheme.ts` / `tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
@@ -88,7 +88,7 @@ src/
   fiber.ts       Element info resolution (3-tier fallback: design-only / safe / dev)
   designStyle.ts Design value extraction from computed styles (pure functions)
   tokenDict.ts   Design token JSON parsing and matching (pure functions)
-  tokenLint.ts   4/8px grid rogue-value detection (pure functions)
+  tokenLint.ts   4px grid rogue-value detection (pure functions)
   classify.ts    MUI / first-party / third-party classification (pure functions)
   overlay.ts     Shadow-DOM-isolated highlight / design badge
   inspector.ts   Inspect mode state machine

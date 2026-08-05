@@ -8,41 +8,17 @@
   "cmdToggleInspect": {
     "message": "インスペクトモードの切替"
   },
-  "cmdToggleRender": {
-    "message": "再描画の可視化モードの切替"
-  },
-  "cmdToggleTree": {
-    "message": "コンポーネントツリーモードの切替"
-  },
   "sectionSite": {
     "message": "このサイトで使う"
   },
   "sectionModes": {
     "message": "モード"
   },
-  "sectionDisplay": {
-    "message": "表示設定"
-  },
   "sectionDev": {
     "message": "高度な設定"
   },
   "popupToggleInspect": {
     "message": "このタブでインスペクトモード切替"
-  },
-  "popupToggleTree": {
-    "message": "コンポーネントツリー (React のみ)"
-  },
-  "popupToggleTreeHint": {
-    "message": "ショートカット: {key} / 解除: Esc"
-  },
-  "optBadgeCompact": {
-    "message": "少なめ — 要素名と場所だけ"
-  },
-  "optBadgeNormal": {
-    "message": "標準 — + デザイン値 (色・余白・角丸・タイポグラフィ)"
-  },
-  "optBadgeDetailed": {
-    "message": "詳細 — + React の props (開発ビルドのみ)"
   },
   "btnEnableSite": {
     "message": "現在のサイトで有効化…"
@@ -95,122 +71,11 @@
   "popupToggleInspectHint": {
     "message": "ショートカット: {key} / 解除: Esc"
   },
-  "popupToggleRender": {
-    "message": "再描画の可視化 (React のみ)"
-  },
-  "popupToggleRenderHint": {
-    "message": "ショートカット: {key} / 記録: {rec} / 解除: Esc"
-  },
   "labelEditor": {
     "message": "ソースを開くエディタ"
   },
-  "labelCustomUrl": {
-    "message": "カスタム URL テンプレート"
-  },
-  "labelMuiSkip": {
-    "message": "MUI 内部をスキップして自作コードへジャンプ"
-  },
-  "labelOpenEditor": {
-    "message": "クリックでエディタを開く"
-  },
-  "labelBadgeDetail": {
-    "message": "バッジの情報量"
-  },
-  "labelShowVarNames": {
-    "message": "生値より CSS 変数名を優先表示"
-  },
-  "tipShowVarNames": {
-    "message": "ON: 値が CSS 変数 (例 var(--text)) で宣言されていれば変数名を表示し、UI がデザイントークンに基づくか検証できます。OFF: 常に生値 (#hex/px) を表示。変数名を精密に取れるのは same-origin の CSS のみで、それ以外は生値に縮退します。"
-  },
-  "labelAutoTheme": {
-    "message": "MUI テーマトークンを自動検出"
-  },
-  "sectionAi": {
-    "message": "AI デザイン監査 (BYOK)"
-  },
-  "labelAiEnabled": {
-    "message": "AI 機能を有効化"
-  },
-  "tipAiEnabled": {
-    "message": "AI 全体のハード ON/OFF。外部 AI を使えないクライアント案件では OFF にすると AI 関連 UI がすべて無効になります。コア機能は AI なしで完結します。"
-  },
-  "labelAiProvider": {
-    "message": "プロバイダ"
-  },
-  "labelAiModel": {
-    "message": "モデル ID"
-  },
-  "tipAiModel": {
-    "message": "プロバイダに送るモデル ID (ハードコードではなく自由入力の設定値)。既定は最安クラス。キーで使える任意のモデルを指定できます。"
-  },
-  "labelAiKey": {
-    "message": "API キー"
-  },
-  "tipAiKey": {
-    "message": "自分のキーを使います (BYOK)。このブラウザの拡張ローカルストレージにのみ保存 — 同期されず、Web ページからは見えず、選択したプロバイダ以外には送信されません。"
-  },
-  "btnAiCollect": {
-    "message": "ページのデザインデータを収集してプレビュー"
-  },
-  "hintAiPrivacy": {
-    "message": "送信されるのは集計済みスタイル値のみ (色・サイズ・件数・トークン名)。URL・テキスト・ページ内容は送信されません。「AI に送信」を押すまで何も送られません。"
-  },
-  "labelAiPreview": {
-    "message": "プレビュー — 送信される内容そのもの"
-  },
-  "btnAiSend": {
-    "message": "AI に送信"
-  },
-  "aiGenerated": {
-    "message": "AI 生成"
-  },
-  "btnAiCopy": {
-    "message": "レポートをコピー"
-  },
-  "aiStatusScanFail": {
-    "message": "このタブでデザインデータを収集できません — 先にこのサイトで拡張を有効化してください"
-  },
-  "aiStatusNoKey": {
-    "message": "先に API キーを入力してください"
-  },
-  "aiStatusSending": {
-    "message": "AI に問い合わせ中…"
-  },
-  "aiStatusCap": {
-    "message": "セッション上限 ({cap} 回) に達しました — ブラウザ再起動でリセットされます"
-  },
-  "aiStatusError": {
-    "message": "リクエスト失敗: {error}"
-  },
-  "aiStatusCopied": {
-    "message": "レポートをコピーしました"
-  },
-  "aiEstimateLine": {
-    "message": "概算入力 {tokens} トークン · このセッションの AI 呼び出し {n}/{cap} 回 · 費用はプロバイダの料金ページ参照"
-  },
-  "tipAutoTheme": {
-    "message": "ON: ページが MUI を使っていれば ThemeProvider からテーマ (palette / spacing / 角丸 / フォントサイズ) を読み取り、JSON 貼り付けなしでトークン照合に併合します (貼り付けトークン優先)。OFF: 貼り付けトークンのみ使用。"
-  },
-  "tipMuiSkip": {
-    "message": "ON: クリックで MUI ライブラリ内部ではなく、あなたが書いた JSX の該当行(例: <Card> を書いた行)へジャンプ。OFF: MUI の内部ファイルへジャンプ。"
-  },
-  "tipOpenEditor": {
-    "message": "要素クリックでソース位置をエディタで開く。開発ビルド専用 — 本番サイト(公開ビルド)ではコード位置が取れないため効果なし(見た目の検査に使う)。"
-  },
-  "tipBadgeDetail": {
-    "message": "ホバー時のバッジ表示量。少なめ=名前+場所 / 標準=+デザイン情報(色/余白) / 詳細=すべて。デザイン情報は本番サイトでは常に表示。"
-  },
-  "tipRecordKey": {
-    "message": "再描画の可視化モード中に、このキーで記録を開始/停止(既定 R)。可視化モードが ON の時だけ有効。"
-  },
-  "tipPathMappings": {
-    "message": "クリックしてもファイルが開かない時、dev サーバのパスをローカルの絶対パスに変換(例: /src=/Users/you/app/src)。1 行 1 件。"
-  },
   "labelPathMappings": {
     "message": "パスマッピング"
-  },
-  "hintTarget": {
-    "message": "localhost はそのまま使えます。他のサイトは上の「このサイトで使う」で有効化。設定は自動保存されます。"
   },
   "helpSummary": {
     "message": "使い方ヘルプ"
@@ -221,14 +86,14 @@
   "hintConfigureShortcuts": {
     "message": "chrome://extensions/shortcuts を開き、インスペクトモードのキーを割り当て・変更できます。他の拡張が同じキーを使っていると、Chrome はそのショートカットを未割り当てのままにします。"
   },
-  "labelRecordKey": {
-    "message": "記録キー(再描画の可視化モード中)"
-  },
   "inspectOn": {
     "message": "インスペクト ON — ホバーで検査、Esc で終了。⌘/Ctrl+クリック: エディタで開く / Alt+クリック: 描画元を見る / ↑↓: 親子移動"
   },
   "inspectOnSafe": {
-    "message": "インスペクト ON — 本番ビルド: コンポーネント名とソースジャンプは出ませんが、デザイン値とトークン照合は動きます。Esc で終了"
+    "message": "インスペクト ON — React の本番ビルド: コンポーネント名とソースジャンプは出ませんが、デザイン値とトークン照合は動きます。Esc で終了"
+  },
+  "inspectOnNoReact": {
+    "message": "インスペクト ON — このページに React はありません。デザイン値・CSS 変数名・グリッド検査は動きます。Esc で終了"
   },
   "inspectOff": {
     "message": "インスペクト OFF"
@@ -428,141 +293,6 @@
   "themeTokensLoaded": {
     "message": "MUI テーマを検出 — 色 {colors} 件 / サイズ {sizes} 件をトークンに追加",
     "description": "MUI テーマ自動取得 (FR-14) 成功時のトースト。{colors}/{sizes} は件数。"
-  },
-  "sectionTokens": {
-    "message": "デザイントークン (Figma)"
-  },
-  "labelTokens": {
-    "message": "トークン JSON を貼り付け (Figma Variables / W3C / Tokens Studio)"
-  },
-  "hintTokens": {
-    "message": "ページが MUI なら不要です — テーマを自動検出します。それ以外の場合は、Figma Variables からエクスポートしたデザイントークン JSON (W3C / Tokens Studio 形式でも可) を貼り付けてください。一致した値にはトークン名が表示され、外れた値は最近傍トークン付きで野良値として警告されます。"
-  },
-  "tokensStatus": {
-    "message": "読込済み: 色 {colors} 件 / サイズ {sizes} 件"
-  },
-  "tokensEmpty": {
-    "message": "トークン未読込"
-  },
-  "tokensError": {
-    "message": "JSON が不正です — エクスポートしたトークンファイルをそのまま貼り付けてください"
-  },
-  "btnTokensClear": {
-    "message": "トークンを削除"
-  },
-  "sectionCoverage": {
-    "message": "トークンカバレッジ"
-  },
-  "tipCoverage": {
-    "message": "トークンと同じ値なら書き方に関わらず「一致」とみなします。CSS 変数を経由しているかどうかは「壊れにくさ」として別に測ります。"
-  },
-  "btnCoverageMeasure": {
-    "message": "この画面を測定"
-  },
-  "coverageMeasuring": {
-    "message": "この画面を測定中…"
-  },
-  "coverageScope": {
-    "message": "{elements} 要素を測定 · トークン: 色 {colors} 件 / サイズ {sizes} 件"
-  },
-  "coverageTruncated": {
-    "message": "上限に達したため {shown} 要素で計測を打ち切りました。件数はその範囲では正確ですが、ページ全体の値ではありません。"
-  },
-  "coverageFamilyColor": {
-    "message": "色"
-  },
-  "coverageFamilySpacing": {
-    "message": "余白"
-  },
-  "coverageFamilyRadius": {
-    "message": "角丸"
-  },
-  "coverageFamilyFont": {
-    "message": "文字サイズ"
-  },
-  "coverageNoDict": {
-    "message": "該当トークンなし"
-  },
-  "coverageNotJudged": {
-    "message": "判定できず: 該当トークン無し {noDict} 件 / 解析不能 {unmeasurable} 件"
-  },
-  "coverageLowSample": {
-    "message": "サンプル僅少"
-  },
-  "coverageOverall": {
-    "message": "全宣言ベース: {rate}% ({hit}/{judged})"
-  },
-  "coverageOverallNote": {
-    "message": "文字色と文字サイズは全要素に出るため、この数値はその 2 つに偏ります。まず上の行を見てください。"
-  },
-  "coverageMeasurable": {
-    "message": "判定できたのは {total} 件中 {judged} 件 ({rate}%)。残りは同種のトークンが無いか、解析できない値です。"
-  },
-  "coverageOriginTitle": {
-    "message": "値の来歴"
-  },
-  "coverageOriginVarHit": {
-    "message": "変数 + 一致"
-  },
-  "coverageOriginVarMiss": {
-    "message": "変数だがトークン外"
-  },
-  "coverageOriginLiteralHit": {
-    "message": "ベタ書きだが一致"
-  },
-  "coverageOriginLiteralMiss": {
-    "message": "ベタ書きの野良値"
-  },
-  "coverageOriginNote": {
-    "message": "{n} 件は値としては合っていますがベタ書きです。次のトークン変更に追従しません。"
-  },
-  "coverageOriginExcluded": {
-    "message": "{n} 件は対象外: 継承値 / ブラウザ既定 / スタイルシートを読めない。"
-  },
-  "coverageOriginUnavailable": {
-    "message": "このページでは変数かベタ書きかを判定できません (スタイルシートを読めないため)。上の一致率には影響しません。"
-  },
-  "coverageOriginBudget": {
-    "message": "このページでは来歴の判定に時間がかかりすぎたため打ち切りました。上の一致率には影響しません。"
-  },
-  "coverageVarRate": {
-    "message": "CSS 変数経由: {rate}% ({vars}/{known})"
-  },
-  "coverageOffGrid": {
-    "message": "{grid}px グリッド外: {rate}% (余白 {total} 件中 {off} 件)"
-  },
-  "coverageTopTitle": {
-    "message": "まず直すと効く値"
-  },
-  "coverageTopLine": {
-    "message": "{value} ×{count} · 近い: {token}"
-  },
-  "coverageTopLineFar": {
-    "message": "{value} ×{count} · 近いトークンなし"
-  },
-  "coverageEmptyDict": {
-    "message": "トークン未読込のため準拠率は測れません。ここで % を出しても意味がないので表示しません。上でトークンを貼り付けるか、MUI 自動検出を ON にしてください。下のチェックはトークン無しでも動きます。"
-  },
-  "coverageStale": {
-    "message": "トークンを変更しました — もう一度測定してください。"
-  },
-  "coverageScopeNote": {
-    "message": "今この画面に出ている状態のスナップショットです。iframe / shadow DOM / 非表示要素は含みません。保存も送信もしません。"
-  },
-  "btnCoverageCopy": {
-    "message": "測定結果をコピー"
-  },
-  "coverageDetailsSummary": {
-    "message": "内訳"
-  },
-  "coverageOriginCssInJs": {
-    "message": "このページは CSS-in-JS (emotion / styled-components) を使っています。ソースがテーマから読んでいても出力は必ずリテラルになるため、来歴からハードコードかテーマ由来かは判定できません。よってここでは判定しません。上の一致率には影響しません。"
-  },
-  "hintTreeWhat": {
-    "message": "このページを構成している React コンポーネントを木構造で一覧します。行にホバーすると該当コンポーネントがページ上で光ります。React のサイトでのみ意味があり、コンポーネント名が読めるのは開発ビルドだけです。"
-  },
-  "hintRenderWhat": {
-    "message": "再描画されたコンポーネントを明滅させ、操作したときに何が描き直されているかを見ます。R を押すと記録が始まり、もう一度 R で「何が何回・なぜ再描画されたか」のランキングが出ます。React アプリの表示が重い原因を探すための機能です。"
   },
   "treeUnavailableProd": {
     "message": "コンポーネントツリーは開発ビルドが必要です — このページは本番ビルドで、React がコンポーネント名を削っています。デザイン計測とトークン照合は引き続き使えます。"

@@ -12,7 +12,7 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 ## Features / 機能
 
 - **Inspect mode** (`Alt+Shift+I`, exit with `Esc`) — hover any element to see a floating badge with its computed design values: text color, background, spacing (margin/padding), border-radius, typography
-- **Rogue-value detection** — spacing outside a 4/8px grid is flagged (`tokenLint.ts`), making design-system drift visible at a glance
+- **Rogue-value detection** — spacing that is not a multiple of 4px is flagged (`tokenLint.ts`), making design-system drift visible at a glance
 - **Design token matching (zero config)** — on MUI pages the theme is auto-detected from `ThemeProvider`; matched values are annotated with the token name, unmatched values flagged as rogue with the nearest token (`muiTheme.ts` / `tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
@@ -93,7 +93,7 @@ src/
   fiber.ts       要素情報の解決 (design-only / safe / dev の 3 段フォールバック)
   designStyle.ts computed style からのデザイン値抽出 (純関数)
   tokenDict.ts   デザイントークン JSON の解析と照合 (純関数)
-  tokenLint.ts   4/8px グリッド野良値検出 (純関数)
+  tokenLint.ts   4px グリッド野良値検出 (純関数)
   classify.ts    MUI / 自作 / サードパーティ分類 (純関数)
   overlay.ts     Shadow DOM 隔離のハイライト / デザインバッジ
   inspector.ts   インスペクトモードの状態機械

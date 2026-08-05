@@ -99,10 +99,19 @@ export class Inspector {
       window.addEventListener(type, this.onIntercept, true);
     }
     window.addEventListener('keydown', this.onKeyDown, true);
-    window.addEventListener('scroll', this.onScroll, true);
+    window.addEventListener('scroll', this.onViewportChange, true);
+    // resize / ズームでも枠が旧サイズのまま残るため同じ扱いにする
+    window.addEventListener('resize', this.onViewportChange, true);
 
+    // **3 状態を区別する。** 以前は devMode の 2 分岐で、React が無い素の HTML ページでも
+    // 「本番ビルドだから出ない」と説明していた (理由が嘘)。React の有無は renderers で分かる
+    const hasReact = this.hookState.renderers.size > 0;
     this.overlay.toast(
-      this.hookState.devMode ? this.strings.inspectOn : this.strings.inspectOnSafe,
+      hasReact
+        ? this.hookState.devMode
+          ? this.strings.inspectOn
+          : this.strings.inspectOnSafe
+        : this.strings.inspectOnNoReact,
       4000,
     );
     this.overlay.showModePill(this.strings.inspectPill, this.strings.inspectPillClose, () =>
@@ -117,7 +126,8 @@ export class Inspector {
       window.removeEventListener(type, this.onIntercept, true);
     }
     window.removeEventListener('keydown', this.onKeyDown, true);
-    window.removeEventListener('scroll', this.onScroll, true);
+    window.removeEventListener('scroll', this.onViewportChange, true);
+    window.removeEventListener('resize', this.onViewportChange, true);
     this.overlay.hideAll();
     this.overlay.hideModePill();
     this.currentElement = null;
@@ -161,6 +171,19 @@ export class Inspector {
     });
   };
 
+  /**
+   * 座標から対象を引き直す。**クリック時に必ず通す**: ホバー時点の選択は
+   * スクロール・DOM 差し替え・resize で実際のカーソル下と食い違いうる。
+   * 一致していれば何もしない (select は currentElement 比較で早期 return する)。
+   */
+  private resyncToPointer(x: number, y: number) {
+    const hit = document.elementFromPoint(x, y);
+    if (!hit) return;
+    if (this.overlay.containsTarget(hit)) return;
+    const element = drillToInnermost(hit, x, y);
+    if (element !== this.currentElement) this.select(element);
+  }
+
   private onIntercept = (event: Event) => {
     // パネル内クリック / 自前のエディタ起動アンカーは通す (scheme を開かせる)
     if (this.overlay.containsTarget(event.target)) return;
@@ -170,6 +193,10 @@ export class Inspector {
     // 通常クリックはページ誤操作の抑止だけ (デザイン検査に専念)。
     if (event.type !== 'click') return;
     const me = event as MouseEvent;
+    // **押した瞬間の座標から対象を引き直す。** hover 時の情報をそのまま使うと、
+    // スクロール後 / 選択要素が DOM から消えた後に「別要素のソース」を開く誤答になる。
+    // 現在の選択と一致していれば select は走らない (無駄な再計測をしない)
+    this.resyncToPointer(me.clientX, me.clientY);
     // Alt+Click: 描画元 (owner) の一覧を出し、行クリックでそのファイルをエディタで開く。
     // モード ON のトーストで案内している操作なので、必ずここで応答する
     // (以前はハンドラが無く、preventDefault だけが効いて完全な無反応になっていた)。
@@ -266,10 +293,18 @@ export class Inspector {
     }
   };
 
-  private onScroll = () => {
-    // スクロール中は座標がずれるため一旦隠す (次の pointermove で再表示)
+  /**
+   * スクロール / resize で座標がずれたら一旦隠す (次の pointermove で再表示)。
+   *
+   * **currentInfo も必ず落とす。** 以前は currentElement だけ落として currentInfo を
+   * 残していたため、ホイールスクロール直後の ⌘/Ctrl+Click が「スクロール前にホバーして
+   * いた要素」のソースを開いた (実測で 100% 再現)。ホイールでは Chrome が pointermove を
+   * 出さないので再同期の機会が無く、タイミング依存ではなく決定論的な誤答だった。
+   */
+  private onViewportChange = () => {
     this.overlay.hideHighlight();
     this.currentElement = null;
+    this.currentInfo = null;
     this.navStack = [];
     this.keyboardNav = false;
   };

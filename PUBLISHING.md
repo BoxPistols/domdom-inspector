@@ -236,8 +236,9 @@ How to test:
 2. Click the extension icon, then press "Enable on current site" and accept the
    permission prompt. (Host access is opt-in by design; without this step the
    extension intentionally does nothing on that site.)
-3. In the popup, press "Toggle inspect mode" (or Alt+Shift+I), then hover any
-   element — a badge shows its measured design values. Press Esc to exit.
+3. Inspecting starts automatically after step 2 — just hover any element and a
+   badge shows its measured design values. (Press Esc to exit; press "Toggle
+   inspect mode" or Alt+Shift+I to start again.)
 4. Or right-click any element and choose "Inspect this element" — same result
    without the keyboard.
 5. On a page built with MUI, the badge additionally shows design-token names

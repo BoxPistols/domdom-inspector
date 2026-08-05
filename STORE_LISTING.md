@@ -48,7 +48,7 @@ INSPECT DESIGN VALUES (Alt+Shift+I)
 - Turn on inspect mode and hover any element.
 - A floating badge shows the element's computed design values: text color,
   background, spacing (margin/padding), border-radius, and typography.
-- Rogue-value detection: spacing that falls outside a 4/8px grid is flagged,
+- Rogue-value detection: spacing that is not a multiple of 4px is flagged,
   so design-system drift is visible at a glance.
 - ↑/↓ move the selection to the parent / child element.
 - Or right-click any element and choose "Inspect this element" — no keyboard needed.
@@ -81,7 +81,7 @@ PRIVACY
 ```
 
 **Permission justification (for review):**
-- `storage`: persist user settings (display options, pasted design tokens) locally.
+- `storage`: persist the user's own settings (editor choice, path mappings) locally.
 - `activeTab`: read the current tab's origin from the popup when you open it.
 - `scripting`: inject the inspector into origins you have enabled.
 - `contextMenus`: add "Inspect this element" / "Open this element's source in my editor"
@@ -140,7 +140,7 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 - インスペクトモードを ON にして要素にホバー。
 - 文字色・背景色・余白 (margin/padding)・角丸・タイポグラフィなどの
   computed デザイン値をバッジ表示。
-- 野良値検出: 4/8px グリッドから外れた spacing に警告が付き、
+- 野良値検出: 4px の倍数でない spacing に警告が付き、
   デザインシステムからの逸脱がひと目でわかります。
 - ↑/↓ で親・子要素へ選択を移動。
 - 要素を右クリック →「この要素を検査」でも開始できます (キーボード不要)。
@@ -182,7 +182,7 @@ web ページの UI のデザイン値を計測し、そのページが依拠す
 **データ利用の申告 (対訳):** **全カテゴリを「収集しない」**。v1 は外部送信を一切持たず
 (BYOK AI 監査は v1 の配線から外した — issue #11)、ページの DOM と computed style は
 メモリ内で読むだけで保存も送信もしない。端末内に保存するのは利用者自身の設定と、
-利用者が貼り付けたデザイントークン JSON のみ。
+利用者自身の設定のみ (エディタの選択・パスマッピング)。
 「販売しない / 無関係な用途に使わない / 信用調査に使わない」の 3 つにチェック。
 
 ---
@@ -221,5 +221,5 @@ Phase 3 の残り (リントエンジン FR-15〜18) は `docs/ROADMAP.md` で�
 
 **搭載しているもの**: ホバーバッジ (デザイン値 + トークン照合注釈 + 野良値警告) /
 右クリックメニュー / エディタジャンプ / ↑↓ 親子ナビ / MUI テーマ自動取得 /
-トークン JSON 貼り付け。判断の根拠は `docs/assessment-20260802-store-readiness.md` と
+判断の根拠は `docs/assessment-20260802-store-readiness.md` と
 `docs/ROADMAP.md`。

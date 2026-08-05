@@ -133,7 +133,10 @@ export const DEFAULT_SETTINGS: Settings = {
  */
 export interface UiStrings {
   inspectOn: string;
+  /** React の production ビルドを検出したとき (名前とソースが取れない) */
   inspectOnSafe: string;
+  /** React がそもそも無いページ (素の HTML / 他フレームワーク)。**production と混同しない** */
+  inspectOnNoReact: string;
   inspectOff: string;
   noOuterComponent: string;
   jumpUnresolved: string;
@@ -232,7 +235,10 @@ export const DEFAULT_STRINGS: UiStrings = {
   // 「名前のみ」は嘘だった: production でもデザイン値・CSS 変数名・トークン照合・野良値警告は
   // すべて出る。出ないのは「自作コンポーネント名」と「ソースジャンプ」だけ
   inspectOnSafe:
-    'Inspect ON — production build: no component names or source jump, but design values and token matching work. Esc to exit',
+    'Inspect ON — React production build: no component names or source jump, but design values and token matching work. Esc to exit',
+  // 素の HTML ページで「本番ビルドだから出ない」と説明していたのは嘘だった (React が無い)
+  inspectOnNoReact:
+    'Inspect ON — no React on this page. Design values, CSS variable names and grid checks work. Esc to exit',
   inspectOff: 'Inspect OFF',
   noOuterComponent: 'No further outer element',
   jumpUnresolved: 'Could not resolve source location (React 19 may need the Babel source plugin)',
