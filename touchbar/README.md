@@ -93,13 +93,21 @@ cp ~/Library/Application\ Support/BetterTouchTool/btt_data_store.version_* ~/Des
 - **幅キーは型ごとに別。** 629 は `BTTTouchBarButtonWidth` + `BTTTouchBarButtonUseFixedWidth`、
   642 は `BTTTBWidgetWidth`
 - **`BTTAdditionalActions` は入力時の別名で、保存時に `BTTActionsToExecute` へ正規化される**
+- **`BTTPredefinedActionType: 128` (アプリ指定でキー送信) を `update_trigger` で流し込むと
+  BTT 本体が落ちる。** 2026-08-05 に実測。以後 `get_triggers` が `-609 接続が無効です` を返し、
+  アプリが常駐しなくなる。復旧は `open -a BetterTouchTool` → 壊れたトリガを UUID で
+  `delete_trigger`。**キー送信は 264 だけを使う**(アプリ限定はシェル側の表示判定で代替する)
+- **`BTTOrder` はプロジェクト間で衝突する。** Touch Bar は order 順に並ぶので、別プロジェクトが
+  同じ帯を使うとボタンが混ざる。現在の割り当ては **0–55 macenv / 100–105 domdom /
+  200– local-ui-builder**。新しい帯を使うときは他プロジェクトに通告する
 
 ## 既知の制限
 
 - **localhost 以外では無反応**: 拡張の既定注入先は `localhost` / `127.0.0.1` のみ。
   他のサイトは popup の「現在のサイトで有効化」で許可したときだけ動く。Touch Bar 側から
   オリジンは判別できないので、Chrome にいる限りボタンは出る
-- **ツリーは本番サイトでリロードが要る**: mid-page 注入では React のフックが間に合わない。
+- **許可した直後はリロードが要る**: mid-page 注入でもデザイン計測は動くが、コンポーネント名の
+  解決は React 読み込み前のフック設置が前提なので、リロードするまで出ない。
   詳細は [`../docs/popup-ux-design.md`](../docs/popup-ux-design.md)
 - **▲ / ▼ はホバーが前提**: `Inspector` は `pointermove` で選択要素を決めるため、
   モードを ON にした直後に ▲ を押しても何も起きない。[`DESIGN.md`](./DESIGN.md) の
