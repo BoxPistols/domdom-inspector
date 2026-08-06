@@ -299,3 +299,61 @@ test('カスケードの勝者だけを由来として出す (:where / @layer)',
 
   await page.close();
 });
+
+/**
+ * 【他拡張との共存】React DevTools のグローバルフックを奪わないこと。
+ *
+ * RDT の installHook は `if (target.hasOwnProperty('__REACT_DEVTOOLS_GLOBAL_HOOK__')) return;`
+ * で**丸ごと降りる**。こちらが document_start で先にシムを置くと **RDT が沈黙する**
+ * (実測: RDT 7.0.1 で 6 試行中 4 回)。他拡張の中核機能を壊してよい理由は無いので、
+ * グローバルの所有権は主張しない — それでも計測は DOM の Fiber から成立する。
+ */
+test('React DevTools のグローバルフックを自分から作らない', async () => {
+  const page = await openFixture();
+
+  const owns = await page.evaluate(() =>
+    Object.prototype.hasOwnProperty.call(window, '__REACT_DEVTOOLS_GLOBAL_HOOK__'),
+  );
+  expect(owns, '拡張がフックを設置していないこと').toBe(false);
+
+  // フックが無くても計測は動く (Fiber は DevTools と無関係に DOM に付く)
+  await activate(page);
+  await page.hover('#target');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+  await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('#c62828');
+
+  await page.close();
+});
+
+/**
+ * 【セキュリティ / 誤答】ページからの不正 settings で計測が凍らないこと。
+ *
+ * MAIN world はページと同一信頼境界なので、防御の主目的は権限昇格ではなく
+ * **「誤答させられないこと」**。以前は生 payload をそのまま overlay に渡していたため、
+ * `payload:{}` を 1 回投げるだけで colors が消え、以後 show() が例外で落ちて
+ * **どの要素をホバーしても前の要素の値を出し続ける**状態を外部から作れた (実測)。
+ */
+test('ページが投げた空の settings で計測が凍らない', async () => {
+  const page = await openFixture(CASCADE_FIXTURE_HTML);
+  await activate(page);
+
+  await page.hover('#btn');
+  await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('--right');
+
+  // bridge を騙って空 payload を送る
+  await page.evaluate(
+    (src) =>
+      new Promise<void>((resolve) => {
+        window.postMessage({ source: src, type: 'settings', payload: {} }, '*');
+        setTimeout(resolve, 50);
+      }),
+    BRIDGE_SOURCE,
+  );
+
+  // 別要素へ移ると、その要素の値が出る (前の要素の値で凍らない)
+  await page.hover('#chip');
+  await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('--unlayered');
+  expect(await badgeText(page)).not.toContain('--right');
+
+  await page.close();
+});

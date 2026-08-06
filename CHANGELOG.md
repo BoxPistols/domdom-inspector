@@ -11,6 +11,35 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.12 (2026-08-07) — 他拡張との共存 / 外部から誤答させられる経路
+
+### React DevTools を沈黙させていた
+
+`installHook` は未設置なら `__REACT_DEVTOOLS_GLOBAL_HOOK__` に最小シムを置いていた。
+React DevTools の installHook は
+`if (target.hasOwnProperty('__REACT_DEVTOOLS_GLOBAL_HOOK__')) return;` で**丸ごと降りる**ため、
+こちらが document_start で先に走ると **RDT が沈黙する** (実測: RDT 7.0.1 で 6 試行中 4 回)。
+デザイナー向けと言っても、入れた開発者の React DevTools を壊してよい理由は無い。
+
+- **グローバルの所有権を主張しない。** フックが既にある場合だけ従来どおり piggyback する
+- 必要な情報は DOM 側から取る: **`fiber.detectReactOnPage`** が `__reactFiber$` を探して
+  React の有無と dev/production を判定する (これらは DevTools と無関係に React が付ける)。
+  MUI テーマは `findMuiThemeFromDom` という後備が元からある
+- 失うのは commit 通知 (テーマ切替の即時再検出) だけで、モード切替時と注入直後の再試行で補う
+- e2e で「拡張がフックを設置していないこと」と「それでも計測が動くこと」を同時に固定
+
+### ページから計測を凍らせられた
+
+`settings` 受信で **生 payload をそのまま overlay に渡していた**。ページが
+`{source:BRIDGE_SOURCE, type:'settings', payload:{}}` を 1 回投げるだけで `colors` が消え、
+以後 `show()` が例外で落ちて **どの要素をホバーしても前の要素の値を出し続ける**状態を
+外部から作れた (実測)。`tokens` 側は shape 検証済みなのに `settings` だけ素通しだった。
+
+MAIN world はページと同一信頼境界なので、防御の主目的は権限昇格ではなく
+**「誤答させられないこと」**。merge 済みの設定だけを配るようにし、e2e で固定した。
+
+---
+
 ## 0.4.11 (2026-08-07) — 看板機能の誤答とホバーコスト
 
 ### 誤答 — 「由来でない CSS 変数名」を由来として表示していた

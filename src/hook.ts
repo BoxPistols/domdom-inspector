@@ -1,8 +1,18 @@
 /**
- * React DevTools グローバルフックの確立 (document_start / MAIN world で最初に実行)。
- * - フック未設置なら最小シムを設置し、renderer 注入と commit を観測する
- * - 本物の DevTools フックが既にあれば壊さずに piggyback する
- * dev ビルド検出 (FR-12) は renderer.bundleType === 1 を一次シグナルとする。
+ * React DevTools グローバルフックへの **piggyback だけ** を行う (document_start / MAIN world)。
+ *
+ * **自分からフックを設置しない。** 以前は未設置なら最小シムを `__REACT_DEVTOOLS_GLOBAL_HOOK__`
+ * に置いていたが、React DevTools の installHook は
+ * `if (target.hasOwnProperty('__REACT_DEVTOOLS_GLOBAL_HOOK__')) return;` で**丸ごと降りる**ため、
+ * こちらが先に走ると **React DevTools が沈黙する** (実測: RDT 7.0.1 で 6 試行中 4 回)。
+ * 他拡張の中核機能を壊してよい理由は無いので、グローバルの所有権は主張しない。
+ *
+ * 代わりに、必要な情報は DOM 側から取る:
+ * - React の有無と dev ビルド判定 → `fiber.detectReactOnPage` (`__reactFiber$` と `_debug*`)
+ * - MUI テーマ → `muiTheme.findMuiThemeFromDom` (フック不要の後備が既にある)
+ *
+ * 失うのは commit 通知 (テーマ切替の即時再検出) だけで、モード切替時と注入直後の再試行で補う。
+ * フックが**既にある**場合 (RDT が入っている等) は従来どおり piggyback して commit も受ける。
  */
 export type CommitListener = (root: unknown) => void;
 
@@ -67,37 +77,7 @@ export function installHook(): HookState {
     return state;
   }
 
-  let uid = 0;
-  const hook = {
-    renderers: state.renderers,
-    supportsFiber: true,
-    supportsFlight: false,
-    isDisabled: false,
-    inject(renderer: any) {
-      const id = ++uid;
-      state.renderers.set(id, renderer);
-      record(renderer);
-      return id;
-    },
-    onCommitFiberRoot(_id: number, root: any) {
-      notifyCommit(root);
-    },
-    onCommitFiberUnmount() {},
-    onPostCommitFiberRoot() {},
-    onScheduleFiberRoot() {},
-    checkDCE() {},
-    // react-refresh が参照するイベント API の最小実装
-    on() {},
-    off() {},
-    sub() {
-      return () => {};
-    },
-    emit() {},
-  };
-  Object.defineProperty(w, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
-    value: hook,
-    enumerable: false,
-    configurable: true,
-  });
+  // フックが無い場合は**設置しない**。React 側は inject を呼ばないので renderers は空のままで、
+  // React の有無・dev 判定は DOM の Fiber から取る (fiber.detectReactOnPage)。
   return state;
 }

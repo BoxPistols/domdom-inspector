@@ -35,6 +35,44 @@ export function getFiberFromElement(element: Element): Fiber | null {
   return null;
 }
 
+/**
+ * ページに React があるか / dev ビルドかを **DOM 側から** 判定する。
+ *
+ * グローバルフックを自分では設置しない (React DevTools を沈黙させるため) 一方で、
+ * モード ON の説明文は「dev / production / React 無し」を区別しなければならない
+ * (取り違えると理由が嘘になる)。`__reactFiber$` は DevTools と無関係に React が必ず
+ * 付けるので、これを直接探すのが最も確実。
+ *
+ * 先頭の限られた要素だけ見る (巨大ページでの暴走防止)。React があるページなら
+ * ルート近傍の要素が既に Fiber を持っているため、この範囲で足りる。
+ */
+export function detectReactOnPage(
+  doc: Document = document,
+  maxElements = 200,
+): { hasReact: boolean; devMode: boolean } {
+  const body = doc.body;
+  if (!body) return { hasReact: false, devMode: false };
+  let seen = 0;
+  let node: Element | null = body;
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_ELEMENT);
+  while (node && seen < maxElements) {
+    const fiber = getFiberFromElement(node);
+    if (fiber) {
+      // dev ビルドは _debugOwner / _debugSource を持つ (production では剥離される)。
+      // host fiber 自身に無くても、コンポーネント Fiber 側にあることがある
+      const component = getNearestComponentFiber(fiber);
+      const devMode =
+        '_debugOwner' in fiber ||
+        fiber._debugSource != null ||
+        (!!component && ('_debugOwner' in component || component._debugSource != null));
+      return { hasReact: true, devMode };
+    }
+    seen += 1;
+    node = walker.nextNode() as Element | null;
+  }
+  return { hasReact: false, devMode: false };
+}
+
 /** Fiber の表示名を解決する */
 export function getFiberName(fiber: Fiber): string | null {
   const t = fiber?.type;

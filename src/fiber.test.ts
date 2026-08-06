@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  detectReactOnPage,
   getFiberName,
   getHostElementOfFiber,
   getParentComponentElement,
@@ -223,5 +224,48 @@ describe('inspectElement', () => {
     expect(info?.classification).toBe('mui'); // Mui* クラスから推定
     expect(info?.name).toBe('MuiButton');
     expect(Array.isArray(info?.design)).toBe(true); // design は常に取得できる
+  });
+});
+
+describe('detectReactOnPage — DOM から React の有無と dev 判定を取る', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  /** 要素に React の内部キーを生やす (DevTools と無関係に React が必ず付けるもの) */
+  const attach = (el: Element, fiber: Record<string, unknown>) =>
+    Object.assign(el, { __reactFiber$abc: fiber });
+
+  it('Fiber を持つ要素が無ければ React 無しと判定する', () => {
+    document.body.appendChild(document.createElement('div'));
+    expect(detectReactOnPage(document)).toEqual({ hasReact: false, devMode: false });
+  });
+
+  it('_debugSource を持てば dev ビルド', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    attach(el, {
+      tag: 5,
+      stateNode: el,
+      return: { tag: 0, type: function App() {}, _debugSource: { fileName: '/src/App.tsx' } },
+    });
+    expect(detectReactOnPage(document)).toEqual({ hasReact: true, devMode: true });
+  });
+
+  it('dev フィールドが無ければ production と判定する (React はある)', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    attach(el, { tag: 5, stateNode: el, return: { tag: 0, type: function App() {} } });
+    expect(detectReactOnPage(document)).toEqual({ hasReact: true, devMode: false });
+  });
+
+  it('探索範囲を超えた位置の Fiber は見ない (巨大ページで暴走しない)', () => {
+    for (let i = 0; i < 5; i += 1) document.body.appendChild(document.createElement('div'));
+    const deep = document.createElement('span');
+    document.body.appendChild(deep);
+    attach(deep, { tag: 5, stateNode: deep, return: { tag: 0, type: function App() {} } });
+    // maxElements=2 では届かない
+    expect(detectReactOnPage(document, 2).hasReact).toBe(false);
+    expect(detectReactOnPage(document, 50).hasReact).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { getParentComponentElement, inspectElement } from './fiber';
+import { detectReactOnPage, getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
 import { isBundledSource } from './source';
@@ -104,11 +104,16 @@ export class Inspector {
     window.addEventListener('resize', this.onViewportChange, true);
 
     // **3 状態を区別する。** 以前は devMode の 2 分岐で、React が無い素の HTML ページでも
-    // 「本番ビルドだから出ない」と説明していた (理由が嘘)。React の有無は renderers で分かる
-    const hasReact = this.hookState.renderers.size > 0;
+    // 「本番ビルドだから出ない」と説明していた (理由が嘘)。
+    // フックは自分から設置しない (React DevTools を沈黙させるため) ので、piggyback できた
+    // ときだけ renderers が埋まる。空なら DOM の Fiber から判定する
+    const fromHook = this.hookState.renderers.size > 0;
+    const { hasReact, devMode } = fromHook
+      ? { hasReact: true, devMode: this.hookState.devMode }
+      : detectReactOnPage();
     this.overlay.toast(
       hasReact
-        ? this.hookState.devMode
+        ? devMode
           ? this.strings.inspectOn
           : this.strings.inspectOnSafe
         : this.strings.inspectOnNoReact,

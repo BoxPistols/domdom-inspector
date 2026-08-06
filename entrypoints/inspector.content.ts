@@ -162,8 +162,12 @@ export default defineContentScript({
       const data = event.data;
       if (!data || data.source !== BRIDGE_SOURCE) return;
       if (data.type === 'settings') {
+        // applySettings が DEFAULT_SETTINGS と merge した結果を overlay にも配る。
+        // **生 payload を overlay へ直接渡してはいけない**: ページが
+        // `{source:BRIDGE_SOURCE,type:'settings',payload:{}}` を 1 回投げるだけで colors が
+        // 消え、以後 show() が例外で落ちて「前の要素の値を出し続ける」状態を外部から作れた
+        // (実測)。tokens 側は shape 検証済みなのに settings だけ素通しだった
         inspector.applySettings(data.payload);
-        overlay.updateSettings(data.payload);
         autoTheme = data.payload.autoTheme !== false;
         pushMergedTokens();
         attemptThemeExtract();
