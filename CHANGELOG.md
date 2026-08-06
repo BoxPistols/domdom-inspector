@@ -11,6 +11,45 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.11 (2026-08-07) — 看板機能の誤答とホバーコスト
+
+### 誤答 — 「由来でない CSS 変数名」を由来として表示していた
+
+この製品は Tier2 (computed 値からの逆引き) を「由来でない変数名を由来と誤提示するのは
+**検証の誠実性に反する**」として却下している。ところが **Tier1 の中で同じ誤りが起きていた**。
+
+- **`:where()` の中身を specificity に数えていた。** 仕様では `:where()` は 0 を寄与し、
+  引数の中身も数えない。`:where(#hero) .btn` を 10100 と評価していたため、実際には効いて
+  いない宣言 (Tailwind preflight / MUI CssBaseline が使う典型) が本物のクラス宣言に勝ち、
+  **その宣言の変数名をバッジの主表示に出していた**
+- **`@layer` をカスケードに反映していなかった。** 通常宣言は「レイヤ無し > 後のレイヤ >
+  前のレイヤ」、`!important` では逆転する。素通りしていたため、レイヤ内の高 specificity 宣言が
+  レイヤ外の宣言に誤って勝っていた
+- `:is()` / `:not()` / `:has()` は引数の**最大**を採るよう修正 (仕様どおり)
+- **shorthand と longhand を cascade で競わせる。** `background` と `background-color` を
+  プロパティ名の順で決めていたため、高 specificity の shorthand 宣言が負けていた
+- 実 Chrome の e2e で回帰を固定 (`:where` の罠 / `@layer` の罠)。
+  **検出力は敵対的に実証** — 修正を戻すとこのテストだけが落ちる
+
+### 機能欠落 — adoptedStyleSheets を読んでいなかった
+
+`document.styleSheets` しか見ておらず、**Constructable Stylesheets**
+(`document.adoptedStyleSheets`) と **shadow root のスタイル**を読み落としていた。
+Lit / Stencil や一部のデザイントークン配布はここに宣言を置くため、「宣言が無い」=
+継承値と誤判定していた。element が属する shadow root の `styleSheets` /
+`adoptedStyleSheets` も走査対象にした。
+
+### パフォーマンス — ホバー 1 回で CSSOM を 10 周していた
+
+`collectAuthoredInfo` がラベルごとに `winningValue` を呼び、その都度全 styleSheet を
+走査していた。マッチ判定 (`element.matches`) はルールごとに 1 回で足りるので、
+**全プロパティを 1 回の走査でまとめて解決**する形に変えた。
+
+実測 (1000 ルールのページ、実拡張): `document.styleSheets` 参照 **10 回 → 1 回**、
+`element.matches()` **約 10,000 回 → 1,002 回**。
+
+---
+
 ## 0.4.10 (2026-08-06) — 深掘り監査の blocker 修正
 
 12 エージェントの深掘り監査 (6 観点 × 反証、実 Chromium プローブつき) で 48 件の所見。

@@ -71,3 +71,36 @@ describe('specificity (簡易 cascade 勝者推定)', () => {
     expect(specificity('.card > .body')).toBe(specificity('.a.b'));
   });
 });
+
+describe('specificity — 関数型疑似クラス (誤答の直接原因だった)', () => {
+  it(':where() は 0 を寄与し、引数の中身も数えない', () => {
+    // 以前は :where(#hero) を「id + 疑似クラス」= 10100 と数えていたため、
+    // **実際には効いていない :where() の宣言が本物のクラス宣言に勝ち**、
+    // 由来でない CSS 変数名を「由来」として表示していた
+    expect(specificity(':where(#hero) .card')).toBe(specificity('.card'));
+    expect(specificity(':where(.a, #b, div) p')).toBe(specificity('p'));
+    expect(specificity(':where(#hero)')).toBe(0);
+  });
+
+  it(':is() / :not() は引数の最大を採る (仕様どおり)', () => {
+    expect(specificity(':is(.a, #b)')).toBe(specificity('#b'));
+    expect(specificity(':not(.card)')).toBe(specificity('.card'));
+    expect(specificity('div:is(.a, .b)')).toBe(specificity('div.a'));
+  });
+
+  it(':where() の中に :is() が入っていても 0 のまま', () => {
+    expect(specificity(':where(:is(#a, #b))')).toBe(0);
+  });
+
+  it('壊れたセレクタ (閉じ括弧なし) で無限ループしない', () => {
+    expect(() => specificity(':where(.a')).not.toThrow();
+    expect(() => specificity(':is(:is(:is(')).not.toThrow();
+  });
+
+  it('実務で効く比較: :where で包んだリセットはコンポーネント宣言に負ける', () => {
+    // Tailwind preflight や MUI の CssBaseline が :where() を使う典型
+    const reset = specificity(':where(button, input)');
+    const component = specificity('.MuiButton-root');
+    expect(reset).toBeLessThan(component);
+  });
+});

@@ -84,6 +84,24 @@ const VAR_FIXTURE_HTML = `<!DOCTYPE html>
 <body style="margin:0"><div id="target" class="card">Var me</div></body>
 </html>`;
 
+// カスケードの罠 fixture。**どちらも「勝者ではない宣言の変数名」を出しうるケース**:
+//  ① :where() は specificity 0 なので、同じ (0,1,0) の .btn が source order で勝つ → --right
+//  ② レイヤ無しの通常宣言はレイヤ内の宣言に勝つ (specificity に関係なく) → --unlayered
+// 以前は :where の中身を id として数え、@layer を素通りしていたため両方で誤答していた。
+const CASCADE_FIXTURE_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Cascade traps</title>
+<style>
+  :root { --wrong: #ff0000; --right: #00ff00; --layered: #0000ff; --unlayered: #ffff00; }
+  :where(#hero) .btn { color: var(--wrong); }
+  .btn { color: var(--right); }
+  @layer base { #panel .chip { background-color: var(--layered); } }
+  .chip { background-color: var(--unlayered); }
+</style></head>
+<body style="margin:0">
+  <div id="hero"><button id="btn" class="btn">where trap</button></div>
+  <div id="panel"><span id="chip" class="chip">layer trap</span></div>
+</body></html>`;
+
 /** fixture ページを開き MAIN world content script の確立を待つ */
 async function openFixture(html: string = FIXTURE_HTML) {
   const page = await context.newPage();
@@ -251,6 +269,33 @@ test('showVarNames=false で生値表示に切り替わる', async () => {
     .poll(async () => badgeText(page), { timeout: 3000 })
     .toContain('#eaedf4');
   expect(await badgeText(page)).not.toContain('--text');
+
+  await page.close();
+});
+
+/**
+ * 【誤答の回帰】カスケードを取り違えて「由来でない CSS 変数名」を出さないこと。
+ *
+ * この製品は Tier2 (computed 値からの逆引き) を「由来でない変数名を由来と誤提示するのは
+ * 検証の誠実性に反する」として却下している。ところが Tier1 の中で同じ誤りが起きていた:
+ *  - `:where(#hero)` の中身を id として数えていた (仕様では :where は specificity 0)
+ *  - `@layer` を素通りしていた (通常宣言はレイヤ無しが勝つ)
+ * どちらも「実際には効いていない宣言の変数名」をバッジの主表示に出す = 看板機能の誤答。
+ */
+test('カスケードの勝者だけを由来として出す (:where / @layer)', async () => {
+  const page = await openFixture(CASCADE_FIXTURE_HTML);
+  await activate(page);
+
+  await page.hover('#btn');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+  await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('--right');
+  // :where() の中身を数えていた頃はこちらが出ていた
+  expect(await badgeText(page)).not.toContain('--wrong');
+
+  await page.hover('#chip');
+  await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('--unlayered');
+  // @layer を素通りしていた頃はこちらが出ていた
+  expect(await badgeText(page)).not.toContain('--layered');
 
   await page.close();
 });
