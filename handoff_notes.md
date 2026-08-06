@@ -122,14 +122,24 @@ main の内容が配信される**ため、push 前に Pages を有効化する�
 
 [`docs/audit-20260807-deep.md`](./docs/audit-20260807-deep.md) の「未対応の一覧」から。
 12 エージェントの監査 (6 観点 × 反証役) の全 70 件が実測根拠つきで載っている。
-残っている high は 3 件:
+残っている high は 3 件で、**それぞれ issue になっている** (再現手順と直し方の案つき):
 
-1. **iframe を含むページで Esc を押すと親子フレームが逆位相**になり、iframe 内のクリックが
-   死んだまま残る (冪等な `inspect-off` を全フレームへ配れば構造的に消える)
-2. **提出スクリーンショット 4 枚中 2 枚が、ユーザーが到達できない経路で注入した辞書に依存**
-   (自称「実物一致」を満たさない。MUI 自動検出が効く fixture で撮り直すのが筋)
-3. **ページが postMessage で照合辞書を注入でき、バッジがページ提供のトークン名で「一致」と
-   表示できる** (監査結果の偽装経路)
+1. [#14](https://github.com/BoxPistols/domdom-inspector/issues/14) — **iframe を含むページで Esc を
+   押すと親子フレームが逆位相**になり、iframe 内のクリックが死んだまま残る
+   (冪等な `inspect-off` を全フレームへ配れば構造的に消える)
+2. [#15](https://github.com/BoxPistols/domdom-inspector/issues/15) — **提出スクリーンショット 4 枚中
+   2 枚が、ユーザーが到達できない経路で注入した辞書に依存** (自称「実物一致」を満たさない。
+   MUI 自動検出が効く fixture で撮り直すのが筋)
+3. [#16](https://github.com/BoxPistols/domdom-inspector/issues/16) — **ページが postMessage で照合
+   辞書を注入でき、バッジがページ提供のトークン名で「一致」と表示できる** (監査結果の偽装経路)
+
+medium 10 件は同文書に集約 (overlay バッジのコントラスト 3.17:1 / ja popup が 604px で
+Chrome の 600px 上限を超える / 野良値の呼び方が UI と文書で不統一 / 到達不能コードが
+inspector.js の約 34% など)。issue にはしていないので、着手時に文書から拾う。
+
+**milestone / label**: `v1.0 — Store 公開` と `v1.1 — 公開後に戻すもの / 監査の残件` の 2 本。
+監査由来は label `audit-20260807`。GitHub Projects への紐付けは `gh` のトークンに `project`
+スコープが無く未実施 (`gh auth refresh -s project` が必要)。
 
 ### このセッションで学んだこと (同じ穴を掘らないために)
 
