@@ -105,8 +105,14 @@ for (const el of [editorEl, customTemplateEl, pathMappingsEl]) {
 
 async function sendToActiveTab(type: string) {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id != null) {
-    browser.tabs.sendMessage(tab.id, { type }).catch(() => {});
+  const tabId = tab?.id;
+  if (tabId != null) {
+    // **トグルはトップフレームだけに送る** (issue #14)。全フレームに送ると各フレームが
+    // 独立に反転して逆位相を作る。結果の状態は background が全フレームへ配る。
+    // 入っていなければ従来どおり全フレームへ (iframe 側だけが対象オリジンのケース)
+    browser.tabs
+      .sendMessage(tabId, { type }, { frameId: 0 })
+      .catch(() => browser.tabs.sendMessage(tabId, { type }).catch(() => {}));
   }
   window.close();
 }

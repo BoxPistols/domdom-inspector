@@ -33,11 +33,55 @@ const BRIDGE_SOURCE = 'domdom-inspector-bridge';
 const ORIGIN = 'http://localhost:9910';
 
 /**
+ * ThemeProvider を持つ React ルートを模した断面を作る (issue #15)。
+ *
+ * **辞書を注入しない。** 以前はここで bridge を騙った `{type:'tokens'}` postMessage を
+ * 投げて辞書を渡していたが、その経路は利用者からは到達できない (v1 に貼り付け UI は無い)
+ * ため、**実物と一致しない画面**を撮っていた。今は `src/muiTheme.ts` の
+ * `findMuiThemeFromDom` が DOM の React 内部キー (`__reactFiber$*`) から Provider の
+ * context 値を見つける — つまり**本番と同じコードで拡張が自力に発見する**。
+ *
+ * 計測対象の祖先には置かない (`getFiberFromElement` は親を遡るため、祖先に置くと計測対象が
+ * React 要素と判定されてバッジの体裁が変わる)。e2e 側の同等物は
+ * `e2e/fixtures/muiThemeFiber.ts` — 片方を直したらもう片方も見ること。
+ */
+function muiThemeRootHtml(theme, id = 'theme-root') {
+  return `<div id="${id}" hidden></div>
+<script>
+  (function () {
+    var theme = ${JSON.stringify(theme)};
+    var provider = { memoizedProps: { value: theme } };
+    var hostFiber = { tag: 5, memoizedProps: {}, return: provider };
+    var el = document.getElementById(${JSON.stringify(id)});
+    if (el) el['__reactFiber\$shots'] = hostFiber;
+  })();
+</script>`;
+}
+
+/**
+ * デモ画面のテーマ。**下の CSS 変数と同じ値**にしてある (実アプリで
+ * 「トークンを CSS 変数に落として使っている」構成そのもの)。
+ * spacing: 8 なので spacing(1)=8px / spacing(2)=16px / spacing(3)=24px が一致し、
+ * #cta の 13px と radius 10px はどのトークンにも一致しない (= 野良値として警告される)。
+ */
+const DEMO_THEME = {
+  palette: {
+    primary: { main: '#1668d4', light: '#eaf2fd' },
+    text: { primary: '#101828', secondary: '#667085' },
+    background: { paper: '#ffffff', default: '#f6f8fb' },
+    divider: '#e4e7ec',
+  },
+  spacing: 8,
+  shape: { borderRadius: 8 },
+  typography: { htmlFontSize: 16, body2: { fontSize: '0.875rem' }, h6: { fontSize: '1rem' } },
+};
+
+/**
  * 撮影用のデモ画面。**実際のプロダクト UI に近い体裁**にする (審査官が「何を計測して
  * いるのか」を 1 枚で理解できる必要があるため)。CSS 変数で宣言した値と、グリッドから
  * 外れた値 (13px) を意図的に混ぜてあり、拡張の主機能がそのまま画面に出る。
  */
-const DEMO_HTML = `<!DOCTYPE html>
+const demoHtml = (withTheme) => `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>Acme Console</title>
 <style>
   :root {
@@ -80,6 +124,7 @@ const DEMO_HTML = `<!DOCTYPE html>
   th { color: var(--ink-500); font-weight: 600; font-size: 12px; }
 </style></head>
 <body>
+  ${withTheme ? muiThemeRootHtml(DEMO_THEME) : ''}
   <header>
     <div class="logo">Acme Console</div>
     <nav><span>Overview</span><span>Reports</span><span>Team</span><span>Settings</span></nav>
@@ -201,32 +246,30 @@ async function activate(page) {
   );
 }
 
-/** 照合辞書を注入する (v1 の実供給元 = MUI テーマ自動検出と同じ経路) */
-async function injectTokens(page) {
-  await page.evaluate(
-    ({ src, dict }) =>
-      new Promise((done) => {
-        window.postMessage({ source: src, type: 'tokens', payload: dict }, '*');
-        setTimeout(done, 0);
-      }),
-    {
-      src: BRIDGE_SOURCE,
-      dict: {
-        colors: [
-          { name: 'palette.primary.main', r: 0x16, g: 0x68, b: 0xd4, a: 1 },
-          { name: 'palette.text.primary', r: 0x10, g: 0x18, b: 0x28, a: 1 },
-          { name: 'palette.background.paper', r: 0xff, g: 0xff, b: 0xff, a: 1 },
-        ],
-        sizes: [
-          { name: 'spacing(1)', px: 8, category: 'space' },
-          { name: 'spacing(2)', px: 16, category: 'space' },
-          { name: 'spacing(3)', px: 24, category: 'space' },
-          { name: 'shape.borderRadius', px: 8, category: 'radius' },
-          { name: 'typography.body2', px: 14, category: 'font' },
-        ],
-      },
-    },
-  );
+/** overlay (closed shadow DOM) のバッジ文言。撮る前に「実際に写っているか」を測るため */
+async function badgeText(page) {
+  return page.evaluate(() => {
+    const host = document.querySelector('domdom-inspector-overlay');
+    const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+    return root?.querySelector('.badge')?.textContent ?? '';
+  });
+}
+
+/**
+ * 撮る前に「その画面が主張している機能が本当に写っているか」を実測する。
+ *
+ * **静かに欠けた画像を提出しないため。** テーマの自動検出が壊れると、トークン注釈が無い
+ * 画面が「トークン照合」として提出される (掲載文と実物の不一致 = 審査で拾われる)。
+ */
+async function requireInBadge(page, name, needles) {
+  const text = await badgeText(page);
+  const missing = needles.filter((n) => !text.includes(n));
+  if (missing.length) {
+    throw new Error(
+      `${name}: バッジに ${missing.join(' / ')} が出ていない。` +
+        `テーマ自動検出が壊れている可能性がある (実際のバッジ文言: ${JSON.stringify(text)})`,
+    );
+  }
 }
 
 async function shootLocale(locale) {
@@ -250,6 +293,16 @@ async function shootLocale(locale) {
       viewport: SIZE,
     },
   );
+  // overlay は closed shadow DOM。**撮る前に「本当に写っているか」を測る**ために
+  // テストと同じ手法で open に強制する (見た目は変わらない = 実物一致を損なわない)
+  await context.addInitScript(() => {
+    const orig = Element.prototype.attachShadow;
+    Element.prototype.attachShadow = function (init) {
+      const root = orig.call(this, { ...init, mode: 'open' });
+      this.__openRoot = root;
+      return root;
+    };
+  });
   const messages = localeMessages(locale);
   await forcePopupLocale(context, locale, messages);
 
@@ -265,16 +318,24 @@ async function shootLocale(locale) {
     console.log(`  ✓ ${name} — ${note}`);
   };
 
-  // ---- ① デザイン値バッジ (辞書なし = CSS 変数名 + 野良値警告が主役) ----
-  const page = await context.newPage();
-  await page.setViewportSize(SIZE);
-  await page.route(`${ORIGIN}/**`, (route) =>
-    route.fulfill({ contentType: 'text/html; charset=utf-8', body: DEMO_HTML }),
-  );
-  await page.goto(`${ORIGIN}/`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => '__DOMDOM_INSPECTOR_LOADED__' in window);
-  await forceOverlayLocale(page, messages);
-  await activate(page);
+  /** デモ画面を開いてモードを ON にする (withTheme=false ならテーマを持たないページ) */
+  const openDemo = async (withTheme) => {
+    const p = await context.newPage();
+    await p.setViewportSize(SIZE);
+    await p.route(`${ORIGIN}/**`, (route) =>
+      route.fulfill({ contentType: 'text/html; charset=utf-8', body: demoHtml(withTheme) }),
+    );
+    await p.goto(`${ORIGIN}/`, { waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => '__DOMDOM_INSPECTOR_LOADED__' in window);
+    await forceOverlayLocale(p, messages);
+    await activate(p);
+    return p;
+  };
+
+  // ---- ① デザイン値バッジ (テーマを持たないページ = 変数名 + 野良値警告が主役) ----
+  //
+  // production の一般ケース。**辞書が無くても計測とグリッド検査は動く**ことを 1 枚で示す。
+  const page = await openDemo(false);
   await page.hover('#cta');
   // ホスト要素自体はレイアウトを持たない (closed shadow DOM) ので attached で待つ
   await page.waitForSelector('domdom-inspector-overlay', { state: 'attached' });
@@ -282,20 +343,37 @@ async function shootLocale(locale) {
   await page.waitForTimeout(4500);
   await page.hover('#cta');
   await page.waitForTimeout(300);
+  // 宣言された変数名と野良値が写っていること (どちらもこの画像の主張そのもの)
+  await requireInBadge(page, '01', ['--brand-600', '13px']);
   await shoot(page, '01-badge-design-values.png', 'ホバーで計測値 + CSS 変数名 + 野良値警告');
+  await page.close();
 
-  // ---- ② トークン照合 (一致トークン名が注釈される) ----
-  await injectTokens(page);
-  await page.hover('.card');
-  await page.waitForTimeout(200);
-  await page.hover('#cta');
-  await page.waitForTimeout(400);
-  await shoot(page, '02-token-matching.png', 'テーマ由来トークン名の注釈 + 最近傍サジェスト');
+  // ---- ②③ トークン照合 (**拡張がページのテーマを自力で検出する**) ----
+  //
+  // 辞書は注入しない。ThemeProvider を持つ React ルートがあるページを開くと、
+  // 拡張が本番と同じ経路 (Fiber → context 値) でテーマを見つけて照合に使う (issue #15)。
+  const themed = await openDemo(true);
+  await themed.hover('#cta');
+  await themed.waitForSelector('domdom-inspector-overlay', { state: 'attached' });
+  // 「テーマから N 色 / M サイズを取得」トーストが消えるのを待つ
+  await themed.waitForTimeout(4500);
+  await themed.hover('.card');
+  await themed.waitForTimeout(200);
+  await themed.hover('#cta');
+  await themed.waitForTimeout(400);
+  // 一致 (palette.primary.main) と 外れ (13px) の両方が写っていること
+  await requireInBadge(themed, '02', ['palette.primary.main', '13px']);
+  await shoot(themed, '02-token-matching.png', 'テーマ由来トークン名の注釈 + 最近傍サジェスト');
 
-  // ---- ③ カード要素 (spacing/radius がトークン一致する例) ----
-  await page.hover('.panel');
-  await page.waitForTimeout(400);
-  await shoot(page, '03-token-hit.png', 'トークンに一致した値 (spacing/radius) の表示');
+  // ---- ③ サイドバー項目 (spacing / radius / 色 がすべてトークン一致する例) ----
+  //
+  // **子要素を持たない要素を選ぶ。** .panel の中心は表なので、そこをホバーすると
+  // 計測対象は <td> になり「パネルの余白」は写らない (最初にこれで撮っていた)
+  await themed.hover('aside a.on');
+  await themed.waitForTimeout(400);
+  await requireInBadge(themed, '03', ['spacing(1)', 'shape.borderRadius', 'palette.primary']);
+  await shoot(themed, '03-token-hit.png', 'トークンに一致した値 (spacing/radius) の表示');
+  await themed.close();
 
   // ---- ④ どんなスタイル手法でも動く (ユーティリティクラス + 素の値のページ) ----
   //
@@ -321,7 +399,6 @@ async function shootLocale(locale) {
   await utility.waitForTimeout(300);
   await shoot(utility, '04-any-styling.png', 'ユーティリティクラス / 素の CSS でも計測できる');
   await utility.close();
-  await page.close();
 
   await context.close();
   console.log(`  → ${shots.length} 枚 (${SIZE.width}×${SIZE.height}) → ${OUT_DIR}`);

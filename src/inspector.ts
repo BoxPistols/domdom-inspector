@@ -57,6 +57,25 @@ export function drillToInnermost(element: Element, x: number, y: number, maxDept
 }
 
 /**
+ * Inspector の生成オプション。**フレーム構成のために要る** (issue #14)。
+ * content script は全フレームに注入されるため、モードピルやトーストを各フレームが出すと
+ * iframe の数だけ重複し、しかも「どのピルの ✕ を押せば全部消えるのか」が分からなくなる。
+ */
+export interface InspectorOptions {
+  /**
+   * モードピルと ON/OFF トーストを出すか。子フレームでは false にする
+   * (計測バッジ自体は各フレームで出す — そのフレームの要素はそのフレームでしか測れない)。
+   */
+  announce?: boolean;
+  /**
+   * ON/OFF が実際に変化したときに呼ばれる。呼び出し側 (content script) がこれを使って
+   * **同じタブの全フレームへ同じ状態を配る**ことで、フレームごとに状態が食い違う
+   * (= Esc で親だけ OFF になり iframe 内のクリックが死ぬ) 現象を構造的に消す。
+   */
+  onStateChange?: (enabled: boolean) => void;
+}
+
+/**
  * インスペクトモードの状態機械 (FR-01〜04)。
  * 有効中は click / pointer 系を capture で握りつぶし、ページ誤操作を防ぐ。
  */
@@ -76,6 +95,7 @@ export class Inspector {
     private hookState: HookState,
     private overlay: Overlay,
     private strings: UiStrings = DEFAULT_STRINGS,
+    private options: InspectorOptions = {},
   ) {}
 
   applySettings(settings: Settings) {
@@ -87,9 +107,23 @@ export class Inspector {
     this.enabled ? this.disable() : this.enable();
   }
 
+  /** 現在 ON か。呼び出し側が状態を配る (フレーム間同期) ために必要 */
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   /** 冪等な ON。popup の「サイト有効化 → 自動 ON」導線から呼ばれる (既に ON なら何もしない) */
   enableOnly() {
     if (!this.enabled) this.enable();
+  }
+
+  /**
+   * 冪等な OFF。**フレーム間同期の要** (issue #14)。
+   * 既に OFF なら何もしない = 何度配っても位相が反転しないので、
+   * 「どこかのフレームで Esc / ピルの ✕ が押されたら全フレームを OFF」を安全に実現できる。
+   */
+  disableOnly() {
+    if (this.enabled) this.disable();
   }
 
   private enable() {
@@ -108,20 +142,25 @@ export class Inspector {
     // フックは自分から設置しない (React DevTools を沈黙させるため) ので、piggyback できた
     // ときだけ renderers が埋まる。空なら DOM の Fiber から判定する
     const fromHook = this.hookState.renderers.size > 0;
-    const { hasReact, devMode } = fromHook
-      ? { hasReact: true, devMode: this.hookState.devMode }
-      : detectReactOnPage();
-    this.overlay.toast(
-      hasReact
-        ? devMode
-          ? this.strings.inspectOn
-          : this.strings.inspectOnSafe
-        : this.strings.inspectOnNoReact,
-      4000,
-    );
-    this.overlay.showModePill(this.strings.inspectPill, this.strings.inspectPillClose, () =>
-      this.disable(),
-    );
+    // **告知は 1 フレームだけ** (既定 = トップ)。子フレームでも出すと iframe の数だけ
+    // ピルとトーストが重なり、終了導線がどれなのか読めなくなる (issue #14)
+    if (this.options.announce !== false) {
+      const { hasReact, devMode } = fromHook
+        ? { hasReact: true, devMode: this.hookState.devMode }
+        : detectReactOnPage();
+      this.overlay.toast(
+        hasReact
+          ? devMode
+            ? this.strings.inspectOn
+            : this.strings.inspectOnSafe
+          : this.strings.inspectOnNoReact,
+        4000,
+      );
+      this.overlay.showModePill(this.strings.inspectPill, this.strings.inspectPillClose, () =>
+        this.disable(),
+      );
+    }
+    this.options.onStateChange?.(true);
   }
 
   private disable() {
@@ -134,12 +173,14 @@ export class Inspector {
     window.removeEventListener('scroll', this.onViewportChange, true);
     window.removeEventListener('resize', this.onViewportChange, true);
     this.overlay.hideAll();
-    this.overlay.hideModePill();
+    // ピルは announce 側のフレームしか持たない (出していないものを消しに行かない)
+    if (this.options.announce !== false) this.overlay.hideModePill();
     this.currentElement = null;
     this.currentInfo = null;
     this.navStack = [];
     this.keyboardNav = false;
-    this.overlay.toast(this.strings.inspectOff);
+    if (this.options.announce !== false) this.overlay.toast(this.strings.inspectOff);
+    this.options.onStateChange?.(false);
   }
 
   private select(element: Element) {

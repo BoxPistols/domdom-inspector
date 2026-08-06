@@ -28,15 +28,21 @@ commands / アイコン 5 サイズ / _locales / description と Summary の文�
 
 ## 1. 実装・品質ゲート (機械確認済み)
 
-| 項目 | 実測 |
+**件数は書かない** (書いた直後に自分のコミットで古くなる)。下のコマンドで毎回測る:
+
+```sh
+pnpm lint && pnpm test && pnpm typecheck && pnpm build   # コミット前ゲート
+pnpm e2e                                                  # 実 Chromium に拡張をロード
+```
+
+| 項目 | 何を担保しているか |
 |---|---|
-| ✅ lint (ESLint: any / @ts-ignore / console.log / 境界契約) | pass |
-| ✅ unit テスト | **295 passed** (26 files) |
-| ✅ typecheck (`tsc --noEmit`) | pass |
-| ✅ build | `.output/chrome-mv3` 147 kB |
-| ✅ e2e (実 Chromium に拡張をロード) | **16 passed** |
-| ✅ 提出 zip | 版数一致・危険物ゼロを `check:submission` が実測 |
-| ✅ zip の危険物 (source map / .env / テスト / .DS_Store) | **0 件** |
+| ✅ lint (ESLint) | `any` / `@ts-ignore` / `console.log` / design 経路 ↛ Fiber の境界契約 |
+| ✅ unit テスト (vitest + happy-dom) | 純ロジック。既知正解値で校正 |
+| ✅ typecheck (`tsc --noEmit`) | 型 |
+| ✅ build | `.output/chrome-mv3` + 同期フォルダへの展開 |
+| ✅ e2e (実 Chromium) | バッジ / 変数名カスケード / 右クリック / **iframe のモード同期** / popup / カバレッジ / 偽装辞書の無効化 |
+| ✅ 提出 zip | 版数一致・危険物ゼロ (source map / .env / テスト / .DS_Store) を `check:submission` が実測 |
 
 ## 2. manifest (ビルド成果物の実測)
 
@@ -70,6 +76,7 @@ commands / アイコン 5 サイズ / _locales / description と Summary の文�
 |---|---|
 | ✅ 1280×800 × 4 枚 × 2 言語 | `docs/store-assets/{en,ja}/` |
 | ✅ 実物一致 | ビルド済み拡張が実 Chromium で描画したもの (`pnpm shots` で再生成) |
+| ✅ 到達可能な状態だけを写す | 辞書は注入せず**拡張がページのテーマを自力で検出**する。撮影前にバッジ文言を実測し、一致トークン名が無ければ**撮影を失敗させる** (issue #15) |
 
 UI を変えたら **`pnpm shots` を回し直す**。popup の画像だけは自動生成に含めていない
 (理由と手撮り手順は `PUBLISHING.md` §7)。
@@ -82,6 +89,8 @@ UI を変えたら **`pnpm shots` を回し直す**。popup の画像だけは�
 | ✅ 動的コード評価 / 外部 script 注入 | 0 件 |
 | ✅ 認証情報の保存 | なし |
 | ✅ ページからの postMessage 偽装 | 特権操作なし。エディタ起動は**信頼済み右クリック直後 (15 秒) に限定**し、合成イベントを無視 (e2e で偽装と本物の両方を固定) |
+| ✅ 検証結果の偽装 | **照合辞書の受信経路を閉じた** (issue #16)。ページが辞書を注入して「一致」を出させられない。残る限界 (ページが自分のテーマを偽る) は `SECURITY.md` に明記 |
+| ✅ テスト専用の裏口 | **無い**。e2e と撮影も実供給元 (MUI テーマ自動検出) を使う |
 
 ---
 
@@ -115,9 +124,10 @@ https://chrome.google.com/webstore/devconsole/
 
 ### ⬜ 手順 4: ③目視 QA
 
-[`manual-verification-20260806.md`](./manual-verification-20260806.md) の **25 項目**。
+[`manual-verification-20260806.md`](./manual-verification-20260806.md) の全項目
+(件数は書かない — 増減するたび古くなる。`grep -c '^- \[ \]'` で数えられる)。
 機械で検証できないものだけに絞ってある (scheme 起動・closed shadow DOM・blob タブ・
-右クリックメニューの実表示・偽装への防御)。
+右クリックメニューの実表示・**実キーの Esc と iframe のフォーカス**・偽装への防御)。
 
 ### ⬜ 手順 5: アップロードと入力
 

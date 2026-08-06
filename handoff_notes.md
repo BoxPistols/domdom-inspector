@@ -122,24 +122,22 @@ main の内容が配信される**ため、push 前に Pages を有効化する�
 
 [`docs/audit-20260807-deep.md`](./docs/audit-20260807-deep.md) の「未対応の一覧」から。
 12 エージェントの監査 (6 観点 × 反証役) の全 70 件が実測根拠つきで載っている。
-残っている high は 3 件で、**それぞれ issue になっている** (再現手順と直し方の案つき):
 
-1. [#14](https://github.com/BoxPistols/domdom-inspector/issues/14) — **iframe を含むページで Esc を
-   押すと親子フレームが逆位相**になり、iframe 内のクリックが死んだまま残る
-   (冪等な `inspect-off` を全フレームへ配れば構造的に消える)
-2. [#15](https://github.com/BoxPistols/domdom-inspector/issues/15) — **提出スクリーンショット 4 枚中
-   2 枚が、ユーザーが到達できない経路で注入した辞書に依存** (自称「実物一致」を満たさない。
-   MUI 自動検出が効く fixture で撮り直すのが筋)
-3. [#16](https://github.com/BoxPistols/domdom-inspector/issues/16) — **ページが postMessage で照合
-   辞書を注入でき、バッジがページ提供のトークン名で「一致」と表示できる** (監査結果の偽装経路)
+**high 3 件は v0.4.13 で修正済み** (issue
+[#14](https://github.com/BoxPistols/domdom-inspector/issues/14) /
+[#15](https://github.com/BoxPistols/domdom-inspector/issues/15) /
+[#16](https://github.com/BoxPistols/domdom-inspector/issues/16)):
+iframe の逆位相 / 提出画像の到達不能な注入依存 / ページによる「一致」偽装。
+いずれも**修正を戻すと落ちる**ことを確認した回帰テストつき。
 
-medium 10 件は同文書に集約 (overlay バッジのコントラスト 3.17:1 / ja popup が 604px で
-Chrome の 600px 上限を超える / 野良値の呼び方が UI と文書で不統一 / 到達不能コードが
-inspector.js の約 34% など)。issue にはしていないので、着手時に文書から拾う。
+**残りは medium 10 件** (issue にはしていないので着手時に上記文書から拾う)。効きそうな順:
 
-**milestone / label**: `v1.0 — Store 公開` と `v1.1 — 公開後に戻すもの / 監査の残件` の 2 本。
-監査由来は label `audit-20260807`。GitHub Projects への紐付けは `gh` のトークンに `project`
-スコープが無く未実施 (`gh auth refresh -s project` が必要)。
+1. overlay バッジのコントラストが AA 未達 (実測 3.17:1 / 4.31:1)。無効化する UI が無いので
+   誰にも回避手段がない
+2. popup の既定表示が ja で 604px = Chrome の action popup 上限 600px 超え (en は 592px)
+3. 到達不能コードが inspector.js の 34% (成果物全体で 49.4 kB / 33.5%)
+4. モードを一度も ON にしていないのに、テーマ発見時に overlay を注入してトーストを出す
+5. トークン非準拠値の呼び方が掲載文・ヘルプ・UI で三者バラバラ
 
 ### このセッションで学んだこと (同じ穴を掘らないために)
 
@@ -157,3 +155,9 @@ inspector.js の約 34% など)。issue にはしていないので、着手時�
   同一信頼境界なので、エディタ起動だけは「信頼済みの右クリック直後」に限定した
 - **他拡張のグローバルを奪わない。** React DevTools の installHook は
   `hasOwnProperty('__REACT_DEVTOOLS_GLOBAL_HOOK__')` で丸ごと降りるので、先に置くと RDT が沈黙する
+- **フレームごとに独立した状態は「片方だけ効く」で必ず壊れる。** Esc もピルの ✕ も押された
+  フレームにしか届かない。冪等な ON/OFF を作って全フレームに配り、決めるのは 1 フレーム
+  (トップ) だけにすると位相の食い違いが構造的に消える
+- **テストのために開けた受信経路は、そのまま攻撃面と「実物でない画面」になる。**
+  `tokens` postMessage は e2e と撮影のためだけに残っていたが、ページからも叩けたし、
+  それで撮った画像は利用者が到達できない状態だった。テストは実供給元を使う

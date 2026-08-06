@@ -19,8 +19,15 @@ inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優
 minified は `isBundledSource` で抑制 / 開かなければパスのコピー導線) + **Alt+Click の描画元リスト**
 + **shadow DOM 貫通** (open root は最内要素まで / closed はホストで止まる)) /
 **MUI テーマ自動取得** (`muiTheme.ts` が Fiber から発見 → `tokenDict.parseMuiTheme` が変換)。
-**照合辞書の供給元はこれだけ** — トークン JSON 貼り付けは v1 の配線から外した
-([#13](https://github.com/BoxPistols/domdom-inspector/issues/13))。
+**照合辞書の供給元はこれだけ** — トークン JSON 貼り付けは v1 の配線から外し
+([#13](https://github.com/BoxPistols/domdom-inspector/issues/13))、
+**MAIN world の `tokens` 受信も閉じた** (ページが辞書を注入して「一致」を偽装できた /
+[#16](https://github.com/BoxPistols/domdom-inspector/issues/16))。e2e と撮影も実供給元
+(テーマ自動検出) を使う = **テスト専用の裏口を持たない**。
+**モードの ON/OFF は全フレームで 1 つ**: 変化したフレームが bridge → background に通知し、
+background が全フレームへ冪等な `inspect-on`/`inspect-off` を配る。トグルはトップフレーム
+(`frameId: 0`) だけに送り、ピルとトーストもトップだけが出す
+([#14](https://github.com/BoxPistols/domdom-inspector/issues/14))。
 
 **外部送信はゼロ** (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件)。この事実に
 `SECURITY.md` / `PRIVACY.md` / `STORE_LISTING.md` / `PUBLISHING.md` の申告が依存しているので、

@@ -36,10 +36,10 @@ export default defineContentScript({
       );
     };
 
-    // **storage の tokenDict の中継は v1 の配線から外した** (issue #13)。
-    // 貼り付け UI が無いので書き込む側が存在せず、読むと「UI から見えない古い辞書で
-    // バッジが注釈される」状態になりうる。照合辞書は MUI テーマ自動検出だけが供給する。
-    // MAIN world 側の 'tokens' 受信は残してある (e2e がこの経路で辞書を注入して照合を検証する)。
+    // **辞書の中継は行わない** (issue #13 / #16)。貼り付け UI が無いので書き込む側が存在せず、
+    // かつ MAIN world はページと同一信頼境界なので、受信経路を開けておくと**ページ自身が
+    // 辞書を注入して「一致」表示を偽装できる**。MAIN world 側の 'tokens' 受信も閉じた
+    // (e2e はテスト用の経路ではなく、実供給元と同じ MUI テーマ自動検出で照合を検証する)。
 
     // UiStrings の各キーを _locales から解決 (欠落時は英語既定にフォールバック)
     const pushStrings = () => {
@@ -57,9 +57,20 @@ export default defineContentScript({
     window.addEventListener('message', (event: MessageEvent) => {
       if (event.source !== window) return;
       const d = event.data;
-      if (!d || d.source !== PAGE_SOURCE || d.type !== 'ready') return;
-      pushStrings();
-      void pushSettings();
+      if (!d || d.source !== PAGE_SOURCE) return;
+      if (d.type === 'ready') {
+        pushStrings();
+        void pushSettings();
+        return;
+      }
+      // MAIN world でモードの ON/OFF が変わった → **同じタブの全フレームへ配る**よう
+      // background に依頼する (issue #14)。ページが偽装しても起きるのは
+      // 「そのタブのインスペクトモードが入る/切れる」だけで、ページ外への作用はない。
+      if (d.type === 'inspect-state' && typeof d.on === 'boolean') {
+        browser.runtime.sendMessage({ type: 'inspect-state', on: d.on }).catch(() => {
+          // SW が落ちている / 応答が無い場合は諦める (次の操作で再送される)
+        });
+      }
     });
 
     pushStrings();
@@ -75,9 +86,10 @@ export default defineContentScript({
       if (message?.type === 'toggle-inspect') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
       }
-      // 冪等 ON (popup のサイト有効化直後に使う。既に ON でも OFF に倒れない)
-      if (message?.type === 'inspect-on') {
-        window.postMessage({ source: BRIDGE_SOURCE, type: 'inspect-on' }, '*');
+      // 冪等 ON / OFF (popup のサイト有効化直後 + フレーム間の状態同期)。
+      // 既に同じ状態なら何もしない = 何度配っても位相が反転しない (issue #14)
+      if (message?.type === 'inspect-on' || message?.type === 'inspect-off') {
+        window.postMessage({ source: BRIDGE_SOURCE, type: message.type }, '*');
       }
       // 右クリックメニュー (background) → MAIN world。対象要素は MAIN world 側が
       // contextmenu イベントで控えているので、ここでは種別だけ渡す

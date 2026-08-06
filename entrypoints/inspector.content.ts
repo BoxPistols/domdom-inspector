@@ -4,12 +4,7 @@ import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
 import { Overlay } from '../src/overlay';
 import { DEV_MATCHES } from '../src/matches';
-import {
-  EMPTY_TOKEN_DICT,
-  mergeTokenDicts,
-  parseMuiTheme,
-  type TokenDict,
-} from '../src/tokenDict';
+import { EMPTY_TOKEN_DICT, parseMuiTheme, type TokenDict } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, PAGE_SOURCE } from '../src/types';
 
 /**
@@ -36,15 +31,58 @@ export default defineContentScript({
     // 参照を持つ全コンポーネントに反映される (英語を既定値として先に動作する)。
     const strings = { ...DEFAULT_STRINGS };
     const overlay = new Overlay(DEFAULT_SETTINGS, strings);
-    const inspector = new Inspector(hookState, overlay, strings);
+
+    /**
+     * トップフレームか。iframe を持つページでは content script が全フレームに入るため、
+     * **告知 (モードピル / ON・OFF トースト) はトップだけが出す** (issue #14)。
+     * 参照比較なので cross-origin でも例外にならないが、念のため保険を置く。
+     */
+    let isTopFrame = true;
+    try {
+      isTopFrame = window.top === window;
+    } catch {
+      isTopFrame = false;
+    }
+    /**
+     * ON/OFF が変わったら **同じタブの全フレームへ同じ状態を配る**よう background に依頼する。
+     * これが無いと Esc / ピルの ✕ がそのフレームにしか効かず、iframe が ON のまま残って
+     * **iframe 内のクリックが死んだまま**になる (さらにショートカットを押すと親子で位相が
+     * 反転し、何度押しても両方 OFF にできない)。MAIN world は browser.* を使えないので
+     * bridge に投げる。受け側の enableOnly/disableOnly は冪等なので配り直しても反転しない。
+     */
+    /** 配られた状態を適用している間は投げ返さない (フレーム数ぶんの無駄な往復を作らない) */
+    let applyingRemoteState = false;
+    const broadcastState = (enabled: boolean) => {
+      if (applyingRemoteState) return;
+      window.postMessage({ source: PAGE_SOURCE, type: 'inspect-state', on: enabled }, '*');
+    };
+    /** 配られた状態の適用 (冪等)。適用中の onStateChange は上のフラグで抑止される */
+    const applyRemoteState = (apply: () => void) => {
+      applyingRemoteState = true;
+      try {
+        apply();
+      } finally {
+        applyingRemoteState = false;
+      }
+    };
+    const inspector = new Inspector(hookState, overlay, strings, {
+      announce: isTopFrame,
+      onStateChange: broadcastState,
+    });
     // v1 はデザイン計測 (inspect) のみ。コンポーネントツリー / レンダー可視化 / vitals は
     // 実装を温存したまま配線から外している (本番ビルドでは React が名前を minify するため
     // 原理的に判読不能で、dev でも React DevTools が優れるため)。復活は地雷3 の 4 点配線。
 
-    // MUI テーマ自動取得 (FR-14 / issue #8): 手動貼り付け (pasted) とテーマ由来 (theme) の
-    // 2 辞書を持ち、併合して overlay に配る (手動優先)。テーマは commit 後に throttle 付きで
-    // 探し、参照が変わったとき (テーマ切替等) だけ再変換してトーストで知らせる。
-    let pastedTokens: TokenDict = EMPTY_TOKEN_DICT;
+    // MUI テーマ自動取得 (FR-14 / issue #8) が **v1 の唯一の辞書供給元**。
+    // テーマは commit 後に throttle 付きで探し、内容が変わったとき (テーマ切替等) だけ
+    // 再変換してトーストで知らせる。
+    //
+    // **ページからの辞書注入は受け付けない** (issue #16)。以前は bridge を騙った
+    // `{type:'tokens'}` を受理していたため、ページ側 JS が自前の辞書を注入して
+    // バッジに「一致: 好きなトークン名」を出させられた。この製品の出力は
+    // 「実装がデザイン定義に従っているか」の**検証結果**なので、ページから検証結果を
+    // 偽装できてはいけない。v1 は送り手 (貼り付け UI) が存在しないので経路ごと閉じる。
+    // 再導入する時も、受け入れ経路を作るなら出所を UI に出すこと (issue #13)。
     let themeTokens: TokenDict = EMPTY_TOKEN_DICT;
     let autoTheme = DEFAULT_SETTINGS.autoTheme;
     /** 直近に採用したテーマの内容署名。参照比較だと render 内 createTheme で毎回変わる */
@@ -52,8 +90,7 @@ export default defineContentScript({
     let themeAttemptAt = 0;
     let themeRetryTimer: ReturnType<typeof setTimeout> | undefined;
     const THEME_THROTTLE_MS = 2000;
-    const currentTokens = () =>
-      mergeTokenDicts(pastedTokens, autoTheme ? themeTokens : EMPTY_TOKEN_DICT);
+    const currentTokens = () => (autoTheme ? themeTokens : EMPTY_TOKEN_DICT);
     const pushMergedTokens = () => {
       overlay.updateTokens(currentTokens());
     };
@@ -107,7 +144,11 @@ export default defineContentScript({
     // あるため、注入直後にも一度 DOM 経由で試す
     setTimeout(attemptThemeExtract, 1000);
 
-    // Esc は中央で所有する (単一モードでも将来のモード追加時に競合しない構え)
+    // Esc は中央で所有する (単一モードでも将来のモード追加時に競合しない構え)。
+    //
+    // **Esc は押されたフレームの window にしか届かない** (各フレームが独立に所有する)。
+    // モードが切れたら onStateChange → broadcastState が全フレームへ OFF を配るので、
+    // 親で押しても iframe が ON のまま残ることはない (issue #14)。
     window.addEventListener(
       'keydown',
       (event) => {
@@ -173,21 +214,19 @@ export default defineContentScript({
         attemptThemeExtract();
       }
       if (data.type === 'i18n' && data.payload) Object.assign(strings, data.payload);
-      if (data.type === 'tokens') {
-        // payload の shape を検証 (同一 window の任意ページからの postMessage を素通しにしない)。
-        // colors/sizes 配列を欠く不正 payload は EMPTY にフォールバックしバッジ描画を守る。
-        const p = data.payload;
-        pastedTokens =
-          p && Array.isArray(p.colors) && Array.isArray(p.sizes) ? p : EMPTY_TOKEN_DICT;
-        pushMergedTokens();
-      }
+      // **'tokens' (辞書注入) は受けない** — 上の宣言部のコメントと issue #16 を参照。
       if (data.type === 'toggle') {
         inspector.toggle();
         attemptThemeExtract();
       }
+      // 冪等 ON / OFF。**タブ内の全フレームへ配られる**ので、ここが冪等でないと
+      // フレーム間で位相が反転する (issue #14)
       if (data.type === 'inspect-on') {
-        inspector.enableOnly();
+        applyRemoteState(() => inspector.enableOnly());
         attemptThemeExtract();
+      }
+      if (data.type === 'inspect-off') {
+        applyRemoteState(() => inspector.disableOnly());
       }
       // 右クリックメニューからの 2 操作。**信頼済みの右クリック直後の対象しか使わない**
       // (別フレームの右クリックが届いた場合に他要素を掴まないため + ページによる
@@ -206,13 +245,14 @@ export default defineContentScript({
       // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
       // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
       if (data.type === 'design-scan' && typeof data.id === 'string') {
-        // 辞書の出所内訳は 2 辞書を持つここでしか作れない (併合後の合計だけでは
-        // 「自動テーマの密なラダーで一致率が上がっている」ことが読み取れない)
-        const themeInUse = autoTheme ? themeTokens : EMPTY_TOKEN_DICT;
-        const scan = scanDesign(document, currentTokens(), {
+        // 辞書の出所内訳。v1 の供給元はテーマ自動検出だけなので pasted は常に 0 だが、
+        // 率の意味 (「自動テーマの密なラダーで一致率が上がっている」) を読むために内訳の
+        // 形は保つ (貼り付けを戻すのは issue #13)
+        const themeInUse = currentTokens();
+        const scan = scanDesign(document, themeInUse, {
           skip: (el) => overlay.containsTarget(el),
           tokenSources: {
-            pasted: { colors: pastedTokens.colors.length, sizes: pastedTokens.sizes.length },
+            pasted: { colors: 0, sizes: 0 },
             theme: { colors: themeInUse.colors.length, sizes: themeInUse.sizes.length },
           },
         });

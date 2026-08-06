@@ -14,6 +14,13 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 > 実際に finder の severity が 8 件下げられ、反証役が finder より重い問題を 22 件見つけた
 > (`:where`/`@layer` の誤答はここから出た)。**単一のレビューでは出なかった。**
 
+**2026-08-07 追記**: 上記の high 3 件 (issue
+[#14](https://github.com/BoxPistols/domdom-inspector/issues/14) /
+[#15](https://github.com/BoxPistols/domdom-inspector/issues/15) /
+[#16](https://github.com/BoxPistols/domdom-inspector/issues/16)) は v0.4.13 で修正した。
+いずれも修正を戻すと落ちることを確認した回帰テストつき (`e2e/iframe-sync.spec.ts` /
+`e2e/badge.spec.ts` / `scripts/store-screenshots.mjs` の撮影前実測)。残りは medium 10 件。
+
 ---
 
 ## 未対応の一覧 (着手順の候補)
@@ -21,9 +28,6 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 | 重大度 | 観点 | 内容 |
 |---|---|---|
-| high | cws-policy | ページが postMessage で照合辞書を注入でき、バッジがページ提供のトークン名で「一致」と表示する (監査結果の偽装経路) |
-| high | cws-policy | 提出スクリーンショット 4 枚中 2 枚が、ユーザーが到達できない経路で注入した辞書に依存している (自称「実物一致」を満たさない) |
-| high | ux-breakage | iframe を含むページで Esc を 1 回押すと親子フレームが逆位相になり、ショートカットで二度と全解除できない (iframe 内のクリックが死んだまま残る) |
 | medium | a11y-contrast | overlay バッジの「生値」と「プロパティ名」が AA 未達 (実測 3.17:1 / 4.31:1) — v1 では無効化する UI が無い |
 | medium | bundle | inspector.js の 34% (18.8 kB) が到達不能。成果物全体では 49.4 kB / 33.5% が削れる (実験ビルド差分で実測) |
 | medium | bundle | design-scan だけ配線の両端が残っており (送信側は不在)、designScan.ts + coverage.ts 5.7 kB を bundle に引き込むうえ、ページからの postMessage 偽装で全 |
@@ -91,7 +95,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [high] ページが postMessage で照合辞書を注入でき、バッジがページ提供のトークン名で「一致」と表示する (監査結果の偽装経路)
 
-- 状態: **⬜ 未対応** / 観点: `cws-policy` / 反証: `—` / 実測
+- 状態: **✅ v0.4.13** (`tokens` 受信を廃止。e2e/撮影も実供給元 (テーマ自動検出) に切替 / SECURITY.md に残る限界を明記) / 実測
 - 根拠: `entrypoints/inspector.content.ts:172-179 — `data.type === 'tokens'` を受けて `pastedTokens` を差し替え `pushMergedTokens()`。検証は colors/sizes が配列かの shape チェックのみで、送信元は同一 window の任意ページ`
 - 影響: この製品の中核主張は「UI がデザイン定義に基づくかを検証する」。監査対象は自分が制御しないデプロイ済みサイトなので、ページ側が「全部トークン準拠」に見せられることは誤答そのもの。正規の供給元 (MUI テーマ自動検出) は MAIN world 内で完結し postMessage を使わないので、このハンドラは現状 e2e/撮影専用の攻撃面。SECURITY.md の脅威モデル記述も実態より狭い。
 - 再現: 実測: 上記ハンドラと screenshots スクリプトの evaluate が同一の postMessage 契約 (`{source:'domdom-inspector-bridge', type:'tokens', payload:{colors,sizes}}`) を使っていることをコードで確認。任意ページで同じ postMessage を発行すれば、自ページの生値に任意のトークン名注釈 (例: `palette.primary.main`) を付けさせられる。ブラウザでの実行は未実施。
@@ -99,7 +103,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [high] 提出スクリーンショット 4 枚中 2 枚が、ユーザーが到達できない経路で注入した辞書に依存している (自称「実物一致」を満たさない)
 
-- 状態: **⬜ 未対応** / 観点: `cws-policy` / 反証: `—` / 実測
+- 状態: **✅ v0.4.13** (撮影ページに ThemeProvider の断面を置き自動検出で撮る + 撮影前にバッジ文言を実測) / 実測
 - 根拠: `scripts/store-screenshots.mjs:204-229 — injectTokens() が `palette.primary.main` / `spacing(1..3)` / `shape.borderRadius` / `typography.body2` を手書きで postMessage 注入 (コメントは『v1 の実供給元 = MUI テーマ自動検出と同じ経路』と説明するが、同じなのは伝送路だけで供給元ではない)`
 - 影響: 掲載画像が「どんなサイトでもトークン名が出る」と読める。実際にトークン照合が働くのは MUI テーマを持つページのみで、掲載文 (STORE_LISTING.md:58-66) の条件付き記述より画像が広い。審査官が再現を試みて一致しない場合、Public 特有の「misleading imagery / 説明と機能の不一致」に触れる。ユーザー側にも期待外れ (低評価) として跳ね返る。
 - 再現: 実測: スクリプトを読み、撮影順が activate → injectTokens → shoot(02) → shoot(03) であることと、DEMO_HTML に react/mui の記述が一切無いことを確認。ユーザー再現: 同じ素 HTML ページで拡張を使っても 01 の状態 (CSS 変数名 + 野良値警告) までしか出ず、02/03 のトークン名注釈は出ない。
@@ -169,7 +173,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [high] iframe を含むページで Esc を 1 回押すと親子フレームが逆位相になり、ショートカットで二度と全解除できない (iframe 内のクリックが死んだまま残る)
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage` / 反証: `—` / 実測
+- 状態: **✅ v0.4.13** (冪等 ON/OFF を全フレームへ配布 + トグルはトップフレームのみ + 告知はトップのみ) / 実測
 - 根拠: `entrypoints/background.ts:185 — commands.onCommand が frameId 未指定で tabs.sendMessage → 全フレームの bridge に配信 (同ファイル 173-175 の contextMenus は frameId を明示しているのに、こちらは未指定)`
 - 影響: 広告・埋め込み・プレビュー iframe を持つ実サイト (allFrames + *://*/* 許可なので全フレームに注入される) で、利用者が Esc で「終了した」と思った後も iframe 内のリンク・ボタンが一切押せない。復帰手段はリロードか、その iframe にフォーカスして Esc / その iframe 内の pill ✕ をクリックするしかなく、小さい iframe や視界外の iframe では終了導線が見えない。ショートカット連打では逆位相のまま解決しない。
 - 再現: 実測 (probe2 [B1]-[B7])。localhost に 600x400 の同一オリジン iframe を持つ親ページを開く → SW から `chrome.tabs.sendMessage(tabId,{type:'toggle-inspect'})` (⌥⇧I と同一経路) → [B1] 親・子ともに pill ON (ピルが 2 個、トーストも 2 個)。[B2] iframe 内クリックは握り潰され子の click カウンタは 0。→ 親にフォーカスして Esc → [B3] 親 pill OFF / **子 pill は ON のまま**、[B4] iframe 内クリック

@@ -2,6 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, expect, test, type BrowserContext } from '@playwright/test';
+import { muiThemeRootHtml } from './fixtures/muiThemeFiber';
 
 /**
  * トークンカバレッジの end-to-end 検証。
@@ -37,6 +38,13 @@ const FIXTURE_HTML = `<!DOCTYPE html>
   <div class="via-var">via var 2</div>
   <div class="literal">literal but on token</div>
   <div class="rogue">rogue</div>
+  ${muiThemeRootHtml({
+    // fixture の実 CSS に合わせたテーマ: #1668d4 は一致 / #c62828 は野良、8px は一致 / 13px は野良
+    palette: { primary: { main: '#1668d4' } },
+    spacing: 8,
+    shape: { borderRadius: 4 },
+    typography: { htmlFontSize: 16, body2: { fontSize: '0.875rem' } },
+  })}
 </body></html>`;
 
 let context: BrowserContext;
@@ -65,23 +73,18 @@ test('実ページの computed style と CSSOM からカバレッジ数値が出
   await page.waitForFunction(() => '__DOMDOM_INSPECTOR_LOADED__' in window);
   await page.bringToFront();
 
-  // 照合辞書は bridge の 'tokens' メッセージで注入する。
-  // **storage 経由 (tokenDict) の中継は v1 の配線から外した** (issue #13 — 貼り付け UI が
-  // 無いので書き込む側が存在しない)。MAIN world の受信経路は残っており、v1 の実際の供給元
-  // (MUI テーマ自動検出) もこの経路で辞書を渡すので、ここを叩くのが実態に沿う。
+  // 照合辞書は **fixture のテーマを拡張が自力で発見する** (v1 の実供給元と同じ経路)。
+  // 以前は bridge を騙った 'tokens' postMessage で注入していたが、その経路は利用者から
+  // 到達できず、ページによる「一致」偽装の穴でもあったため閉じた (issue #13 / #16)。
+  // テーマ発見は commit / 注入後 1 秒 / モード操作 のいずれかで走るので、
+  // 辞書が入るまで待ってから測る (待たずに測ると judged=0 の空カバレッジを緑にしてしまう)。
   await page.evaluate(
-    ({ bridge, dict }) =>
+    (src) =>
       new Promise<void>((resolve) => {
-        window.postMessage({ source: bridge, type: 'tokens', payload: dict }, '*');
+        window.postMessage({ source: src, type: 'toggle' }, '*');
         setTimeout(resolve, 0);
       }),
-    {
-      bridge: BRIDGE_SOURCE,
-      dict: {
-        colors: [{ name: 'brand', r: 0x16, g: 0x68, b: 0xd4, a: 1 }],
-        sizes: [{ name: 'space/2', px: 8, category: 'space' }],
-      },
-    },
+    BRIDGE_SOURCE,
   );
 
   // popup → tabs.sendMessage は tabs 権限が要る (テスト環境では未付与) ため、

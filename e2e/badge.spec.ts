@@ -2,6 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { muiThemeRootHtml } from './fixtures/muiThemeFiber';
 
 /**
  * badge スモーク (P1): ビルド済み拡張を Chromium にロードし、
@@ -9,7 +10,7 @@ import { chromium, expect, test, type BrowserContext, type Page } from '@playwri
  * 事前条件: `pnpm build` 済みで .output/chrome-mv3 が存在すること。
  *
  * テスト1: inspector toggle → hover → overlay.show() → ensureMounted() → DOM 追加 (因果)
- * テスト2: 正規化済み TokenDict を注入 → hover → バッジに実トークン名が描画される (end-to-end)
+ * テスト2: ページのテーマを拡張が自力で発見 → hover → バッジに実トークン名 (end-to-end)
  */
 
 const EXT_PATH = join(import.meta.dirname, '..', '.output', 'chrome-mv3');
@@ -72,6 +73,35 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await context.close();
 });
+
+/**
+ * ThemeProvider を持つ React アプリの断面。**辞書は注入せず拡張が自力で発見する**
+ * (v1 の実供給元と同じ経路 — issue #15 / #16)。テーマの値は fixture の実 CSS に合わせてある:
+ * palette.error.main = #c62828 / spacing(1) = 8px / shape.borderRadius = 8px。
+ */
+const THEME_FIXTURE_HTML = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>DomDom Theme E2E Fixture</title></head>
+<body style="margin:0">
+  <div
+    id="target"
+    style="
+      width:200px;height:100px;
+      background-color:#c62828;
+      margin:16px;padding:8px;
+      border-radius:8px;
+      color:#fff;
+      font-size:16px;
+      font-family:sans-serif"
+  >Inspect me</div>
+  ${muiThemeRootHtml({
+    palette: { error: { main: '#c62828' }, background: { paper: '#ffffff' } },
+    spacing: 8,
+    shape: { borderRadius: 8 },
+    typography: { htmlFontSize: 16, body1: { fontSize: '1rem' } },
+  })}
+</body>
+</html>`;
 
 // CSS 変数で宣言した要素 (color/bg/padding が var(--x) 由来)。変数名優先表示の検証用。
 const VAR_FIXTURE_HTML = `<!DOCTYPE html>
@@ -168,44 +198,77 @@ test('ホバーでデザインバッジが描画される', async () => {
 });
 
 /**
- * トークン照合パス (end-to-end): bridge が parseTokens で正規化した後の TokenDict 形状
- * (TokenColor {name,r,g,b,a} / TokenSize {name,px,category}) を注入し、fixture の
- * background-color #c62828=rgb(198,40,40) と padding:8px に一致するトークンを与える。
+ * トークン照合パス (end-to-end)。**v1 の実供給元と同じ経路で辞書を得る**:
+ * ページの React 内部から ThemeProvider のテーマを拡張が自力で発見し
+ * (`src/muiTheme.ts` → `parseMuiTheme`)、fixture の background-color #c62828 /
+ * padding 8px / border-radius 8px に一致するトークン名がバッジに出る。
  * hover → inspectElement → annotateProp → matchColor/matchSize → hit → バッジ描画 まで
- * 一気通貫で通り、バッジの shadow textContent に実トークン名が出ることを検証する。
- * 照合ロジック単体の網羅は tokenDict.test.ts が担保 (ここは配線の疎通確認)。
+ * 一気通貫で通る。照合ロジック単体の網羅は tokenDict.test.ts が担保。
+ *
+ * **以前は bridge を騙った `tokens` postMessage で注入していた** が、その経路は利用者から
+ * 到達できず、かつページによる偽装の穴だったため閉じた (issue #15 / #16)。
  */
-test('注入したトークン名がバッジに描画される', async () => {
-  const page = await openFixture();
+test('ページのテーマから自動検出したトークン名がバッジに描画される', async () => {
+  const page = await openFixture(THEME_FIXTURE_HTML);
 
-  // fixture の background-color (#c62828) と padding (8px) に一致するトークンを登録
+  await activate(page); // toggle の処理内で attemptThemeExtract が走る
+  await page.hover('#target');
+
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  // palette.error.main (#c62828) / spacing(1) (8px) / shape.borderRadius (8px) が
+  // テーマ由来の名前として注釈される。show() は同期だがテーマ発見は非同期なので poll する
+  await expect
+    .poll(async () => badgeText(page), { timeout: 5000 })
+    .toContain('palette.error.main');
+  const text = await badgeText(page);
+  expect(text).toContain('spacing(1)');
+  expect(text).toContain('shape.borderRadius');
+
+  await page.close();
+});
+
+/**
+ * 【セキュリティ / issue #16】**ページが注入した辞書で「一致」を偽装できない。**
+ *
+ * MAIN world はページと同一信頼境界なので、ページ側 JS は bridge を騙った postMessage を
+ * 投げられる (source 文字列を真似るだけ)。以前は `{type:'tokens'}` を受理していたため、
+ * ページが自前の辞書を注入して**バッジに好きなトークン名で「一致」を表示させられた**。
+ * この製品の出力は「実装がデザイン定義に従っているか」の検証結果なので、
+ * ページから検証結果を偽装できてはいけない。
+ */
+test('ページが postMessage で注入した辞書は無視される (偽装した一致が出ない)', async () => {
+  const page = await openFixture(); // テーマを持たない fixture = 辞書は空のまま
+
+  // fixture の実際の値 (#c62828 / 8px) にわざと一致させた偽の辞書を注入する
   await page.evaluate(
     (src) =>
-      window.postMessage(
-        {
-          source: src,
-          type: 'tokens',
-          payload: {
-            colors: [{ name: 'color/error', r: 198, g: 40, b: 40, a: 1 }],
-            sizes: [{ name: 'spacing/sm', px: 8, category: 'space' }],
+      new Promise<void>((resolve) => {
+        window.postMessage(
+          {
+            source: src,
+            type: 'tokens',
+            payload: {
+              colors: [{ name: 'FORGED_COLOR_TOKEN', r: 198, g: 40, b: 40, a: 1 }],
+              sizes: [{ name: 'FORGED_SIZE_TOKEN', px: 8, category: 'space' }],
+            },
           },
-        },
-        '*',
-      ),
+          '*',
+        );
+        setTimeout(resolve, 0);
+      }),
     BRIDGE_SOURCE,
   );
 
   await activate(page);
   await page.hover('#target');
-
   await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
 
-  // バッジに color hit (color/error) と size hit (spacing/sm) の両トークン名が描画される。
-  // show() は ensureMounted→buildBadge を同期実行するが、微小タイミングに備え poll する。
-  await expect
-    .poll(async () => badgeText(page), { timeout: 3000 })
-    .toContain('color/error');
-  expect(await badgeText(page)).toContain('spacing/sm');
+  // 計測自体は動いている (テストが「何も描かれていないから緑」になっていないことの確認)
+  await expect.poll(async () => badgeText(page), { timeout: 3000 }).toContain('#c62828');
+  const text = await badgeText(page);
+  expect(text).not.toContain('FORGED_COLOR_TOKEN');
+  expect(text).not.toContain('FORGED_SIZE_TOKEN');
 
   await page.close();
 });

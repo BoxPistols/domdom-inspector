@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { HookState } from './hook';
-import { drillToInnermost, Inspector, resolveOuterElement } from './inspector';
+import {
+  drillToInnermost,
+  Inspector,
+  type InspectorOptions,
+  resolveOuterElement,
+} from './inspector';
 import type { Overlay } from './overlay';
 import { DEFAULT_STRINGS, type InspectInfo } from './types';
 
@@ -15,18 +20,19 @@ function stubOverlay() {
     editorOpened: [] as { fileName: string; lineNumber: number }[],
     chainPanels: [] as InspectInfo[],
     shown: [] as Element[],
+    pills: [] as string[],
   };
   const overlay = {
     containsTarget: () => false,
     toast: (text: string) => calls.toasts.push(text),
+    showModePill: () => calls.pills.push('show'),
+    hideModePill: () => calls.pills.push('hide'),
     openEditor: (loc: { fileName: string; lineNumber: number; columnNumber: number }) =>
       calls.editorOpened.push({ fileName: loc.fileName, lineNumber: loc.lineNumber }),
     showChainPanel: (info: InspectInfo) => calls.chainPanels.push(info),
     show: (element: Element) => calls.shown.push(element),
     hideHighlight: () => {},
     hideAll: () => {},
-    showModePill: () => {},
-    hideModePill: () => {},
     updateSettings: () => {},
     isChainPanelOpen: () => false,
     hideChainPanel: () => {},
@@ -64,12 +70,85 @@ afterEach(() => {
   for (const inspector of created.splice(0)) inspector.onEscape();
 });
 
-function make(devMode = true, hasReact = false) {
+function make(devMode = true, hasReact = false, options: InspectorOptions = {}) {
   const { overlay, calls } = stubOverlay();
-  const inspector = new Inspector(stubHook(devMode, hasReact), overlay, DEFAULT_STRINGS);
+  const inspector = new Inspector(stubHook(devMode, hasReact), overlay, DEFAULT_STRINGS, options);
   created.push(inspector);
   return { inspector, calls };
 }
+
+/**
+ * フレーム間の状態同期 (issue #14)。**iframe を含むページで Esc を押すと親だけ OFF になり、
+ * iframe 内のクリックが死んだまま残る**という現象の土台をここで固定する。
+ * 実際の配布経路 (bridge → background → 全フレーム) は e2e/iframe-sync.spec.ts が担保。
+ */
+describe('フレーム間同期の土台 (冪等 OFF / 状態通知 / 告知の抑止)', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('disableOnly は OFF のとき何もしない (何度配っても位相が反転しない)', () => {
+    const states: boolean[] = [];
+    const { inspector, calls } = make(true, false, { onStateChange: (on) => states.push(on) });
+
+    // 既に OFF。ここで disable が走ると「配るたびに ON/OFF が入れ替わる」バグになる
+    inspector.disableOnly();
+    inspector.disableOnly();
+    expect(states).toEqual([]);
+    expect(calls.toasts).toEqual([]);
+
+    inspector.toggle(); // ON
+    inspector.disableOnly(); // OFF
+    inspector.disableOnly(); // 2 度目は無視される
+    expect(states).toEqual([true, false]);
+  });
+
+  it('enableOnly も冪等 (ON のとき再通知しない)', () => {
+    const states: boolean[] = [];
+    const { inspector } = make(true, false, { onStateChange: (on) => states.push(on) });
+
+    inspector.enableOnly();
+    inspector.enableOnly();
+    expect(states).toEqual([true]);
+    expect(inspector.isEnabled()).toBe(true);
+  });
+
+  it('Esc でモードが切れたときも状態を通知する (親で押した Esc を子へ配れる)', () => {
+    const states: boolean[] = [];
+    const { inspector } = make(true, false, { onStateChange: (on) => states.push(on) });
+
+    inspector.toggle();
+    states.length = 0;
+    expect(inspector.onEscape()).toBe(true);
+    expect(states).toEqual([false]);
+    expect(inspector.isEnabled()).toBe(false);
+
+    // 既に OFF の Esc は消費しない = 通知も出ない (ページの Esc を奪わない)
+    expect(inspector.onEscape()).toBe(false);
+    expect(states).toEqual([false]);
+  });
+
+  it('announce:false ではピルと ON/OFF トーストを出さない (子フレームの重複を作らない)', () => {
+    const { inspector, calls } = make(true, false, { announce: false });
+
+    inspector.toggle(); // ON
+    inspector.toggle(); // OFF
+    expect(calls.pills).toEqual([]);
+    expect(calls.toasts).toEqual([]);
+  });
+
+  it('既定 (announce 未指定) ではピルと ON/OFF トーストを出す', () => {
+    const { inspector, calls } = make();
+
+    inspector.toggle();
+    expect(calls.pills).toEqual(['show']);
+    expect(calls.toasts).toEqual([DEFAULT_STRINGS.inspectOnNoReact]);
+
+    inspector.toggle();
+    expect(calls.pills).toEqual(['show', 'hide']);
+    expect(calls.toasts).toEqual([DEFAULT_STRINGS.inspectOnNoReact, DEFAULT_STRINGS.inspectOff]);
+  });
+});
 
 describe('resolveOuterElement (↑ の親解決 + DOM フォールバック)', () => {
   beforeEach(() => {

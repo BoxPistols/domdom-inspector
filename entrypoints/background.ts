@@ -79,6 +79,24 @@ async function relayToTab(tabId: number, frameId: number, type: string): Promise
   }
 }
 
+/**
+ * インスペクトモードの ON/OFF を **タブ内の全フレームへ配る** (issue #14)。
+ *
+ * Esc と モードピルの ✕ は押されたフレームにしか効かない (キーイベントも DOM も
+ * フレームごとに独立している)。配らないと iframe が ON のまま残り、**iframe 内の
+ * クリックが死んだまま**になる (インスペクタが capture で握りつぶすため)。
+ * さらにショートカットを押すと親子で位相が反転し、何度押しても両方 OFF にできない。
+ * 受け側 (`enableOnly` / `disableOnly`) は冪等なので、配り直しても反転しない。
+ */
+async function broadcastInspectState(tabId: number, on: boolean): Promise<void> {
+  try {
+    // frameId を指定しない = 全フレームの bridge に届く (ここでは意図的にそうする)
+    await browser.tabs.sendMessage(tabId, { type: on ? 'inspect-on' : 'inspect-off' });
+  } catch {
+    // 未注入のフレームしか無い等は無視 (状態を配る相手が居ないだけ)
+  }
+}
+
 // **AI 中継 (fetch) は v1 の配線から外した。** これが拡張内で唯一の fetch 発生源だったため、
 // 外すと「ネットワークリクエストを 1 つも発行しない」が grep で再現証明できる状態になる
 // (SECURITY.md / PRIVACY.md / STORE_LISTING.md の申告がこれに依存している)。
@@ -175,13 +193,31 @@ export default defineBackground(() => {
     void relayToTab(tab.id, info.frameId ?? 0, String(info.menuItemId));
   });
 
+  // content script (bridge) からの状態通知 → 同じタブの全フレームへ配る
+  browser.runtime.onMessage.addListener((message, sender) => {
+    if (message?.type !== 'inspect-state' || typeof message.on !== 'boolean') return false;
+    const tabId = sender.tab?.id;
+    // popup など tab を持たない送信元からは受けない (配る相手が決まらない)
+    if (tabId != null) void broadcastInspectState(tabId, message.on);
+    return false;
+  });
+
   // キーボードショートカット (manifest commands) → アクティブタブへトグル指示 (FR-01)
   browser.commands.onCommand.addListener(async (command, tab) => {
     if (!COMMANDS.has(command)) return;
     const tabId =
       tab?.id ??
       (await browser.tabs.query({ active: true, currentWindow: true }))[0]?.id;
-    if (tabId != null) {
+    if (tabId == null) return;
+    // **トグルはトップフレームだけに送る** (issue #14)。全フレームに送ると各フレームが
+    // 独立に反転するため、後から挿入された iframe (まだ OFF) が居ると 1 回の押下で
+    // 「親 OFF / 子 ON」の逆位相を作る。結果の状態は上の broadcastInspectState が
+    // 全フレームへ配るので、決めるのは 1 フレームだけでよい。
+    try {
+      await browser.tabs.sendMessage(tabId, { type: command }, { frameId: 0 });
+    } catch {
+      // トップフレームに content script が入っていない (iframe 側だけ対象オリジン等)。
+      // その場合に限り全フレームへ送る = 従来動作。1 フレームしか居なければ反転は起きない
       browser.tabs.sendMessage(tabId, { type: command }).catch(() => {
         // 対象外オリジン (content script 未注入) は無視
       });
