@@ -43,7 +43,7 @@ Page Vitals / Markdown レポートは v1 の配線から外した**(実装は `
 準拠検証」。**モード系の復活時は本ファイル地雷3の 4 点配線を戻す**(エディタジャンプは click
 ハンドラで mode ではないため 4 点配線不要)。
 designer/engineer ロールトグルは機能差ゼロのため除去済み (`Settings.role` 型は dormant)。
-詳細 `docs/ROADMAP.md` / 判断の根拠 `docs/assessment-20260802-store-readiness.md`。
+詳細 `docs/ROADMAP.md` / 判断の根拠 `docs/assessment-20260802-store-readiness.md` / **未対応の欠陥は `docs/audit-20260807-deep.md`** (12 エージェント監査の全 70 件、実測根拠つき) / 提出可否は `docs/store-submission-readiness.md` (数字は `pnpm check:submission` が実測)。
 
 ## アーキテクチャ(2 world 構成 — 最重要)
 
