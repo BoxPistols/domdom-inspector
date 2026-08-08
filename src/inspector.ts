@@ -25,6 +25,17 @@ export function resolveOuterElement(
   return componentParent(element) ?? element.parentElement ?? shadowHostOf(element);
 }
 
+/**
+ * ↑↓ を奪ってはいけない対象 (テキスト入力中のカーソル移動・選択肢移動)。
+ * インスペクト中でもページのフォーム操作は生かす。
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  const tag = target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  return target instanceof HTMLElement && target.isContentEditable;
+}
+
 /** element が shadow root の中にあれば、そのホスト要素 */
 function shadowHostOf(element: Element): Element | null {
   const root = element.getRootNode?.();
@@ -165,6 +176,10 @@ export class Inspector {
 
   private disable() {
     this.enabled = false;
+    // **pointermove が積んだ未実行の rAF を必ず捨てる。** 捨てないと hideAll() の後に
+    // rAF が select() → show() を実行し、モード OFF なのに枠とバッジがリロードまで
+    // 残る (リスナは解除済みなので以後更新も消去もされない。実測で 1/1 再現)
+    cancelAnimationFrame(this.rafId);
     window.removeEventListener('pointermove', this.onPointerMove, true);
     for (const type of ['click', 'pointerdown', 'pointerup', 'mousedown', 'mouseup'] as const) {
       window.removeEventListener(type, this.onIntercept, true);
@@ -220,14 +235,17 @@ export class Inspector {
   /**
    * 座標から対象を引き直す。**クリック時に必ず通す**: ホバー時点の選択は
    * スクロール・DOM 差し替え・resize で実際のカーソル下と食い違いうる。
-   * 一致していれば何もしない (select は currentElement 比較で早期 return する)。
+   *
+   * **同一要素でも再計測する。** ホバー中に JS がその要素のスタイルを書き換えても
+   * pointermove は同一要素で早期 return するため、バッジは古い値のまま残る。
+   * せめて「クリックした瞬間」は必ず現在の computed style を測り直す
+   * (ここをホバー時の情報で済ませると、⌘Click が古い値の要素として動く誤答になる)。
    */
   private resyncToPointer(x: number, y: number) {
     const hit = document.elementFromPoint(x, y);
     if (!hit) return;
     if (this.overlay.containsTarget(hit)) return;
-    const element = drillToInnermost(hit, x, y);
-    if (element !== this.currentElement) this.select(element);
+    this.select(drillToInnermost(hit, x, y));
   }
 
   private onIntercept = (event: Event) => {
@@ -246,8 +264,14 @@ export class Inspector {
     // Alt+Click: 描画元 (owner) の一覧を出し、行クリックでそのファイルをエディタで開く。
     // モード ON のトーストで案内している操作なので、必ずここで応答する
     // (以前はハンドラが無く、preventDefault だけが効いて完全な無反応になっていた)。
+    // resync 後も currentInfo が無い (カーソル下に要素が無い等) 場合も黙らない —
+    // 案内した操作の無反応は「押しても効かない」という一番わかりにくい壊れ方になる
     if (me.altKey) {
-      if (this.currentInfo) this.overlay.showChainPanel(this.currentInfo, me.clientX, me.clientY);
+      if (this.currentInfo) {
+        this.overlay.showChainPanel(this.currentInfo, me.clientX, me.clientY);
+      } else {
+        this.overlay.toast(this.strings.jumpUnresolved);
+      }
       return;
     }
     // Cmd(Mac)/Ctrl(Win)+Click で該当ソースをエディタで開く (dev の実ソースのみ)
@@ -313,11 +337,18 @@ export class Inspector {
   }
 
   private onKeyDown = (event: KeyboardEvent) => {
-    // ↑: 親コンポーネントへ / ↓: 遡った履歴を子へ戻る (FR-04 補完)
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    // **入力中・修飾キー付きの ↑↓ は奪わない。** テキスト入力のカーソル移動や
+    // ⌘↑ (ページ先頭へ) はページの操作であって、インスペクタのナビゲーションではない
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (isEditableTarget(event.target)) return;
+    // **選択が無いときは preventDefault しない。** スクロール後は選択を捨てる仕様
+    // (onViewportChange) なので、ここで奪うと「↑ が無反応 + ページのキースクロールも
+    // 死んでいる」という説明のつかない状態になる。選択が無ければページに返す
     if (event.key === 'ArrowUp') {
+      if (!this.currentElement) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (!this.currentElement) return;
       const parent = resolveOuterElement(this.currentElement, getParentComponentElement);
       if (parent) {
         this.navStack.push(this.currentElement);
@@ -328,15 +359,13 @@ export class Inspector {
       }
       return;
     }
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const child = this.navStack.pop();
-      if (child?.isConnected) {
-        this.keyboardNav = true;
-        this.select(child);
-      }
-    }
+    // ↓: 遡った履歴が無ければページに返す (常に奪うとキースクロールが死ぬ)
+    const child = this.navStack.pop();
+    if (!child?.isConnected) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this.keyboardNav = true;
+    this.select(child);
   };
 
   /**

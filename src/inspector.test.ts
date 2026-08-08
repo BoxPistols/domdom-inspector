@@ -510,3 +510,116 @@ describe('クリック時に対象を引き直す (スクロール後の誤答�
     expect(calls.toasts).toEqual([DEFAULT_STRINGS.jumpUnresolved]);
   });
 });
+
+describe('操作系の細部 (監査 2026-08-07 の未対応分を固定)', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  function stubElementFromPoint(el: Element | null) {
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: () => el,
+    });
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'elementFromPoint');
+  });
+
+  it('選択が無いときの ↑↓ はページに返す (キースクロールを殺さない)', () => {
+    const { inspector } = make();
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.toggle(); // ON (選択は無い)
+
+    // スクロール後 = 選択を捨てた状態と同じ。↑ を奪うと「無反応 + スクロールも死ぬ」
+    const up = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
+    window.dispatchEvent(up);
+    expect(up.defaultPrevented, '選択が無い ↑ はページに返す').toBe(false);
+
+    // 遡った履歴が無い ↓ もページに返す (履歴を積む前に確認する)
+    const down = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true, bubbles: true });
+    window.dispatchEvent(down);
+    expect(down.defaultPrevented, '戻る先の無い ↓ はページに返す').toBe(false);
+
+    // 選択があれば従来どおり奪ってナビゲートする
+    inspector.inspectAt(el);
+    const up2 = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
+    window.dispatchEvent(up2);
+    expect(up2.defaultPrevented, '選択がある ↑ はナビゲーションが消費').toBe(true);
+
+    // ↑ で積んだ履歴がある ↓ は消費する
+    const down2 = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true, bubbles: true });
+    window.dispatchEvent(down2);
+    expect(down2.defaultPrevented, '履歴がある ↓ はナビゲーションが消費').toBe(true);
+  });
+
+  it('テキスト入力中・修飾キー付きの ↑↓ は奪わない', () => {
+    const { inspector } = make();
+    const el = document.createElement('div');
+    const input = document.createElement('input');
+    document.body.append(el, input);
+    inspector.inspectAt(el); // 選択あり = 奪う条件は揃っている
+
+    const inInput = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
+    Object.defineProperty(inInput, 'target', { value: input });
+    window.dispatchEvent(inInput);
+    expect(inInput.defaultPrevented, '入力欄のカーソル移動を奪わない').toBe(false);
+
+    const withMeta = new KeyboardEvent('keydown', {
+      key: 'ArrowUp', metaKey: true, cancelable: true, bubbles: true,
+    });
+    window.dispatchEvent(withMeta);
+    expect(withMeta.defaultPrevented, '⌘↑ (ページ先頭へ) を奪わない').toBe(false);
+  });
+
+  it('disable が未実行の rAF を捨てる (OFF 後に枠が復活してリロードまで残る事故)', () => {
+    const { inspector, calls } = make();
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    stubElementFromPoint(el);
+    inspector.toggle();
+
+    // pointermove が rAF を積む → 実行前に Esc で OFF
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    inspector.onEscape();
+    const shownAtOff = calls.shown.length;
+
+    // rAF が発火しても select は走らない (happy-dom の rAF は setTimeout ベース)
+    return new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        expect(calls.shown.length, 'OFF 後に show が走らない').toBe(shownAtOff);
+        resolve();
+      });
+    });
+  });
+
+  it('クリックは同一要素でも再計測する (ホバー中のスタイル書き換えを拾う)', () => {
+    const { inspector, calls } = make();
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    stubElementFromPoint(el);
+    inspector.inspectAt(el);
+    expect(calls.shown).toEqual([el]);
+
+    // 同一要素のままクリック → 以前は「変わっていない」として再計測しなかった
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(calls.shown, 'クリック時に同一要素を測り直す').toEqual([el, el]);
+  });
+
+  it('カーソル下に要素が無い Alt+Click は理由をトーストで言う (無反応にしない)', () => {
+    const { inspector, calls } = make();
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.toggle();
+    calls.toasts.length = 0;
+    stubElementFromPoint(null); // 引き直しても対象が取れない
+
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, altKey: true }));
+    expect(calls.chainPanels).toEqual([]);
+    expect(calls.toasts, '案内済みの操作を黙って無視しない').toEqual([
+      DEFAULT_STRINGS.jumpUnresolved,
+    ]);
+  });
+});

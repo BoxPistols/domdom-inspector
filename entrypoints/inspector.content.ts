@@ -1,4 +1,3 @@
-import { scanDesign } from '../src/designScan';
 import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
@@ -67,7 +66,15 @@ export default defineContentScript({
     };
     const inspector = new Inspector(hookState, overlay, strings, {
       announce: isTopFrame,
-      onStateChange: broadcastState,
+      onStateChange: (enabled) => {
+        // OFF 中に発見して保留していたテーマ通知をここで出す (告知フレームのみ =
+        // iframe の数だけ重複させない)。ON トーストより後に出すことで上書きされない
+        if (enabled && isTopFrame && pendingThemeToast) {
+          overlay.toast(pendingThemeToast);
+          pendingThemeToast = null;
+        }
+        broadcastState(enabled);
+      },
     });
     // v1 はデザイン計測 (inspect) のみ。コンポーネントツリー / レンダー可視化 / vitals は
     // 実装を温存したまま配線から外している (本番ビルドでは React が名前を minify するため
@@ -85,6 +92,8 @@ export default defineContentScript({
     // 再導入する時も、受け入れ経路を作るなら出所を UI に出すこと (issue #13)。
     let themeTokens: TokenDict = EMPTY_TOKEN_DICT;
     let autoTheme = DEFAULT_SETTINGS.autoTheme;
+    /** モード OFF 中に発見したテーマの通知を保留する (次の ON で 1 度だけ出す) */
+    let pendingThemeToast: string | null = null;
     /** 直近に採用したテーマの内容署名。参照比較だと render 内 createTheme で毎回変わる */
     let themeSignature = '';
     let themeAttemptAt = 0;
@@ -133,11 +142,17 @@ export default defineContentScript({
       themeSignature = signature;
       themeTokens = dict;
       pushMergedTokens();
-      overlay.toast(
-        strings.themeTokensLoaded
-          .replace('{colors}', String(dict.colors.length))
-          .replace('{sizes}', String(dict.sizes.length)),
-      );
+      const message = strings.themeTokensLoaded
+        .replace('{colors}', String(dict.colors.length))
+        .replace('{sizes}', String(dict.sizes.length));
+      // **モードを一度も ON にしていないページでトーストを出さない** (= overlay の DOM 注入も
+      // しない)。拡張を使う意思を示していない閲覧中に UI が湧くのは越権で、ページの DOM を
+      // 不要に変える。OFF 中に見つけた場合は保留し、次の ON で知らせる
+      if (inspector.isEnabled()) {
+        overlay.toast(message);
+      } else {
+        pendingThemeToast = message;
+      }
     };
     hookState.onCommit(() => attemptThemeExtract());
     // mid-page 注入 (production の「現在のサイトで有効化」) では commit が来ないことが
@@ -242,25 +257,11 @@ export default defineContentScript({
         const target = freshContextTarget();
         if (target) inspector.openEditorAt(target);
       }
-      // AI 監査 (popup) からのページスキャン依頼 (bridge が往復中継)。
-      // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
-      if (data.type === 'design-scan' && typeof data.id === 'string') {
-        // 辞書の出所内訳。v1 の供給元はテーマ自動検出だけなので pasted は常に 0 だが、
-        // 率の意味 (「自動テーマの密なラダーで一致率が上がっている」) を読むために内訳の
-        // 形は保つ (貼り付けを戻すのは issue #13)
-        const themeInUse = currentTokens();
-        const scan = scanDesign(document, themeInUse, {
-          skip: (el) => overlay.containsTarget(el),
-          tokenSources: {
-            pasted: { colors: 0, sizes: 0 },
-            theme: { colors: themeInUse.colors.length, sizes: themeInUse.sizes.length },
-          },
-        });
-        window.postMessage(
-          { source: PAGE_SOURCE, type: 'design-scan-result', id: data.id, payload: scan },
-          '*',
-        );
-      }
+      // **design-scan (ページ全体の集計) の受信は v1 の配線から外した** (issue #10)。
+      // 送信側 (popup のカバレッジ UI) が存在しないのに受信側だけ残すと、
+      // ページからの postMessage 偽装で全ページスキャンを起動できる攻撃面と、
+      // designScan/coverage 一式 (約 5.7 kB) を bundle に引き込む理由だけが残る。
+      // side panel として再導入するとき、この位置に受信側を戻す (実装は温存)。
     });
 
     // **リスナ登録が済んだことを bridge に知らせる。**

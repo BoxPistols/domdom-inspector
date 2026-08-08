@@ -8,6 +8,10 @@ and matches them against the user's design tokens. On React pages it additionall
 element with the component that renders it, and can open that component's source file in the
 user's editor. This policy explains what the extension does and does not do with your data.
 
+**Single purpose**: the extension exists to measure the design values of a web page's UI
+and check them against the design system that page is built on. Every feature serves that
+one purpose, and no data is collected for any purpose at all.
+
 ## Summary
 
 - **No telemetry, no analytics, no tracking.** The extension does not collect usage data.
@@ -49,6 +53,8 @@ extension offers a **Copy path** button. It writes only the source file path and
 - `storage` — to save your settings locally.
 - `activeTab` — to read the current tab's origin when you open the popup.
 - `scripting` — to inject the inspector into origins you have enabled.
+- `contextMenus` — to add "Inspect this element" / "Open source in editor" to the
+  right-click menu. This grants no additional access to page content.
 - Host access — `localhost` / `127.0.0.1` is covered by a static content script. Any other
   origin is covered by `optional_host_permissions` (`*://*/*`), which is **not granted by
   default** and is requested only when you click "Enable on current site" / "Enable on all
@@ -73,6 +79,10 @@ DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を
 トークンと照合します。React ページでは、その要素を描画しているコンポーネント名を併記し、
 そのソースファイルを利用者のエディタで開くこともできます。
 本ポリシーは、本拡張機能がデータをどう扱うか(扱わないか)を説明します。
+
+**単一目的**: 本拡張は「web ページ UI のデザイン値を計測し、そのページが依って立つ
+デザインシステムと照合する」ためだけに存在します。全機能がこの 1 目的に奉仕し、
+いかなる目的のためのデータ収集も行いません。
 
 ## 要約
 
@@ -114,6 +124,8 @@ React を使用している場合は、コンポーネント名の補足表示�
 - `storage` — 設定をローカル保存するため。
 - `activeTab` — ポップアップを開いた時に現タブの origin を取得するため。
 - `scripting` — あなたが有効化したオリジンにインスペクタを注入するため。
+- `contextMenus` — 右クリックメニューに「この要素を検査 / ソースをエディタで開く」を
+  追加するため。ページ内容への追加アクセス権は生じません。
 - ホストアクセス — `localhost` / `127.0.0.1` は静的コンテンツスクリプトで対応。その他の
   オリジンは `optional_host_permissions`(`*://*/*`)で対応しますが、これは **既定では未付与** で、
   「現在のサイトで有効化」(または「全サイトで許可」)を押した時のみ要求します。

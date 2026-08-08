@@ -109,3 +109,40 @@ async function openDevSection(page: Page) {
     (el as HTMLDetailsElement).open = true;
   });
 }
+
+/**
+ * Chrome の action popup は 600px を超えるとスクロールバーが出る。
+ * 既定表示 (details 閉) は**最も長い locale (ja)** でも 600px 未満に収める
+ * (実測で ja 604px に膨らんで超えていた — 監査 2026-08-07)。
+ * ランナーの UI 言語に依存しないよう、ja の実文字列を chrome.i18n に流し込んで測る。
+ */
+test('既定表示の高さが ja でも 600px 未満 (popup のスクロールバーを出さない)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const raw = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', 'public', '_locales', 'ja', 'messages.json'), 'utf8'),
+  ) as Record<string, { message: string }>;
+  const messages = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v.message]));
+
+  const page = await context.newPage();
+  await page.addInitScript(
+    ({ msgs }) => {
+      const api = (globalThis as unknown as { chrome?: { i18n?: Record<string, unknown> } }).chrome;
+      if (!api?.i18n) return;
+      api.i18n.getMessage = (key: string) => msgs[key] ?? '';
+      api.i18n.getUILanguage = () => 'ja-JP';
+    },
+    { msgs: messages },
+  );
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  await page.waitForTimeout(200);
+
+  // 既定 = details 閉。同一 context の前のテストが「開発者向け」を開いた状態を
+  // storage (popupDevOpen) に残すので、測る前に既定状態へ明示的に戻す
+  const height = await page.evaluate(() => {
+    for (const d of document.querySelectorAll('details')) d.open = false;
+    return document.body.scrollHeight;
+  });
+  expect(height, 'details 閉の既定表示').toBeLessThan(600);
+
+  await page.close();
+});

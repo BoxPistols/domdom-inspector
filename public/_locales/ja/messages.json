@@ -59,6 +59,10 @@
   "siteUnknownUrl": {
     "message": "このタブは URL を返しません (blob: プレビュー等)。全サイト許可があれば注入は試せます — ボタンを押すと試行します。"
   },
+  "siteBlobNeedsAllSites": {
+    "message": "このタブは blob: プレビューです。上の「全サイトで許可(一度だけ)」を一度有効にすると、このボタンで注入できます。",
+    "description": "popup: blob: タブで全サイト許可が無いときの理由と解決策 (誤って「http/https 以外」と言わない)"
+  },
   "siteTarget": {
     "message": "対象: {origin}"
   },
@@ -117,7 +121,7 @@
     "message": "バンドル出力 · dev ビルドで開けます"
   },
   "editorHint": {
-    "message": "⌘/Ctrl+Click でエディタで開く"
+    "message": "⌘/Ctrl+クリックでエディタを開く"
   },
   "editorOpening": {
     "message": "エディタに送りました: {file}"
@@ -291,7 +295,7 @@
     "message": "≠ トークン"
   },
   "themeTokensLoaded": {
-    "message": "MUI テーマを検出 — 色 {colors} 件 / サイズ {sizes} 件をトークンに追加",
+    "message": "MUI テーマを検出 — 色トークン {colors} 件 / サイズトークン {sizes} 件",
     "description": "MUI テーマ自動取得 (FR-14) 成功時のトースト。{colors}/{sizes} は件数。"
   },
   "treeUnavailableProd": {

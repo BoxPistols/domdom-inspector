@@ -130,14 +130,12 @@ main の内容が配信される**ため、push 前に Pages を有効化する�
 iframe の逆位相 / 提出画像の到達不能な注入依存 / ページによる「一致」偽装。
 いずれも**修正を戻すと落ちる**ことを確認した回帰テストつき。
 
-**残りは medium 10 件** (issue にはしていないので着手時に上記文書から拾う)。効きそうな順:
+**medium 10 件 + low/missed も v0.4.14 で決着した** (修正 36 / issue 化 3 / 判断 4)。
+未対応 ⬜ は 0 件。残っている issue:
 
-1. overlay バッジのコントラストが AA 未達 (実測 3.17:1 / 4.31:1)。無効化する UI が無いので
-   誰にも回避手段がない
-2. popup の既定表示が ja で 604px = Chrome の action popup 上限 600px 超え (en は 592px)
-3. 到達不能コードが inspector.js の 34% (成果物全体で 49.4 kB / 33.5%)
-4. モードを一度も ON にしていないのに、テーマ発見時に overlay を注入してトーストを出す
-5. トークン非準拠値の呼び方が掲載文・ヘルプ・UI で三者バラバラ
+1. [#17](https://github.com/BoxPistols/domdom-inspector/issues/17) — 温存実装 (render/tree) の分離ビルド (bundle から外す)
+2. [#18](https://github.com/BoxPistols/domdom-inspector/issues/18) — 分類の非色手がかり (SC 1.4.1)
+3. [#19](https://github.com/BoxPistols/domdom-inspector/issues/19) — 選択中の要素のスタイル変化への live 追従
 
 ### このセッションで学んだこと (同じ穴を掘らないために)
 

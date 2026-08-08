@@ -52,11 +52,22 @@ function searchDown(start: Fiber): unknown | null {
   return null;
 }
 
-/** commit 済み FiberRoot 群からテーマを探す (最初に見つかった = 最外の Provider) */
+/**
+ * commit 済み FiberRoot 群からテーマを探す (最初に見つかった = 最外の Provider)。
+ *
+ * **unmount 済みの root はここで捨てる** (Set から削除 = GC 可能にする)。
+ * roots は commit のたびに増えるが減る契機が無く、SPA のルート差し替えを繰り返すページでは
+ * 死んだ Fiber ツリーを保持し続け、2 秒ごとのテーマ探索コストも root 数に比例して増えていた。
+ */
 export function findMuiTheme(roots: Set<unknown>): unknown | null {
   for (const root of roots) {
     const current: Fiber = (root as Fiber)?.current;
-    if (!current) continue;
+    // containerInfo (マウント先 DOM) が文書から外れた root は今後もテーマを提供しない
+    const container = (root as Fiber)?.containerInfo as Node | undefined;
+    if (!current || (container && container.isConnected === false)) {
+      roots.delete(root);
+      continue;
+    }
     const found = searchDown(current);
     if (found) return found;
   }

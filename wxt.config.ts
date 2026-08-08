@@ -1,6 +1,15 @@
 import { defineConfig } from 'wxt';
 
 export default defineConfig({
+  vite: () => ({
+    build: {
+      // Vite が popup チャンクに注入する modulepreload polyfill は fetch( を含む。
+      // 「送信 API の発生箇所ゼロ」を**出荷物に対しても** grep で再現証明できるよう外す。
+      // minimum_chrome_version 119 は <link rel="modulepreload"> をネイティブ対応
+      // (Chrome 66+) しているので polyfill は不要
+      modulePreload: { polyfill: false },
+    },
+  }),
   manifest: {
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',

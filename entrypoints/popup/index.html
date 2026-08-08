@@ -6,7 +6,9 @@
     <style>
       /*
        * darkmode ファースト: 既定はダークテーマ、prefers-color-scheme: light のときだけ
-       * ライトへ切替。全色は WCAG AA (通常テキスト 4.5:1 以上) を満たすトークンで管理する。
+       * ライトへ切替。主要トークンの WCAG AA (テキスト 4.5:1 / UI 部品境界 3:1) は
+       * src/overlayContrast.test.ts が色値から毎回計算して機械検証する (数値をコメントに
+       * 書くと実測とズレたまま残る — 監査 2026-08-07 で実証)。
        */
       :root {
         color-scheme: dark light;
@@ -14,20 +16,17 @@
         --surface: #171a21;
         --surface-2: #1e2230;
         --border: #2a2f3d;
+        --border-input: #6b7486; /* 入力欄の枠: UI 部品境界は 3:1 必要 (--border は装飾用で 1.3:1) */
         --text: #e8ebf1;
         --muted: #a3abbb;
         --accent-text: #8ec2ff;
-        --accent-bg: #8ec2ff;   /* 主ボタン: 明るい青地 + 濃色文字 (コントラスト > 7:1) */
+        --accent-bg: #8ec2ff;   /* 主ボタン: 明るい青地 + 濃色文字 (比は overlayContrast.test.ts が毎回計算する) */
         --on-accent: #0b1220;
         --focus: #8ec2ff;
         /* 分類凡例 (ダーク地で AA を満たす明度) */
         --lg-mui: #7cb8ff;
         --lg-custom: #7ddb99;
         --lg-third: #b3bac7;
-        --hc-blue: #7cb8ff;
-        --hc-green: #7ddb99;
-        --hc-yellow: #f2c14e;
-        --hc-red: #ff8f8f;
       }
       @media (prefers-color-scheme: light) {
         :root {
@@ -35,19 +34,16 @@
           --surface: #f5f7fa;
           --surface-2: #edf0f6;
           --border: #d7dde7;
+          --border-input: #6a7386;
           --text: #1a1f2b;
           --muted: #525d75;
           --accent-text: #12569f;
-          --accent-bg: #1668d4;  /* ライトでは濃青地 + 白文字 (4.6:1) */
+          --accent-bg: #1668d4;  /* ライトでは濃青地 + 白文字 (比はテストが計算する — 数値をここに書かない) */
           --on-accent: #ffffff;
           --focus: #1668d4;
           --lg-mui: #12569f;
           --lg-custom: #1d6f3c;
           --lg-third: #4d5871;
-          --hc-blue: #12569f;
-          --hc-green: #1d6f3c;
-          --hc-yellow: #8a6100;
-          --hc-red: #b3261e;
         }
       }
 
@@ -55,7 +51,7 @@
       body {
         width: 340px;
         margin: 0;
-        padding: 14px;
+        padding: 12px 14px;
         font-family: system-ui, sans-serif;
         font-size: 13px;
         line-height: 1.5;
@@ -65,7 +61,8 @@
       h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: 0.01em; }
 
       /* 動線 (サイトで使う → モード → 表示設定 → 詳細) を群で区切る */
-      .section { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+      /* 既定表示を 600px 未満に保つ (Chrome の popup 上限でスクロールが出る)。余白で調整し文字は削らない */
+      .section { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
       .section h2, summary.h2 {
         margin: 0 0 2px;
         font-size: 11px;
@@ -79,7 +76,7 @@
       select, input[type="text"], input[type="password"], textarea {
         width: 100%;
         padding: 6px 8px;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-input);
         border-radius: 8px;
         font-family: inherit;
         font-size: 12px;
@@ -119,42 +116,8 @@
       textarea:focus-visible, summary:focus-visible {
         outline: 2px solid var(--focus); outline-offset: 2px;
       }
-      /* 設定の意味を補足する ⓘ (tabindex 0 でキーボードからも読める) */
-      .q {
-        display: inline-block; margin-left: 4px; cursor: help;
-        color: var(--accent-text); font-size: 12px; vertical-align: middle;
-        border-radius: 50%;
-      }
-      .q:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
       details { margin-top: 12px; }
       summary { cursor: pointer; font-weight: 700; font-size: 12px; color: var(--accent-text); }
-      /* FR-26: AI 生成コンテンツを決定論結果と視覚的に区別するバッジ */
-      .ai-badge {
-        display: inline-block; padding: 1px 6px; border: 1px solid var(--hc-yellow);
-        color: var(--hc-yellow); border-radius: 4px; font-size: 10px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.04em;
-      }
-      #aiPreview, #aiResult { height: 120px; }
-      /* カバレッジ: 率だけでなく必ず実数を併記し、色だけに意味を載せない */
-      .cov-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; }
-      .cov-name { width: 68px; flex: none; color: var(--muted); }
-      .cov-rate { width: 92px; flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
-      .cov-bar { flex: 1; display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
-      .cov-bar i { display: block; height: 100%; }
-      .cov-hit { background: var(--hc-green); }
-      .cov-near { background: var(--hc-yellow); }
-      .cov-far { background: var(--hc-red); }
-      .cov-none { color: var(--muted); font-weight: 400; }
-      .cov-quad { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-      .cov-cell {
-        padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
-        background: var(--surface); font-size: 11px;
-      }
-      .cov-cell b { display: block; font-size: 13px; font-variant-numeric: tabular-nums; }
-      .cov-cell.bad { border-color: var(--hc-red); }
-      .cov-cell.warn { border-color: var(--hc-yellow); }
-      .cov-cell.good { border-color: var(--hc-green); }
-      #coverageTop div { margin-top: 6px; font-size: 11px; font-family: ui-monospace, monospace; }
       /* ヘルプの視認性: 本文はテーマトークンで両テーマ対応 */
       .help { margin-top: 8px; font-size: 11.5px; line-height: 1.7; color: var(--text); }
       .help p { margin: 8px 0; }
@@ -169,10 +132,6 @@
       .lg-mui { color: var(--lg-mui); }
       .lg-custom { color: var(--lg-custom); }
       .lg-third { color: var(--lg-third); }
-      .hc-blue { color: var(--hc-blue); }
-      .hc-green { color: var(--hc-green); }
-      .hc-yellow { color: var(--hc-yellow); }
-      .hc-red { color: var(--hc-red); }
     </style>
   </head>
   <body>
@@ -249,7 +208,7 @@
         色凡例 span・表・code など内部マークアップが多く、messages.json (プレーン文字列 +
         getMessage) に載せると可読性・保守性が落ちるため意図的にこの方式を採る。
         ラベル類は data-i18n + _locales に統一 (単純文字列は共通経路)。
-        凡例色はテーマトークン (lg-*/hc-*) 経由でダーク/ライト両対応の AA コントラストにする。
+        凡例色はテーマトークン (lg-*) 経由でダーク/ライト両対応の AA コントラストにする。
       -->
       <div class="help" data-help="en">
         <p><b>Setup</b>: on a deployed site, click "Enable on current site…" once — inspecting
@@ -259,7 +218,7 @@
         <p><b>Hover</b>: an outline and badge appear. Outline color is
         <span class="legend lg-mui">blue = MUI</span> /
         <span class="legend lg-custom">green = your code</span> /
-        <span class="legend lg-third">gray = other libraries</span>.
+        <span class="legend lg-third">gray = other libraries or plain DOM</span>.
         The badge shows the design values of the element — color, background, spacing,
         border-radius, typography. Where a value comes from a CSS custom property, the
         <b>declared variable name</b> is shown instead of the raw value.</p>
@@ -272,9 +231,12 @@
         <p><b>Design tokens</b>: no setup. On a page built with MUI, the theme is read from its
         <code>ThemeProvider</code> automatically — matched values show the token name, and values
         that miss are flagged with the nearest token. On pages without a theme you still get the
-        declared CSS variable names and the off-grid spacing warnings.</p>
+        declared CSS variable names and the rogue-value warnings for off-grid spacing.</p>
         <p><b>Works anywhere</b>: React apps (dev or production build) and non-React pages
         alike. Component names appear when React is present; design measurement never needs it.</p>
+        <p><b>Note</b>: values are measured while the pointer is over the element, so
+        <code>:hover</code> styles are included — on buttons and links you are seeing the
+        hover-state values, which may differ from the resting state.</p>
       </div>
 
       <div class="help" data-help="ja" hidden>
@@ -285,7 +247,7 @@
         <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
         <span class="legend lg-mui">青 = MUI</span> /
         <span class="legend lg-custom">緑 = 自作</span> /
-        <span class="legend lg-third">グレー = その他ライブラリ</span>。
+        <span class="legend lg-third">グレー = その他ライブラリ / 素の DOM</span>。
         バッジには要素のデザイン値 — 色・背景・余白・角丸・タイポグラフィ — が表示されます。
         値が CSS カスタムプロパティ由来なら、生値ではなく<b>宣言された変数名</b>が出ます。</p>
         <table>
@@ -296,10 +258,12 @@
         </table>
         <p><b>デザイントークン</b>: 設定は不要です。MUI で作られたページなら
         <code>ThemeProvider</code> のテーマを自動で読み取り、一致した値にはトークン名、
-        外れた値には最近傍トークン付きの警告が出ます。テーマが無いページでも、宣言された
-        CSS 変数名とグリッド外の余白警告は表示されます。</p>
+        外れた値には最近傍トークン付きの野良値警告が出ます。テーマが無いページでも、宣言された
+        CSS 変数名と、グリッド外の余白に対する野良値警告は表示されます。</p>
         <p><b>どこでも動作</b>: React アプリ (開発・本番ビルドとも) でも、React を使わないページ
         でも動きます。React があればコンポーネント名も表示されます (デザイン計測自体は React 不要)。</p>
+        <p><b>注意</b>: 計測はカーソルを載せた状態で行うため <code>:hover</code> の宣言が
+        効いた値になります。ボタンやリンクではホバー時の値であり、静止時と異なることがあります。</p>
       </div>
     </details>
 

@@ -82,7 +82,7 @@ export default defineContentScript({
       if ('settings' in changes) void pushSettings();
     });
 
-    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((message) => {
       if (message?.type === 'toggle-inspect') {
         window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
       }
@@ -96,27 +96,9 @@ export default defineContentScript({
       if (message?.type === 'inspect-at-context' || message?.type === 'open-editor-at-context') {
         window.postMessage({ source: BRIDGE_SOURCE, type: message.type }, '*');
       }
-      // popup のページスキャン依頼を MAIN world へ往復中継する (AI 監査の入力収集)。
-      // 非同期応答は sendResponse + return true (Chrome ネイティブ API では
-      // リスナから Promise を返しても応答にならない)
-      if (message?.type === 'design-scan') {
-        const id = Math.random().toString(36).slice(2);
-        const timer = setTimeout(() => {
-          window.removeEventListener('message', onResult);
-          sendResponse(null);
-        }, 5000);
-        const onResult = (event: MessageEvent) => {
-          const d = event.data;
-          if (event.source !== window || !d || d.source !== PAGE_SOURCE) return;
-          if (d.type !== 'design-scan-result' || d.id !== id) return;
-          clearTimeout(timer);
-          window.removeEventListener('message', onResult);
-          sendResponse(d.payload ?? null);
-        };
-        window.addEventListener('message', onResult);
-        window.postMessage({ source: BRIDGE_SOURCE, type: 'design-scan', id }, '*');
-        return true;
-      }
+      // **design-scan の中継は v1 の配線から外した** (issue #10 — 送信側の popup UI が
+      // 存在しない)。再導入時は「sendResponse + return true」の往復中継をここに戻す
+      // (Chrome ネイティブ API ではリスナから Promise を返しても応答にならない)。
       return false;
     });
   },

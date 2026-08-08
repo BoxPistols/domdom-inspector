@@ -73,7 +73,7 @@ WORKS ANYWHERE
 PRIVACY
 - No telemetry, no servers of our own, no tracking. Settings stay in local
   storage.
-- **Nothing is sent anywhere.** The extension has no backend and makes no network
+- Nothing is sent anywhere. The extension has no backend and makes no network
   requests at all.
 - Localhost dev servers work out of the box. Any other site is inspected only
   after you explicitly enable it ("Enable on current site"), and even then the
@@ -164,7 +164,7 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 
 プライバシー
 - テレメトリ・独自サーバー・トラッキングなし。設定はローカル保存のみ。
-- **外部送信は一切ありません。** バックエンドを持たず、ネットワークリクエストを
+- 外部送信は一切ありません。 バックエンドを持たず、ネットワークリクエストを
   1 つも発行しません。
 - localhost の開発サーバはそのまま動作。その他のサイトは「現在のサイトで有効化」
   した時のみ検査対象になり、その場合もページを読むだけで、ページ内容の保存・

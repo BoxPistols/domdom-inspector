@@ -39,19 +39,30 @@ const EDITOR_LAUNCH_GRACE_MS = 1200;
 
 export class Overlay {
   private host: HTMLElement | null = null;
+  private root: ShadowRoot | null = null;
   private box!: HTMLDivElement;
   private badge!: HTMLDivElement;
   private panel!: HTMLDivElement;
-  private statsPanel!: HTMLDivElement;
-  private renderControl!: HTMLDivElement;
-  private treePanel!: HTMLDivElement;
+  // ---- v1 で到達不能なサーフェス (render/tree — issue #4/#5 で温存) は**遅延生成**する。
+  // mount のたびに canvas + 2D context / stats / rctl / tree の実 DOM を作るのは、
+  // 使われない要素をページごとに増やすだけ (監査 2026-08-07 medium)。初回の show* で作る
+  private statsPanel: HTMLDivElement | null = null;
+  private renderControl: HTMLDivElement | null = null;
+  private treePanel: HTMLDivElement | null = null;
   private inspectPillEl!: HTMLDivElement;
   /** ツリー行の nodeId → DOM 行 (scrollTreeTo 用) */
   private treeRows = new Map<number, HTMLElement>();
-  private canvas!: HTMLCanvasElement;
-  private ctx!: CanvasRenderingContext2D | null;
+  private canvas: HTMLCanvasElement | null = null;
+  private ctx: CanvasRenderingContext2D | null = null;
   private toastEl!: HTMLDivElement;
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * モードピルの現在値。ページ側 JS が overlay host ごと DOM から外すことがあり
+   * (仮想 DOM の巻き戻し・body 差し替え等)、その場合 ensureMounted が作り直すが、
+   * ピルは「モード ON の間ずっと出ている」契約なので**再マウント時に再描画する**。
+   * これが無いと、モードは ON のままマウスでの終了導線だけが消える。
+   */
+  private pill: { label: string; closeLabel: string; onClose: () => void } | null = null;
   private flashes: Flash[] = [];
   private flashRaf = 0;
   private readonly FLASH_MS = 500;
@@ -81,6 +92,13 @@ export class Overlay {
     if (this.host?.isConnected) return;
     this.host = document.createElement('domdom-inspector-overlay');
     const root = this.host.attachShadow({ mode: 'closed' });
+    this.root = root;
+    // 再マウント時 (ページ側 JS が host を外した場合) は遅延サーフェスも作り直しになる
+    this.statsPanel = null;
+    this.renderControl = null;
+    this.treePanel = null;
+    this.canvas = null;
+    this.ctx = null;
 
     const style = document.createElement('style');
     style.textContent = OVERLAY_CSS;
@@ -90,42 +108,76 @@ export class Overlay {
     this.badge = el('div', 'badge');
     this.panel = el('div', 'panel');
     this.toastEl = el('div', 'toast');
-    this.canvas = el('canvas', 'render-canvas');
-    this.ctx = this.canvas.getContext('2d');
-    this.statsPanel = el('div', 'stats');
-    this.renderControl = el('div', 'rctl');
-    this.treePanel = el('div', 'tree');
+    // AT にも届くように。トーストは唯一の状態通知 (モード ON/OFF・エディタ起動の結果) なので
+    // 視覚だけに載せない。aria-live は要素が先に存在している必要があるためここで付ける
+    this.toastEl.setAttribute('role', 'status');
+    this.toastEl.setAttribute('aria-live', 'polite');
     this.inspectPillEl = el('div', 'inspect-pill');
-    root.append(
-      this.canvas,
-      this.box,
-      this.badge,
-      this.panel,
-      this.statsPanel,
-      this.renderControl,
-      this.treePanel,
-      this.inspectPillEl,
-      this.toastEl,
-    );
+    root.append(this.box, this.badge, this.panel, this.inspectPillEl, this.toastEl);
     document.documentElement.appendChild(this.host);
+    // ページ側に host を外されて作り直した場合、モード ON ならピルを復元する
+    if (this.pill) this.renderPill(this.pill);
+  }
+
+  /** v1 で到達不能なサーフェスの遅延生成 (render/tree の再配線時に初めて DOM を作る) */
+  private ensureCanvas(): HTMLCanvasElement {
+    if (!this.canvas) {
+      this.canvas = el('canvas', 'render-canvas');
+      this.ctx = this.canvas.getContext('2d');
+      this.root?.append(this.canvas);
+    }
+    return this.canvas;
+  }
+
+  private ensureStatsPanel(): HTMLDivElement {
+    if (!this.statsPanel) {
+      this.statsPanel = el('div', 'stats');
+      this.root?.append(this.statsPanel);
+    }
+    return this.statsPanel;
+  }
+
+  private ensureRenderControl(): HTMLDivElement {
+    if (!this.renderControl) {
+      this.renderControl = el('div', 'rctl');
+      this.root?.append(this.renderControl);
+    }
+    return this.renderControl;
+  }
+
+  private ensureTreePanel(): HTMLDivElement {
+    if (!this.treePanel) {
+      this.treePanel = el('div', 'tree');
+      this.root?.append(this.treePanel);
+    }
+    return this.treePanel;
   }
 
   /** インスペクトモード中の常設ピル。マウスだけで終了できる導線 (ST-5) */
   showModePill(label: string, closeLabel: string, onClose: () => void) {
+    this.pill = { label, closeLabel, onClose };
     this.ensureMounted();
+    this.renderPill(this.pill);
+  }
+
+  private renderPill(pill: { label: string; closeLabel: string; onClose: () => void }) {
     while (this.inspectPillEl.firstChild) this.inspectPillEl.removeChild(this.inspectPillEl.firstChild);
-    const lbl = el('span', 'lbl', label);
+    const lbl = el('span', 'lbl', pill.label);
     const btn = el('button', undefined, '✕');
-    btn.title = closeLabel;
+    btn.title = pill.closeLabel;
+    // accessible name を "✕" にしない。title は Chromium で SUPERSEDED 扱いになるため
+    // ローカライズ済みラベルを aria-label で明示する
+    btn.setAttribute('aria-label', pill.closeLabel);
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      onClose();
+      pill.onClose();
     });
     this.inspectPillEl.append(lbl, btn);
     this.inspectPillEl.classList.add('on');
   }
 
   hideModePill() {
+    this.pill = null;
     this.inspectPillEl?.classList.remove('on');
   }
 
@@ -173,8 +225,13 @@ export class Overlay {
           : this.strings.prodSafeMode;
 
     this.badge.replaceChildren();
-    const name = el('span', 'name', `<${info.name}>`);
-    name.style.color = color;
+    // 名前は白文字に固定し、分類は色ドット + 枠色で示す。分類色をテキストに使うと
+    // 「枠は白ページ上で 3:1」「文字は暗いバッジ上で 4.5:1」を同じ色では満たせない
+    // (overlayContrast.test.ts が両方を機械検証する)
+    const name = el('span', 'name');
+    const cdot = el('span', 'cdot');
+    cdot.style.background = color;
+    name.append(cdot, `<${info.name}>`);
     this.badge.append(name);
     if (detail !== 'compact') {
       const metaBits = [info.internalName, propsText].filter(Boolean).join(' · ');
@@ -206,10 +263,14 @@ export class Overlay {
         const chip = el('span', 'chip');
         const lb = el('span', 'lb', designLabel(p.label, this.strings));
         chip.append(lb);
-        // 色値は hex 文字列だけでは読めないため実色スウォッチを前置 (半透明もそのまま描画)
+        // 色値は hex 文字列だけでは読めないため実色スウォッチを前置。
+        // **半透明色は市松の上に描く**: バッジの暗背景と合成すると実際とかけ離れた色に
+        // 見える (実測 ΔRGB=331)。上層 = 実色 / 下層 = 市松 の 2 層背景にする
         if (isColorValue(p.value)) {
           const sw = el('span', 'sw');
-          sw.style.background = p.value;
+          sw.style.backgroundImage =
+            `linear-gradient(${p.value}, ${p.value}), ` +
+            'conic-gradient(#9a9a9a 25%, #fff 0 50%, #9a9a9a 0 75%, #fff 0)';
           chip.append(sw);
         }
         // 変数名優先 (showVarNames かつ宣言された CSS 変数がある) なら変数名を主・生値を従で描画。
@@ -252,7 +313,9 @@ export class Overlay {
             .map((f) =>
               this.strings.offGridWarn
                 .replace('{label}', designLabel(f.label, this.strings))
-                .replace('{values}', f.offGrid.join('/'))
+                // "13/5px" は分数に見える。区切りにも px を付けて "13px / 5px" にする
+                // (末尾の px はテンプレート側 `{values}px` が持つ)
+                .replace('{values}', f.offGrid.join('px / '))
                 .replace('{grid}', String(SPACING_GRID)),
             )
             .join(' · ');
@@ -309,9 +372,18 @@ export class Overlay {
         file.textContent = `${entry.source.fileName.split('/').pop()}:${entry.source.lineNumber}`;
         row.classList.add('jumpable');
         const source = entry.source;
-        row.addEventListener('click', () => {
+        const activate = () => {
           this.openEditor(source);
           this.hideChainPanel();
+        };
+        row.addEventListener('click', activate);
+        // マウス専用にしない: Tab で行に到達でき、Enter/Space で同じ操作ができる
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          activate();
         });
       } else if (entry.source) {
         file.textContent = this.strings.sourceMinified;
@@ -404,6 +476,7 @@ export class Overlay {
   /** レンダーデバッグ: 再描画した要素群をヒートマップ色で明滅させる */
   flashRenders(entries: { element: Element; heat: number }[]) {
     this.ensureMounted();
+    this.ensureCanvas();
     const now = Date.now();
     for (const { element, heat } of entries) {
       const r = element.getBoundingClientRect();
@@ -422,7 +495,7 @@ export class Overlay {
   private drawFlashes = () => {
     const canvas = this.canvas;
     const ctx = this.ctx;
-    if (!ctx) {
+    if (!canvas || !ctx) {
       this.flashRaf = 0;
       return;
     }
@@ -462,6 +535,9 @@ export class Overlay {
     }
   }
 
+  // ---- 以下 render/tree サーフェスの show/hide は v1 で到達不能 (温存)。
+  //      遅延生成後はローカル変数に受けて null を消す ----
+
   /**
    * レンダー記録の統計パネル (再描画ランキング + why-did-render + Page vitals)。
    * 行にホバーすると原因内訳 (state/props/parent/mount) と直近変化の props/hook が見える。
@@ -473,10 +549,11 @@ export class Overlay {
     opts: { onClose: () => void; buildReport: () => string },
   ) {
     this.ensureMounted();
-    this.statsPanel.replaceChildren();
+    const statsPanel = this.ensureStatsPanel();
+    statsPanel.replaceChildren();
     const titleText = this.strings.statsTitle.replace('{n}', String(snapshot.commits));
-    this.statsPanel.setAttribute('role', 'dialog');
-    this.statsPanel.setAttribute('aria-label', titleText);
+    statsPanel.setAttribute('role', 'dialog');
+    statsPanel.setAttribute('aria-label', titleText);
 
     const head = el('div', 'head');
     const title = el('span', 'ttl', titleText);
@@ -496,7 +573,7 @@ export class Overlay {
     });
     acts.append(copyBtn, close);
     head.append(title, acts);
-    this.statsPanel.appendChild(head);
+    statsPanel.appendChild(head);
 
     // Page vitals (Closed 環境の Lighthouse 代替。観測できた指標だけをチップ表示)
     if (vitals.metrics.length || vitals.longTasks > 0) {
@@ -517,7 +594,7 @@ export class Overlay {
         );
         vit.append(chip);
       }
-      this.statsPanel.appendChild(vit);
+      statsPanel.appendChild(vit);
     }
 
     const totalRenders = snapshot.stats.reduce((a, s) => a + s.count, 0);
@@ -529,7 +606,7 @@ export class Overlay {
         .replace('{wasted}', String(snapshot.totalWasted))
         .replace('{ms}', snapshot.timingSupported ? snapshot.totalSelfMs.toFixed(1) : '—'),
     );
-    this.statsPanel.appendChild(summary);
+    statsPanel.appendChild(summary);
 
     const sub = el(
       'div',
@@ -538,10 +615,10 @@ export class Overlay {
         ? this.strings.statsColsSupported
         : this.strings.statsColsUnsupported,
     );
-    this.statsPanel.appendChild(sub);
+    statsPanel.appendChild(sub);
 
     if (snapshot.stats.length === 0) {
-      this.statsPanel.appendChild(el('div', 'r', this.strings.statsEmpty));
+      statsPanel.appendChild(el('div', 'r', this.strings.statsEmpty));
     } else {
       const hd = el('div', 'r hd');
       hd.append(
@@ -550,7 +627,7 @@ export class Overlay {
         el('span', 'ws', this.strings.statsColWasted),
         el('span', 'ms', this.strings.statsColMs),
       );
-      this.statsPanel.appendChild(hd);
+      statsPanel.appendChild(hd);
     }
     for (const s of snapshot.stats.slice(0, 100)) {
       const row = el('div', 'r');
@@ -561,13 +638,13 @@ export class Overlay {
       const ws = el('span', 'ws' + (wasted > 0 ? ' warn' : ''), wasted > 0 ? String(wasted) : '·');
       const ms = el('span', 'ms', s.selfMs > 0 ? s.selfMs.toFixed(1) : '—');
       row.append(nm, ct, ws, ms);
-      this.statsPanel.appendChild(row);
+      statsPanel.appendChild(row);
     }
 
     if (snapshot.totalWasted > 0) {
-      this.statsPanel.appendChild(el('div', 'foot', this.strings.statsWastedHint));
+      statsPanel.appendChild(el('div', 'foot', this.strings.statsWastedHint));
     }
-    this.statsPanel.style.display = 'block';
+    statsPanel.style.display = 'block';
   }
 
   /** 行ツールチップ: 原因内訳 + 直近で変化した props / hooks */
@@ -626,7 +703,7 @@ export class Overlay {
   }
 
   hideRenderStats() {
-    if (this.host) this.statsPanel.style.display = 'none';
+    if (this.statsPanel) this.statsPanel.style.display = 'none';
   }
 
   /**
@@ -640,20 +717,21 @@ export class Overlay {
     onToggle: () => void;
   }) {
     this.ensureMounted();
-    this.renderControl.replaceChildren();
+    const renderControl = this.ensureRenderControl();
+    renderControl.replaceChildren();
     const status = el('span', 'st');
     const dot = el('span', 'd');
     const label = el('span', undefined, opts.recording ? this.strings.ctrlRecording : opts.title);
     status.append(dot, label);
     const btn = el('button', undefined, opts.toggleLabel);
     btn.addEventListener('click', opts.onToggle);
-    this.renderControl.append(status, btn);
-    this.renderControl.classList.toggle('rec', opts.recording);
-    this.renderControl.classList.add('on');
+    renderControl.append(status, btn);
+    renderControl.classList.toggle('rec', opts.recording);
+    renderControl.classList.add('on');
   }
 
   hideRenderControl() {
-    if (this.host) this.renderControl.classList.remove('on', 'rec');
+    if (this.renderControl) this.renderControl.classList.remove('on', 'rec');
   }
 
   /**
@@ -665,10 +743,11 @@ export class Overlay {
     opts: { title: string; onHoverNode: (node: TreeNode) => void; onClickNode: (node: TreeNode) => void; onClose: () => void },
   ) {
     this.ensureMounted();
-    this.treePanel.replaceChildren();
+    const treePanel = this.ensureTreePanel();
+    treePanel.replaceChildren();
     this.treeRows.clear();
-    this.treePanel.setAttribute('role', 'dialog');
-    this.treePanel.setAttribute('aria-label', opts.title);
+    treePanel.setAttribute('role', 'dialog');
+    treePanel.setAttribute('aria-label', opts.title);
 
     const head = el('div', 'head');
     const title = el('span', undefined, `${opts.title} (${nodes.length})`);
@@ -680,11 +759,11 @@ export class Overlay {
       opts.onClose();
     });
     head.append(title, close);
-    this.treePanel.appendChild(head);
+    treePanel.appendChild(head);
 
     if (nodes.length === 0) {
       const empty = el('div', 'empty', this.strings.statsEmpty);
-      this.treePanel.appendChild(empty);
+      treePanel.appendChild(empty);
     }
 
     for (const node of nodes) {
@@ -696,18 +775,18 @@ export class Overlay {
       row.append(dot, nm);
       row.addEventListener('mouseenter', () => opts.onHoverNode(node));
       row.addEventListener('click', () => opts.onClickNode(node));
-      this.treePanel.appendChild(row);
+      treePanel.appendChild(row);
       this.treeRows.set(node.id, row);
     }
-    this.treePanel.style.display = 'block';
+    treePanel.style.display = 'block';
   }
 
   hideTree() {
-    if (this.host) this.treePanel.style.display = 'none';
+    if (this.treePanel) this.treePanel.style.display = 'none';
   }
 
   isTreeOpen(): boolean {
-    return !!this.host && this.treePanel.style.display === 'block';
+    return !!this.treePanel && this.treePanel.style.display === 'block';
   }
 
   /** 実 DOM hover → 該当ツリー行へスクロール&一時強調 (FR-07 逆方向) */

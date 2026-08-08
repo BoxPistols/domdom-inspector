@@ -7,37 +7,38 @@ Chrome Web Store の Public 公開直前に実施した監査の記録。**12 �
 CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 **この表が唯一の記録。** ワークフローの出力は一時ファイルにしか残らないため、ここへ写した。
-`✅` は修正済み (版数)、`⬜` は未対応 = **次に着手する候補**。
+`✅` は修正済み (版数)。**全 70 件に状態がつき、⬜ 未対応は 0 件** — 未修正で残るものは issue (#17 #18 #19) か「判断済み (修正しない)」(理由つき)。
 
 > 監査の設計上の要点: 各観点の finder に「**動かない**より**誤答する**を優先して探せ」と
 > 「読んだだけなら measured: false と書け」を課し、別エージェントが**反証**に回った。
 > 実際に finder の severity が 8 件下げられ、反証役が finder より重い問題を 22 件見つけた
 > (`:where`/`@layer` の誤答はここから出た)。**単一のレビューでは出なかった。**
 
-**2026-08-07 追記**: 上記の high 3 件 (issue
+**2026-08-07 追記**: high 3 件 (issue
 [#14](https://github.com/BoxPistols/domdom-inspector/issues/14) /
 [#15](https://github.com/BoxPistols/domdom-inspector/issues/15) /
 [#16](https://github.com/BoxPistols/domdom-inspector/issues/16)) は v0.4.13 で修正した。
 いずれも修正を戻すと落ちることを確認した回帰テストつき (`e2e/iframe-sync.spec.ts` /
-`e2e/badge.spec.ts` / `scripts/store-screenshots.mjs` の撮影前実測)。残りは medium 10 件。
+`e2e/badge.spec.ts` / `scripts/store-screenshots.mjs` の撮影前実測)。
+
+**2026-08-08 追記**: 残っていた medium 10 件 + low/missed の大半を v0.4.14 で一括修正した。
+未修正で残るのは issue 化した 3 件 (#17 bundle 分離 / #18 分類の非色手がかり /
+#19 選択中の live 追従) と「判断済み (修正しない)」4 件のみ。
 
 ---
 
 ## 未対応の一覧 (着手順の候補)
 
 
-| 重大度 | 観点 | 内容 |
-|---|---|---|
-| medium | a11y-contrast | overlay バッジの「生値」と「プロパティ名」が AA 未達 (実測 3.17:1 / 4.31:1) — v1 では無効化する UI が無い |
-| medium | bundle | inspector.js の 34% (18.8 kB) が到達不能。成果物全体では 49.4 kB / 33.5% が削れる (実験ビルド差分で実測) |
-| medium | bundle | design-scan だけ配線の両端が残っており (送信側は不在)、designScan.ts + coverage.ts 5.7 kB を bundle に引き込むうえ、ページからの postMessage 偽装で全 |
-| medium | bundle | overlay が inspect 起動ごとに到達不能な 4 サーフェスを実 DOM に作る (canvas.render-canvas + 2D context / div.stats / div.rctl / div |
-| medium | cws-policy | 「fetch 発生箇所 0 件」の監査手順が src 限定 — 提出 zip には Vite の modulepreload polyfill 由来の `fetch(` が 1 件ある |
-| medium | i18n-quality | popup の既定表示が ja 604px で Chrome の action popup 上限 600px を超える (en は 592px で残り 8px) |
-| medium | i18n-quality | blob: タブで全サイト許可が無いとき「http/https 以外だから有効化できない」と誤った理由を出し、直下の解決策から遠ざける |
-| medium | i18n-quality | トークン非準拠値の呼び方が掲載文・ヘルプ・UI で三者バラバラ (en: rogue / stray / off token / ≠ token、ja: 野良値 / 外れた値 / トークン外 / ベタ書き) |
-| medium | performance | モードを一度も ON にしていなくても、MUI テーマ発見時に overlay をページ DOM へ注入してトーストを出す |
-| medium | ux-breakage | インスペクト中は ↑↓ が常に preventDefault され、ページのキーボードスクロールが死ぬ。しかもスクロール直後は ↑ が完全に無反応 (理由も出ない) |
+v0.4.14 の一括対応で **medium 10 件はすべて修正済み**。low / missed の未対応は
+各項目の「状態」行に判断を書いた (修正しない判断をしたものは理由つき)。
+**残っていて issue になっているもの**:
+
+| issue | 内容 |
+|---|---|
+| [#17](https://github.com/BoxPistols/domdom-inspector/issues/17) | 到達不能コードの bundle 排除 (温存実装の分離ビルド) — design-scan 撤去で 6.1 kB は削減済み、残りは overlay の render/tree サーフェス |
+| [#18](https://github.com/BoxPistols/domdom-inspector/issues/18) | 分類 (青=MUI 等) の非色手がかり (SC 1.4.1) — 枠色 3:1 と凡例文言は修正済み、色以外の視覚手がかりは UI 設計判断が要る |
+| [#19](https://github.com/BoxPistols/domdom-inspector/issues/19) | ホバー中の同一要素のスタイル変化にバッジが追従しない — クリック時の再計測は v0.4.14 で対応、ホバー静止中の live 追従は MutationObserver の設計が要る |
 
 ---
 
@@ -189,7 +190,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] overlay バッジの「生値」と「プロパティ名」が AA 未達 (実測 3.17:1 / 4.31:1) — v1 では無効化する UI が無い
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: high
+- 状態: **✅ v0.4.14** (不透明度を引き上げ、overlayContrast.test.ts が色定数から毎回計算して機械検証) / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: high
 - 根拠: `src/overlayStyles.ts:56 — `.badge .chip .raw { opacity: 0.5; font-size: 11px; }``
 - 影響: `.raw` = **3.17:1 (ページ白) / 3.66:1 (ページ黒)** で、どんなページ背景でも 4.5:1 に届かない。`.lb` = 4.31:1 (白) / 5.15:1 (黒) で明るいページのみ未達。`.raw` は「CSS 変数名を優先表示したときの実測値そのもの」= この製品が存在する理由の出力で、既定 (showVarNames: true) かつ v1 に切替 UI が無いため利用者側で回避できない。entrypoints/popup/index.html:9 の「全色は WCAG AA (通常テキスト 4.5:1 以上) を満たすトークンで管理する」という宣言
 - 再現: 実 Chromium (playwright 1.61.1 / chromium-1228) で src/overlayStyles.ts の OVERLAY_CSS をそのまま shadow root に注入し、overlay.ts:206-222 と同じ入れ子 (.badge > .design > .chip > span.raw) を構築。各段に `background: currentColor` の 60x60 ブロックを差してスクリーンショットのピクセルを canvas.getImageData で実測した (合成後の実色を取るため)。結果: chip 背景 = rgb(55,5
@@ -197,7 +198,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] inspector.js の 34% (18.8 kB) が到達不能。成果物全体では 49.4 kB / 33.5% が削れる (実験ビルド差分で実測)
 
-- 状態: **⬜ 未対応** / 観点: `bundle` / 反証: `—` / 実測
+- 状態: **✅ 一部 v0.4.14** (design-scan 撤去で 6.1 kB 削減 + 未到達サーフェスの遅延生成。残り (温存実装の分離ビルド) は issue #17) / 観点: `bundle` / 反証: `—` / 実測
 - 根拠: `src/overlay.ts:405 flashRenders / 422 drawFlashes / 456 clearRenderFlashes / 470 showRenderStats / 574 causeTooltip / 604 copyText / 628 hideRenderStats / 636 showRenderControl / 655 hideRenderControl / 663 showTree / 705 hideTree / 709 isTreeOpen / 714 scrollTreeTo — いずれも src/inspector.ts と entrypoints/inspector.content.ts から一度も呼ばれない (呼ばれるのは containsTarget/hideAll/hideChainPanel/hideHighlight/hideModePill/isChainPanelOpen/openEditor/show/showChainPanel/showModePill/toast/updateSettings/updateTokens の 13 個だけ)`
 - 影響: inspector.js は `all_frames: true` + `world: MAIN` で document_start に注入されるので、iframe の数だけ 54.8 kB を parse する。到達不能分がその 1/3。審査面としても、`.stats`/`.rctl`/`.tree` の CSS と showRenderStats/showTree の本体が成果物に残っていると、審査官が読んだ機能面と単一目的の宣言 (STORE_LISTING.md:95 「Measure the design values of a web page's UI…」) が一致しない。Ove
 - 再現: 実測済み。リポジトリを scratchpad にコピーして段階的に剥がし、毎回 `wxt build` してサイズを取った (baseline はバイト単位で本物と一致: inspector.js 54805 B / Σ 147.17 kB)。
@@ -210,7 +211,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] design-scan だけ配線の両端が残っており (送信側は不在)、designScan.ts + coverage.ts 5.7 kB を bundle に引き込むうえ、ページからの postMessage 偽装で全文書走査を起動できる
 
-- 状態: **⬜ 未対応** / 観点: `bundle` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (bridge 中継 + MAIN world 受信を撤去 (issue #10 に復元手順)。coverage e2e も撤去) / 観点: `bundle` / 反証: `—` / 実測
 - 根拠: `entrypoints/inspector.content.ts:204 — `if (data.type === 'design-scan' && typeof data.id === 'string') {` → :208 `scanDesign(document, currentTokens(), {...})` → :215-218 結果を `window.postMessage({..., type:'design-scan-result', payload: scan}, '*')``
 - 影響: ユーザーに届く機能が 1 つも無い経路のために 5.71 kB を全フレームに配り、かつページ側から叩ける入口を 1 つ余分に開けている。エディタ起動の postMessage 偽装は `freshContextTarget()` で塞いだのに、同じリスナのこの分岐は塞がれていない (対策の非対称)。e2e/coverage.spec.ts が緑なので、配線が切れていることが gate から見えない — これが 5.7 kB が生き残った直接の原因
 - 再現: 配線の欠落は実測 (grep 全数)。走査の起動可能性は未確認 (コード読みのみ): inspect が有効なタブでページ script が `window.postMessage({source:'domdom-inspector-bridge', type:'design-scan', id:'x'}, '*')` を投げると :204 が成立し scanDesign が走る。返り値は `'*'` でページに返るが、v1 は貼り付けトークン UI が無く辞書はページ自身の MUI テーマ由来なので、ページが自分の持っていない情報を得るわけではない (= 情報漏洩ではない)。残るのは CPU
@@ -218,7 +219,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] overlay が inspect 起動ごとに到達不能な 4 サーフェスを実 DOM に作る (canvas.render-canvas + 2D context / div.stats / div.rctl / div.tree) — 実 Chromium で確認
 
-- 状態: **⬜ 未対応** / 観点: `bundle` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (canvas/stats/rctl/tree を遅延生成に変更。e2e が「ホバー後も DOM に無い」を固定) / 観点: `bundle` / 反証: `—` / 実測
 - 根拠: `src/overlay.ts:94-96 — `this.canvas = el('canvas', 'render-canvas'); this.ctx = this.canvas.getContext('2d');` (flashRenders/drawFlashes は到達不能なので一度も描画されない)`
 - 影響: 透明・pointer-events:none・未描画なので見た目と操作は壊れない。実害は「inspect したフレームごとに無駄な DOM 4 個と 2D canvas context 1 個を確保する」こと。all_frames なので iframe が N 個あるページでは N 倍。ユーザーの見た目には出ないが、ページに要素を注入する拡張として最小主義から外れる (審査官が DevTools で shadow root を開けば、単一目的の宣言に無い stats/rctl/tree の器が見える)
 - 再現: 実測済み。playwright で拡張をロードし localhost fixture で `attachShadow` を open 強制、`{source:'domdom-inspector-bridge', type:'inspect-on'}` を postMessage して要素を hover。closed shadow root の子要素を列挙した結果:
@@ -246,7 +247,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] 「fetch 発生箇所 0 件」の監査手順が src 限定 — 提出 zip には Vite の modulepreload polyfill 由来の `fetch(` が 1 件ある
 
-- 状態: **⬜ 未対応** / 観点: `cws-policy` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (vite modulePreload polyfill を無効化して出荷 JS から除去 + check:submission と SECURITY.md に bundle 側 grep を追加) / 観点: `cws-policy` / 反証: `—` / 実測
 - 根拠: `SECURITY.md:8-10 — 『fetch / XMLHttpRequest / WebSocket / sendBeacon / EventSource の発生箇所が 1 つも無いことを grep で再現証明できる』`
 - 影響: 外部送信は実際に無いので申告は正しいが、こちらが指定した監査手順を zip に対して実行した第三者 (審査官・企業の IT) には『0 件』が再現しない。製品の最大の売り (送信経路ゼロ) の証明手順が、提示する成果物の上で崩れる。
 - 再現: 実測: `unzip -p .output/domdom-inspector-0.4.7-chrome.zip chunks/popup-B21RLllI.js | grep -c 'fetch('` → 1。前後を読むと Vite の modulepreload polyfill (`link[rel=modulepreload]` の href を fetch = chrome-extension:// 内リソース) で外部送信ではない。ソース側 grep は確かに 0 件 (`grep -rniE 'fetch\(|XMLHttpRequest|WebSocket|sendBeacon|
@@ -254,7 +255,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] popup の既定表示が ja 604px で Chrome の action popup 上限 600px を超える (en は 592px で残り 8px)
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (余白を圧縮し en 564px / ja 576px (実測)。e2e が ja の実文字列で 600px 未満を固定) / 観点: `i18n-quality` / 反証: `—` / 実測
 - 根拠: `entrypoints/popup/index.html:56-57`
 - 影響: 初回起動 = サイト未有効化 = まさに文言が一番多い状態で、ja だけポップアップ内スクロールが出て「全サイトで許可」の説明や下部のヘルプ導線が見切れる。en も余裕 8px しかないため、今後 1 行足すだけで両言語が超える (長さの回帰を検知する仕掛けが無い)。
 - 再現: ビルド済み拡張を実 Chromium にロードし chrome-extension://<id>/popup.html を 420×900 で開き、locale を fetch して applyI18n と同じ差し替えを行い document.body.scrollHeight を実測 (初回状態 = サイト未有効化なので siteStatus と modeUnavailable が可視、details は閉じ)。結果: en 592px / ja 604px。最大の消費者は hintAllSites (両言語で 6 行 99px)。横溢れは en/ja とも 0 件 (body は 340p
@@ -262,7 +263,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] blob: タブで全サイト許可が無いとき「http/https 以外だから有効化できない」と誤った理由を出し、直下の解決策から遠ざける
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (siteBlobNeedsAllSites キーを新設し「全サイト許可があれば使える」と正しい解決策を出す) / 観点: `i18n-quality` / 反証: `—` / 実測
 - 根拠: `entrypoints/popup/main.ts:216-221`
 - 影響: 実際には親が https で、同じ popup 内の直下にある「全サイトで許可(一度だけ)」を押せば executeScript 経路で有効化できる (main.ts:264-283 がその専用パスを持っている)。それを「このページでは無理」と断定するので、解決可能な状態でユーザーを諦めさせる。理由が誤りである点は inspector.ts:217-219 で確立した原則 (理由を実状態から選ぶ) の未適用箇所。
 - 再現: blob:https://<origin>/<uuid> をトップレベルタブで開き (プレビューを新規タブで開く導線)、全サイト許可を与えていない状態で popup を開く。main.ts:196-208 で isBlobTab=true・siteOrigin=親の https origin が解決されているのに、:218-221 は btn.disabled=true にして siteUnavailable を出す。文言は en 'This page (non-http/https or unknown URL) can't be enabled.' / ja 「このページ(http/htt
@@ -270,7 +271,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] トークン非準拠値の呼び方が掲載文・ヘルプ・UI で三者バラバラ (en: rogue / stray / off token / ≠ token、ja: 野良値 / 外れた値 / トークン外 / ベタ書き)
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (en=rogue value / ja=野良値 に統一 (popup ヘルプ 3 箇所を修正。バッジの ≠ token 記号は幅の制約で維持)) / 観点: `i18n-quality` / 反証: `—` / 実測
 - 根拠: `STORE_LISTING.md:51`
 - 影響: 掲載文とヘルプで 'rogue value' / 「野良値」を学んだユーザーが、バッジで '≠ token' / 「≠ トークン」を見ても同じものだと結び付かない (v1 で可視な範囲だけでも用語が 1 つズレている)。加えて 'rogue value' は「野良値」の直訳で、英語圏のデザインシステム語彙では off-token / hardcoded / one-off が通用語なので、既定 en の掲載文としては不自然に読まれる。残り 4 通りは dormant なので今は害が無いが、カバレッジ画面を再配線した時点でそのまま出荷される。
 - 再現: 全 en メッセージを機械走査した実測: 'rogue' はヘルプ本文 (index.html:271) の 1 箇所と掲載文 (STORE_LISTING.md:51) のみで、UI 文言には 0 箇所。UI が実際に出すのは tokenNear/tokenNone の '≠ token' と offGridWarn の '(not on the 4px grid)'。dormant なキーには 'stray' (hintTokens) / 'off token' (coverageOriginVarMiss, coverageOriginLiteralMiss) / 'literal' (
@@ -278,7 +279,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] モードを一度も ON にしていなくても、MUI テーマ発見時に overlay をページ DOM へ注入してトーストを出す
 
-- 状態: **⬜ 未対応** / 観点: `performance` / 反証: `CONFIRMED` / 実測
+- 状態: **✅ v0.4.14** (OFF 中は通知を保留し (DOM 注入もしない)、次の ON で 1 度だけ出す) / 観点: `performance` / 反証: `CONFIRMED` / 実測
 - 根拠: `entrypoints/inspector.content.ts:105 (hookState.onCommit で常時購読。inspector.enabled を見ていない)`
 - 影響: サイトを 1 度許可すれば以降そのドメインの全ページ読み込みで発火し、テーマ差し替え (ダーク切替等) ごとに再発する。ユーザーから見ると「何も押していないのに拡張が喋る」「サイト自身の通知と紛らわしい」挙動で、常駐型拡張として最も嫌われる型。全サイト許可モードだと被害範囲がブラウジング全体になる。
 - 再現: node /private/tmp/claude-502/-Users-ai-dev-domdom-inspector/2fe7d5de-f034-43c7-9516-d64dd5a4ea8e/scratchpad/off-state.mjs (モードは一切 ON にしない)
@@ -306,7 +307,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [medium] インスペクト中は ↑↓ が常に preventDefault され、ページのキーボードスクロールが死ぬ。しかもスクロール直後は ↑ が完全に無反応 (理由も出ない)
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (選択なし/履歴なしはページへ返す + 編集要素・修飾キーは奪わない。unit で固定) / 観点: `ux-breakage` / 反証: `—` / 実測
 - 根拠: `src/inspector.ts:242-247 — ArrowUp は preventDefault / stopImmediatePropagation を**先に**実行し、その後 `if (!this.currentElement) return;` で黙って抜ける (toast も無し)`
 - 影響: 長いページを検査する主用途で、モード ON のまま矢印キーでスクロールできない (PageUp/Down・スペースは生きるので余計に気づきにくい)。加えて直近で潰した「押しても無反応」類型がここに残っている: スクロール直後の ↑ は何も起きず理由も言わない。
 - 再現: 実測 (probe3 [3][4])。ON → #a をホバー → ホイールで 120px スクロール (scrollY=120) → ↑ を押す → scrollY は 120 のまま (ページスクロールを奪う) かつ枠もトーストも出ない (state: box=none, 新規トースト無し)。続けて ↓ も scrollY 120 のまま無反応。ホバーし直せば ↑ は親へ動くので、症状は「スクロール直後だけ死ぬ」。入力欄にフォーカスがある場合にキャレット移動を奪う点はコード上そう読めるが未計測。
@@ -314,7 +315,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] 半透明な computed 色のスウォッチがバッジ背景の上で合成され、実際とかけ離れた色に見える (ΔRGB=331)
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: high
+- 状態: **✅ v0.4.14** (スウォッチを市松 (2 層背景) の上に描画) / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: high
 - 根拠: `src/overlay.ts:209-214 — `// 色値は hex 文字列だけでは読めないため実色スウォッチを前置 (半透明もそのまま描画)` → `sw.style.background = p.value``
 - 影響: MUI の `alpha()` 由来トークン (action.hover 0.04 / action.selected 0.08 / divider 0.12 等) は「青=MUI」を主対象に据えたこの製品で日常的に出る。明るいページで `rgba(0,0,0,0.04)` = 実際はほぼ白 (rgb 245) の色が、バッジではほぼ黒 (rgb 53) のチップとして描かれる。デザイナーがスウォッチを見て色を判断する導線なので視覚チャンネルでの誤答。blocker にしなかった根拠: 隣に生値テキストが出るので文字を読めば訂正できる。ただしその生値テキストが上記所見1で 3.17:1 なので
 - 再現: 実 Chromium で OVERLAY_CSS を注入し、overlay.ts:206-214 と同じ chip (CSS 既定の inline-flex) 内に `.sw` を作って `style.background` に MUI が実際に使う半透明値を入れ、同じ値をページ実背景 (白 / #111111) の上に置いた比較ブロックと並べてピクセル実測。ページ白での結果 — `rgba(0,0,0,0.04)`: バッジ内 rgb(53,53,56) / ページ実際 rgb(245,245,245) Δ=331。`rgba(0,0,0,0.12)`: rgb(49,49,52) / rg
@@ -322,7 +323,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] SC 1.4.11 (非テキストコントラスト) が一度も検算されていない — popup の入力枠 1.36–1.41:1、toast ボタン枠 2.50:1
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (--border-input (3:1) を新設し入力欄に適用 + toast ボタン枠 0.45。overlayContrast.test.ts が両テーマを検算) / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `entrypoints/popup/index.html:9 — AA 主張は「通常テキスト 4.5:1」だけで非テキスト (3:1) に言及なし`
 - 影響: 「開発者向け」を開いたときのエディタ select / カスタム URL input / パスマッピング textarea は、枠も塗りも地とほぼ同輝度なので低視力ユーザーには入力欄の存在と範囲が見えない (可視ラベルはあるので免除の余地はあるが、3:1 を満たしていないのは確定)。overlay の「コピー」トーストボタンも枠 2.50:1 で押せる要素だと気づきにくく、これはエディタが開かなかったときの唯一の復帰導線。text 側だけを AA で管理し非テキスト側を見ていない、という抜けが構造。
 - 再現: 実 Chromium で file:// から entrypoints/popup/index.html を開き、colorScheme=dark / light を切替えて `getComputedStyle` の borderTopColor / backgroundColor を読み、WCAG 式で比を計算。dark: 枠 rgb(42,47,61) vs 地 rgb(15,17,22) = **1.41:1**、塗り rgb(23,26,33) vs 地 = **1.08:1**。light: 枠 rgb(215,221,231) vs rgb(255,255,255) = **1.3
@@ -330,7 +331,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] モードピルの ✕ ボタンの accessible name が "✕" — ローカライズ済みラベルが title に置かれ Chromium が SUPERSEDED 扱いにしている
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (aria-label にローカライズ済みラベルを明示) / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `src/overlay.ts:118-119 — `const btn = el('button', undefined, '✕'); btn.title = closeLabel;``
 - 影響: v1 で唯一到達可能な overlay のボタン (モードピルの閉じる) が、スクリーンリーダーには「✕ ボタン」としか読まれる。ローカライズした 'Exit inspect mode' / 'インスペクトモードを終了' は AT に一切届かない (WCAG 4.1.2)。Esc で代替できるので致命ではないが、v1 配線外の stats/tree では aria-label を付けてあるのに v1 で実際に使う 1 個だけ抜けている非対称。
 - 再現: 実 Chromium で overlay.ts:114-125 と同じ構築 (button の textContent = '✕'、title = 'Exit inspect mode') を行い、CDP `Accessibility.getPartialAXTree` で計算済み accessible name とその source を取得。結果: `role=button accessibleName="✕"`、source 内訳 `contents="✕"` が採用され `attribute[title]="Exit inspect mode"` は **SUPERSEDED** と明示
@@ -338,7 +339,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] インスペクト中の ↑↓ が編集要素・修飾キーを問わず window capture で潰される — 同じファイルの pointer 経路にはあるガードが key 経路に無い
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (isEditableTarget + 修飾キー除外 (medium の ↑↓ 対応と同時)) / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `src/inspector.ts:101 — `window.addEventListener('keydown', this.onKeyDown, true)` (capture)`
 - 影響: インスペクト中はページ側の textarea / select / listbox / combobox / コードエディタ (Monaco, CodeMirror) で ↑↓ のキャレット移動・選択移動が効かない。`stopImmediatePropagation` を window capture で撃つのでページ側ハンドラも道連れ。Shift+↑ (行選択) や Cmd+↓ (末尾へ) といった修飾キー付きも同じく親コンポーネント移動に化ける。↑↓ をモードキーにするのはヘルプに書いてある意図的挙動なので、欠陥は「編集可能な対象への例外がない」点に限定される。Esc で復帰できる。
 - 再現: grep による不在証明: `grep -n 'contentEditable|isContentEditable|INPUT|TEXTAREA|closest(|altKey|metaKey|ctrlKey|shiftKey|event.target' src/inspector.ts` は 141/166/167/176/181 (すべて pointer 経路) にしかヒットせず、242-266 の onKeyDown 内には 1 件も無い。実ブラウザでの挙動再現 (テキストエリアにフォーカスして ↑↓ を押す) は**未確認** — 拡張のロードを伴うため。コードの事実 (ガード不在) 
@@ -346,7 +347,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] overlay の owner パネルがキーボード到達不能、トーストが AT に届かない (role/aria-live 無し・9 秒で消える)
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (jumpable 行を tabindex=0 + role=button + Enter/Space 対応、トーストに role=status + aria-live=polite) / 観点: `a11y-contrast` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `src/overlay.ts:300-320 — owner 行は `el('div', 'row')` に `row.addEventListener('click', ...)` のみ。tabindex / role="button" / keydown ハンドラ無し`
 - 影響: Alt+Click の描画元リストは行クリックでエディタへ飛ぶ唯一の導線だが div + click なのでキーボードから起動できない (SC 2.1.1)。トーストは「エディタに送った先」「production セーフモード」「MUI テーマ検出」「グリッド外警告」などの全フィードバック経路なのに live region ではないので AT には何も通知されない。操作可能トーストのボタンは closed shadow DOM 内で Tab 順の最後尾にあり、しかも 9 秒で消えるため実質キーボードでは押せない。製品全体がホバー主体なので前提として視覚・ポインタ依存だが、パネルとトーストは既存
 - 再現: コード読解 + grep。`grep -n 'aria|role=|setAttribute|tabIndex|tabindex' src/overlay.ts` のヒットは 368 (data-domdom-editor)、478/479/492 (stats)、614 (readonly)、670/671/677 (tree) のみ。v1 で到達可能な panel / toast / badge には 1 件も無い。実 AT (VoiceOver) での読み上げ確認は未確認。
@@ -354,7 +355,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] コード内コントラスト値のコメントが実測と不一致 (4.6:1 と書いて実測 5.30:1) — 数値を機械検証する仕組みが 0 件
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `CONFIRMED` / 実測
+- 状態: **✅ v0.4.14** (コメントの数値を撤去し「テストが計算する」に置換 (overlayContrast.test.ts)) / 観点: `a11y-contrast` / 反証: `CONFIRMED` / 実測
 - 根拠: `entrypoints/popup/index.html:41 — `--accent-bg: #1668d4;  /* ライトでは濃青地 + 白文字 (4.6:1) */``
 - 影響: 実際の値はコメントより良いのでユーザー被害は無い。ただし数値が一度も検算されていない証拠であり、これが所見1 (overlay の 3.17:1) と所見3 (非テキスト 1.36:1) を通した根本原因。CLAUDE.md のコミット前ゲート (lint/test/typecheck/build) にコントラストの門が無いため、次にトークンを触ったときも同じ形で破れる。
 - 再現: `grep -rln 'contrast|wcag|WCAG|luminance|axe' src/ e2e/ scripts/` → **ヒット 0 件**。コントラスト比を守るテストもリンタも存在しない。実測は python の WCAG 相対輝度実装 + 実 Chromium の computed style で行い、#ffffff on #1668d4 = **5.30:1** (コメントの 4.6:1 と不一致)、#0b1220 on #8ec2ff = 10.08:1。
@@ -362,7 +363,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] popup に到達不能な CSS が 20 セレクタ以上残っている (.cov-* / .ai-badge / .q / #coverageTop / .help code など)
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast` / 反証: `CONFIRMED` / 実測
+- 状態: **✅ v0.4.14** (.cov-*/.ai-badge/#coverageTop/.q/.hc-* と --hc-* 変数を削除 (再導入時は git から)) / 観点: `a11y-contrast` / 反証: `CONFIRMED` / 実測
 - 根拠: `entrypoints/popup/index.html:123-128 — `.q` (「tabindex 0 でキーボードからも読める」というコメント付きだが markup に `class="q"` が無い)`
 - 影響: 審査もユーザー体験も止めない。ただし (a) 提出パッケージに v1 で外した機能 (カバレッジ / AI 監査) の痕跡が残る、(b) `.q` は「ⓘ でキーボードから設定の意味が読める」という**実在しない a11y 配慮**をコメントで主張している、(c) `.hint` 内の `<code>from=to</code>` は意図されたチップ装飾 (背景 + 角丸) が当たらず素のテキストで出る (可読性自体は 8.18:1 / 6.60:1 で問題なし)。次に a11y を見る人が「ⓘ があるはず」と誤解する。
 - 再現: body 部 (178-301 行) の `class=` 属性を実際に列挙: `hint`(9) `section`(4) `secondary`(2) `legend lg-third`(2) `legend lg-mui`(2) `legend lg-custom`(2) `help`(2) の 7 種だけ。CSS 部 (54-176 行) が宣言するクラス/ID セレクタは 26 種。差分がそのまま死んでいる。`grep -c 'createElement|innerHTML' entrypoints/popup/main.ts` = **0** なので TS 側が動的に付けている可能
@@ -370,7 +371,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] 成果物に fetch( が 1 件ある (Vite の modulePreload polyfill)。PRIVACY.md「ネットワークリクエストを 1 つも発行しない」と grep 上で衝突する
 
-- 状態: **⬜ 未対応** / 観点: `bundle` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (modulePreload polyfill 無効化で除去。check:submission が出荷 JS を毎回 grep) / 観点: `bundle` / 反証: `—` / 実測
 - 根拠: `.output/chrome-mv3/chunks/popup-B21RLllI.js:1 — `function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}` (Vite の modulepreload polyfill)`
 - 影響: 実行されないので機能・プライバシーの実害はゼロ。ただし審査官が提出 zip に `fetch(` を grep すると 1 件当たり、その隣で PRIVACY.md が「1 つも発行しない」と言っている。自前のチェックがこの 1 件を見ていない (src だけ grep している) ので、申告の根拠が成果物では測られていない
 - 再現: 実測済み。`grep -ro 'fetch(' .output/chrome-mv3` = 1 件 (chunks/popup-B21RLllI.js)。src/entrypoints 側は submission-check と同条件の grep で 0 件。実行されないことも確認: polyfill 冒頭が `let e=document.createElement('link').relList; if(e&&e.supports&&e.supports('modulepreload'))return;` で、Chrome (min 119) は modulepreload を suppo
@@ -378,7 +379,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] 到達不能コードを守るテストが 295 件中 112 件 (38%) あり、v1 の品質根拠として数えられる形になっている
 
-- 状態: **⬜ 未対応** / 観点: `bundle` / 反証: `CONFIRMED` / 実測
+- 状態: **判断済み (修正しない)** — テストは温存実装 (issue #4/#5/#10-13 で再導入予定) の回帰を守る資産として意図的に残す。「v1 の品質根拠」として件数を文書に書かないことは store-submission-readiness から数字を全廃して担保した
 - 根拠: ``pnpm test` 実測 = 26 files / 295 tests。うち到達不能モジュール: coverage.test.ts 26 / tree.test.ts 16 / renderCause.test.ts 14 / renderTracker.test.ts 12 / aiProviders.test.ts 9 / designScan.test.ts 8 / vitals.test.ts 8 / aiPrompt.test.ts 7 / recordKey.test.ts 6 / report.test.ts 5 / aiCost.test.ts 1 = 112 件`
 - 影響: 「295 tests green」を v1 の担保として読むと 38% が誰も到達できないコードの担保。温存の方針自体は正しい (issue #10-#13 で戻すときに壊れていないことを保証する) が、v1 の gate と温存コードの gate が同じ数字に混ざっているため、今回の「配線が切れているのに緑」を誰も疑わなかった
 - 再現: 実測済み。`pnpm test` の per-file 件数を集計。到達可能性は値 import のみを辿るスクリプトで機械計算し、grep (buildTree / summarizeTimeline / largest-contentful-paint / longtask / PerformanceObserver / api.openai.com / generativelanguage = 全て成果物 0 件) と実験ビルド差分で裏を取った
@@ -386,7 +387,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] PUBLISHING.md §4-2 の単一目的「要旨」に配線外しの『ページ全体の集計』が残り、readiness の「四者同一 ✅」が成立していない
 
-- 状態: **⬜ 未対応** / 観点: `cws-policy` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (要旨を確定文言 (要素単位のみ) に揃え、集計が v1 に無いことを注記) / 観点: `cws-policy` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `PUBLISHING.md:186-188 — 『…ユーザーのデザイントークンと要素単位およびページ全体の集計で突合する。』`
 - 影響: 単一目的の申告が実装より広くなると、2026-08-01 施行の「開示済み単一目的に厳密に必要な範囲」ルールに対して自ら齟齬を作る。また readiness 判定書の ✅ が機械確認でなく実際には不一致なので、提出前チェックが機能していない。
 - 再現: 実測: 4 ファイルの単一目的文を並べて比較。PUBLISHING.md §4-2 のみ『ページ全体の集計』を含み、:208-209 は文として壊れている。ダッシュボード入力は §4-2 を手順書として使う運用 (PUBLISHING.md:329 の対応表) なので、operator が要旨側を貼ると申告が実装より広くなる。
@@ -394,7 +395,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] 詳細説明の Markdown 強調 `**…**` が CWS のプレーンテキスト欄でアスタリスクとして表示される
 
-- 状態: **⬜ 未対応** / 観点: `cws-policy` / 反証: `CONFIRMED` / 実測
+- 状態: **✅ v0.4.14** (en/ja の説明文コードブロックから ** を除去) / 観点: `cws-policy` / 反証: `CONFIRMED` / 実測
 - 根拠: `STORE_LISTING.md:76 — 説明本文 (貼り付け用コードブロック内) に '- **Nothing is sent anywhere.** The extension has no backend…'`
 - 影響: Public 掲載で最も目に付く箇所の表記崩れ。ポリシー違反ではないが、掲載文の品質が審査対象になる版で不要な減点材料。
 - 再現: 実測: 該当行が掲載用コードブロックの内側にあることを確認。CWS の Description 欄は Markdown を解釈しないので、貼るとアスタリスクがそのまま出る。
@@ -402,7 +403,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] 公開するプライバシーポリシーの権限一覧が contextMenus を落としている (en/ja 両方)
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (en/ja 両方に追記 (追加のページアクセス権は生じない旨も)) / 観点: `i18n-quality` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `PRIVACY.md:47-56`
 - 影響: CWS に提出するプライバシーポリシー URL の中身が、要求している権限の 1 つを説明していない。en/ja の食い違いではなく両方の欠落なので、審査で権限一覧と突き合わされたときに「開示漏れ」として照会されうる。実害は無い権限 (右クリック項目の追加のみ) なので、書けば済む。
 - 再現: manifest の permissions は [storage, activeTab, scripting, contextMenus] の 4 つ。PRIVACY.md の '## Permissions' (:47) と '## 権限' (:112) はいずれも storage / activeTab / scripting / ホストアクセスの 4 項目で、contextMenus が無い。STORE_LISTING.md:87 の justification には contextMenus がある。
@@ -410,7 +411,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] en の細部: 引用符スタイル混在 / 単複非対応で「1 colors」が出る / 「13/5px」と読める警告 / 直書きフォールバック 3 箇所が locale と別文
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `—` / 実測
+- 状態: **✅ 一部 v0.4.14** (引用符を \" に統一 / 「1 colors」は形式変更で解消 / 「13/5px」は 13px / 5px に。残りは可視文言に無し) / 観点: `i18n-quality` / 反証: `—` / 実測
 - 根拠: `public/_locales/en/messages.json:56-58`
 - 影響: (a)(b)(c) はいずれも既定言語である en の仕上がりの品質。Public は掲載文とスクリーンショットが審査対象で、UI の粗さは印象に効く。(c) は複数値の余白で「どの値が px か」を一瞬迷わせる (実測で必ず起きる)。(d) は将来の文言修正が locale だけに入って HTML 側が取り残される温床。
 - 再現: (a) 引用符を機械走査すると、20 キー中 18 キーが直線引用符 (element's/can't/"Enable on current site") なのに ctxOpenInEditor:57 だけカーリー ’、hintTarget:213 だけカーリー “ ”。前者はユーザーに見える右クリック項目。(b) themeTokensLoaded:429 は 'MUI theme detected — {colors} colors / {sizes} sizes added as tokens' で単複の切り替えが無い (Chrome i18n に複数形機能は無い)。件数 1 の到達性は
@@ -418,7 +419,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] ja の細部: editorHint だけ「Click」が英語のまま + で重複、可視文言と dormant 文言で敬体/常体が分かれている
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `—` / 実測
+- 状態: **✅ 一部 v0.4.14** (editorHint を「⌘/Ctrl+クリックでエディタを開く」に。dormant キーの敬体/常体は到達不能のため対応しない (再導入時に直す)) / 観点: `i18n-quality` / 反証: `—` / 実測
 - 根拠: `public/_locales/ja/messages.json:254-256`
 - 影響: 同一機能の同一操作が数秒差で「クリック」と「Click」で提示される。文体の割れは今は dormant 側だけなので可視の害は無いが、表示設定やツールチップを再配線した時点で敬体と常体が同じ popup に並ぶ。「検査」と「インスペクト」の併用 (inspectOn の 1 文に両方) は、モード名=インスペクト・動作=検査の使い分けとして読めるため実害は薄いと判断した (無理に統一する必要は無い)。
 - 再現: editorHint (ja:255) = 「⌘/Ctrl+Click でエディタで開く」。同じセッションで先に出る inspectOn (ja:228) は「⌘/Ctrl+クリック: エディタで開く」、hintEditorUsage (ja:571) も「⌘/Ctrl+クリック」。つまりトーストは「クリック」、その直後にホバーしたバッジの file 行は「Click」で、修飾キー記法も掲載文 (STORE_LISTING.md:157) では「Cmd/Ctrl+クリック」と 3 通りある。editorHint は「Click で」+「エディタで開く」で助詞「で」が重複。文体は、v1 で可視な
@@ -426,7 +427,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] 世界公開を en/ja だけで出すのは妥当 (機能欠損は無い)。追加するなら UI 文言限定で、権限・プライバシー文は en 据え置きにすべき
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality` / 反証: `—` / 実測
+- 状態: **判断済み (修正しない)** — 助言であり欠陥ではない。追加言語は UI 文言限定・権限/プライバシー文は en 据え置き、という方針をそのまま採用する
 - 根拠: `wxt.config.ts:7`
 - 影響: 現状の en/ja のままで Public 全地域に出して問題は無い。追加言語の費用対効果は「popup の 19 ラベル + overlay の約 30 文言」で済むので低いが、翻訳者不在で機械翻訳を入れると危険な箇所が特定できる: hintAllSites (Chrome の全サイト警告の意味と「都度許可でも機能は同じ」という代替提示)、hintEditorUsage (開発ビルド限定という制約)、PRIVACY.md 全体。ここを誤訳すると権限の意味とプライバシー上の約束が言語ごとに変わり、審査でも信頼でも損になる (en が正であることを担保できない)。
 - 再現: default_locale: en (wxt.config.ts:7) なので ja 以外の全ロケールは en にフォールバックし、機能欠損は生じない。popup のヘルプ本文は main.ts:27-31 で getUILanguage().startsWith('ja') の二値判定なので、非 ja は必ず en 本文が出る (欠落しない)。翻訳品質の実測: ja 196 キー中、en と同一なのは extName (ブランド名) の 1 件のみ、CJK を 1 文字も含まない ja エントリは 0 件 = ja は全訳済み。PRIVACY.md は en + ja の二本立てで公開でき
@@ -434,7 +435,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] roots Set を刈らないので unmount 済み FiberRoot を GC 不能に保持し、2 秒ごとのテーマ探索コストが root 数に比例して増える
 
-- 状態: **⬜ 未対応** / 観点: `performance` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
+- 状態: **✅ v0.4.14** (findMuiTheme が isConnected===false の root を捨てる。unit で固定) / 観点: `performance` / 反証: `DOWNGRADED` / 実測 / finder の申告: medium
 - 根拠: `src/hook.ts:41-51 (notifyCommit が state.roots.add(root) するだけ。削除経路が無い)`
 - 影響: createRoot/unmount を繰り返す環境 (Storybook のストーリー切替、HMR、ウィジェット単位の root 生成) では、拡張が有効な間ずっと detached な fiber/DOM グラフが解放されず、同時に「モード OFF でも 2 秒ごとに走る探索」が root 数に比例して重くなる。MUI テーマが見つからないページ (= 非 MUI の React アプリ) は毎回全 root を最後まで舐めるので最悪ケースに当たる。実 React の unmount 後にどれだけのグラフが root から到達可能かはアプリ依存 (未計測)。
 - 再現: 1) 保持の確定 (WeakRef + 実 gc): node /private/tmp/claude-502/-Users-ai-dev-domdom-inspector/2fe7d5de-f034-43c7-9516-d64dd5a4ea8e/scratchpad/roots-leak.mjs (--js-flags=--expose-gc)
@@ -443,7 +444,7 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [low] ページ側が overlay ホストを外すと、モードは ON のままモードピル (マウスでの終了導線) だけが消える
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage` / 反証: `—` / 実測
+- 状態: **✅ v0.4.14** (ピル状態を保持し再マウント時に復元。e2e が host 除去 → 復元を固定) / 観点: `ux-breakage` / 反証: `—` / 実測
 - 根拠: `src/overlay.ts:80-111 — ensureMounted は `host?.isConnected` が false なら host と全サーフェスを作り直す (pill も空の新規要素になる)`
 - 影響: マウスだけで終了する導線 (ST-5 として意図的に用意したもの) が消え、Esc かショートカットを知らない利用者は「クリックが効かないページ」に取り残される。トリガは限定的 (ページが documentElement の未知要素を掃除する場合) なので実発生頻度は低い。
 - 再現: 実測 (probe4 [1]-[3])。ON → ホバーして pill 表示を確認 (`インスペクト中 — Esc で終了 ✕`) → ページ側 JS で `document.querySelector('domdom-inspector-overlay').remove()` (documentElement を掃除するページ・他拡張相当) → 別要素をホバー → overlay は再マウントされて枠は出る ([2] box=block) が pill は `on` クラスなし・中身空。[3] クリックは依然握り潰されており (カウンタ 0) モードは ON のまま。
@@ -451,32 +452,32 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [missed] [medium] ハイライト枠の分類色が明るいページで 3:1 未達 (SC 1.4.11) + 分類が色相のみ (SC 1.4.1) — この製品の第一出力を finder は測っていない。src/overlay.ts:143-152 p
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast (missed)` / 反証: `MISSED` / —
+- 状態: **✅ 一部 v0.4.14** (既定 3 色を 3:1 以上に変更 (テストで機械検証) + バッジ名は白文字 + 色ドットに分離。色相のみの分類伝達 (1.4.1) は issue #18) / 観点: `a11y-contrast (missed)` / 反証: `MISSED` / —
 - 影響: [medium] ハイライト枠の分類色が明るいページで 3:1 未達 (SC 1.4.11) + 分類が色相のみ (SC 1.4.1) — この製品の第一出力を finder は測っていない。src/overlay.ts:143-152 positionBox が borderColor に分類色を直接入れる。既定は src/types.ts:118-121 の mui #2196f3 / custom #4caf50 / thirdParty #9e9e9e。実 Chromium で 2px 枠を描いてピクセル採取 + WCAG 式で実測: 白ページ 3.12 / 2.78 / 2.68、MUI 既定の grey 地 #f5f5f5 では 2.87 / 2.55 / 2.46 → **明るいページでは 3 色すべて 3:1 未達**(暗ページは 6.04 / 6.79 / 7.05 で問
 
 ### [missed] [medium] popup ヘルプが「存在しない貼り付け欄」に JSON を貼れと指示している (直近潰したはずの『存在しない機能の宣言』の再発) — entrypoints/popup/index.html:269 "Design to
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.10** (ヘルプ本文を v1 実態 (自動検出のみ) に書き換え済み。現 index.html に貼り付けの記述ゼロを確認) / 観点: `a11y-contrast (missed)` / 反証: `MISSED` / —
 - 影響: [medium] popup ヘルプが「存在しない貼り付け欄」に JSON を貼れと指示している (直近潰したはずの『存在しない機能の宣言』の再発) — entrypoints/popup/index.html:269 "Design tokens: paste your Figma Variables / W3C / Tokens Studio JSON above." / :291-292「上の欄に Figma Variables / W3C / Tokens Studio の JSON を貼り付けると」/ :264 "your pasted design tokens" / :286「貼り付けたデザイントークンと照合した名前が併記されます」。しかし貼り付け UI は v1 で外してある (entrypoints/popup/main.ts:57-59「トークン JSON 貼り付けは 
 
 ### [missed] [low] entrypoints/popup/main.ts:35 の内部コメント「render/tree は issue #4/#5 で再配線済み」が v1 スコープ (tree/render は配線外し = 到達不能) と矛盾する。ユ
 
-- 状態: **⬜ 未対応** / 観点: `a11y-contrast (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (コメントを v1 実態 (配線外し) に修正) / 観点: `a11y-contrast (missed)` / 反証: `MISSED` / —
 - 影響: [low] entrypoints/popup/main.ts:35 の内部コメント「render/tree は issue #4/#5 で再配線済み」が v1 スコープ (tree/render は配線外し = 到達不能) と矛盾する。ユーザー可視ではないが、次に触る人が到達可能だと誤解して 4 点配線の復活手順 (CLAUDE.md 地雷3) を飛ばす risk がある。
 
 ### [missed] **[blocker 級 / 実測] バッジが「由来でない CSS 変数名を由来として表示する」— この製品が Tier2 を却下した理由そのものが Tier1 の中で起きている。** 実 Chromium + 実拡張 (.output/c
 
-- 状態: **⬜ 未対応** / 観点: `bundle (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.11** (cssVars の @layer/specificity 修正 (compareCascade) で解消済み。監査と同じ「同値でレイヤ内が高 specificity」の形を e2e (badge.spec の #samecolor) に追加し、比較器を壊すと落ちることを確認) / 観点: `bundle (missed)` / 反証: `MISSED` / —
 - 影響: **[blocker 級 / 実測] バッジが「由来でない CSS 変数名を由来として表示する」— この製品が Tier2 を却下した理由そのものが Tier1 の中で起きている。** 実 Chromium + 実拡張 (.output/chrome-mv3) + localhost fixture で計測した実際のバッジ描画: (a) `@layer base { .a.b { color: var(--wrong-color) } }` と非レイヤの `.only { color: rgb(0,128,0) }` を両方当てた要素 → ground truth `getComputedStyle().color = rgb(0,128,0)` (非レイヤ宣言が全レイヤに勝つ) なのに、バッジは `文字色 --wrong-color = #008000` と描画。--wrong-colo
 
 ### [missed] **[medium / 実測] ホバー状態の値を「その要素のデザイン値」として無警告で表示する。** 同じ実拡張プローブで `.btn { color: var(--rest); padding: 8px } .btn:hover { co
 
-- 状態: **⬜ 未対応** / 観点: `bundle (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (popup ヘルプに「:hover の値を測っている」注意を明記 (en/ja)。監査自身の推奨する最小手当て。hover 抑制した再計測は将来課題) / 観点: `bundle (missed)` / 反証: `MISSED` / —
 - 影響: **[medium / 実測] ホバー状態の値を「その要素のデザイン値」として無警告で表示する。** 同じ実拡張プローブで `.btn { color: var(--rest); padding: 8px } .btn:hover { color: var(--hov); padding: 12px }` を計測 → バッジは `文字色 --hov = #c8c8c8` / `内余白 12px`。インスペクトはホバーで起動するので `:hover` 宣言が常に cascade に参加し、**対話要素では常時 hover バリアントの値しか見えない**。computed style と一致するので誤りではないが、「このボタンは正しい余白トークンを使っているか」を確かめる用途では静かに別の答えを返す。頻度はボタン/リンクの 100%。最小の手当ては popup ヘルプ 1 行の明示 (現在の 
 
 ### [missed] **[low / finder の measured 主張の反証] finder は「probe の spec ファイルは削除済みで git status は clean・git diff は空」と書いているが、実際の repo には pr
 
-- 状態: **⬜ 未対応** / 観点: `bundle (missed)` / 反証: `MISSED` / —
+- 状態: **判断済み (修正しない)** — finder の自己申告の反証記録であり、製品の欠陥ではない (作業手順の教訓として本文を保持)
 - 影響: **[low / finder の measured 主張の反証] finder は「probe の spec ファイルは削除済みで git status は clean・git diff は空」と書いているが、実際の repo には probe の残骸が置かれたままだった**: ルートに `__ph.mjs` `__ph2.mjs` `__ds.mjs`、さらに `src/__drift.test.ts` (07:48 作成、untracked)。後者は `console.log` を含み `pnpm test` に載って実走する (私の実行で 295 → 296 tests になった原因)。CLAUDE.md のコミット前ゲートは `pnpm lint` で no-console を機械強制しているので、これを取り込むとゲートが落ちる。出荷物 (.output → zip) には入らな
 
 ### [missed] **@layer / :where を無視した近似 specificity が「由来でない CSS 変数名」を提示する (medium, 実 Chromium で実測)** — 看板機能そのものの誤答。src/cssVars.ts:129-
@@ -491,27 +492,27 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [missed] **PRIVACY.md に単一目的の記述が存在しない (low, 実測)** — grep '単一目的|Single purpose|single purpose' の結果は SECURITY.md:82 のみ。docs/store-su
 
-- 状態: **⬜ 未対応** / 観点: `cws-policy (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (en/ja 両方に Single purpose 段落を追加) / 観点: `cws-policy (missed)` / 反証: `MISSED` / —
 - 影響: **PRIVACY.md に単一目的の記述が存在しない (low, 実測)** — grep '単一目的|Single purpose|single purpose' の結果は SECURITY.md:82 のみ。docs/store-submission-readiness.md:45 が『✅ 単一目的の四者同一 STORE_LISTING.md / PUBLISHING.md §4-2 / PRIVACY.md / SECURITY.md』と主張しているが、4 者のうち 1 者は比較対象の文を持っていない。finder の finding 7 は『§4-2 だけが広い』と書いていて、この構造的な欠落には触れていない。
 
 ### [missed] 【出荷 js に fetch( が 1 件残っており「送信経路ゼロ、grep で再現可能」という申告が出荷物に対しては成立しない】 severity: low。STORE_LISTING.md:110-111 と docs/store-su
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (modulePreload polyfill 無効化 + check:submission の出荷 JS grep) / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
 - 影響: 【出荷 js に fetch( が 1 件残っており「送信経路ゼロ、grep で再現可能」という申告が出荷物に対しては成立しない】 severity: low。STORE_LISTING.md:110-111 と docs/store-submission-readiness.md:62 は「送信経路 **ゼロ** — fetch/XHR/WebSocket/beacon の発生箇所が 0 件 (grep で再現可能)」と申告し、Data usage は全カテゴリ「収集しない」+「ネットワークリクエストを一切行わない」。しかし出荷物を自分で grep すると .output/chrome-mv3/chunks/popup-B21RLllI.js に `fetch(` が 1 件ある (background.js / content-scripts/bridge.js / content-s
 
 ### [missed] 【公開するプライバシーポリシーと README が「localhost / 127.0.0.1 は静的 content script で自動対応」と書くが、https://127.0.0.1 は対象外】 severity: low。src/
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (DEV_MATCHES に https://127.0.0.1/* を追加 (文書側でなくコード側を主張に合わせた)) / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
 - 影響: 【公開するプライバシーポリシーと README が「localhost / 127.0.0.1 は静的 content script で自動対応」と書くが、https://127.0.0.1 は対象外】 severity: low。src/matches.ts:5-9 の DEV_MATCHES は http://localhost/* / https://localhost/* / http://127.0.0.1/* の 3 つで、**https://127.0.0.1/* が無い**。出荷 manifest でも確認した (.output/chrome-mv3/manifest.json の content_scripts[].matches = [http://127.0.0.1/*, http://localhost/*, https://localhost/*] ×2)。一方 
 
 ### [missed] 【popup ヘルプの色凡例が、非 React ページでは全要素を「グレー = その他ライブラリ」と説明することになる】 severity: low。src/classify.ts:9-23 は sourcePath も name も MU
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (凡例を「グレー = その他ライブラリ / 素の DOM」(en: or plain DOM) に修正) / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
 - 影響: 【popup ヘルプの色凡例が、非 React ページでは全要素を「グレー = その他ライブラリ」と説明することになる】 severity: low。src/classify.ts:9-23 は sourcePath も name も MUI クラス名も無い場合 :23 で `return 'third-party'` に落ち、src/overlayFormat.ts:12-18 の colorFor はこれを colors.thirdParty (グレー) に写す。素の HTML ページでは全要素が name=null / sourcePath=null なので、枠は常にグレーになる。ところが index.html:259-263 (en) / :281-285 (ja) の凡例は「gray = other libraries」「グレー = その他ライブラリ」と断定しており、React 
 
 ### [missed] 【i18n.test.ts の逆方向検査は所見 3 の指摘に加えて data-i18n 側も守れていない (今は違反ゼロ)】 severity: low (予防のみ)。src/i18n.test.ts の 8 検査は「en/ja のキー集合
 
-- 状態: **⬜ 未対応** / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (data-i18n 検査は導入済みだったため、main.ts の msg() 参照キー検査と DEFAULT_STRINGS↔en 本文一致検査を追加 (typo 注入で赤を確認)) / 観点: `i18n-quality (missed)` / 反証: `MISSED` / —
 - 影響: 【i18n.test.ts の逆方向検査は所見 3 の指摘に加えて data-i18n 側も守れていない (今は違反ゼロ)】 severity: low (予防のみ)。src/i18n.test.ts の 8 検査は「en/ja のキー集合一致」と「DEFAULT_STRINGS ⊆ locale」方向だけで、entrypoints/popup/index.html の data-i18n キーが locale に存在するかを見ていない。現時点で 19 キーすべて en/ja に存在することは機械確認済み (欠落 0) なので**今は無害**だが、欠けた場合 applyI18n (main.ts:14-19) は getMessage が falsy なら textContent を書き換えないため、ja 環境で直書きの英文がそのまま出る (= サイレントに未翻訳が混入し、テストも lin
 
 ### [missed] 【誤答・high 相当】:where() を specificity に数えているため、実際には効いていない宣言の変数名をバッジが「由来」として出す。src/cssVars.ts:51-61 の regex をそのまま実行すると speci
@@ -536,26 +537,26 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 ### [missed] 参考 (finder の notes 4 の裏取り): designScan の来歴予算は誠実に働いている (src/designScan.ts:166-169 で originBudgetExceeded→originAvailable=
 
-- 状態: **⬜ 未対応** / 観点: `performance (missed)` / 反証: `MISSED` / —
+- 状態: **判断済み (修正しない)** — 欠陥ではない (誠実に働いていることの裏取り記録)。v0.4.14 で design-scan 自体を配線から外した
 - 影響: 参考 (finder の notes 4 の裏取り): designScan の来歴予算は誠実に働いている (src/designScan.ts:166-169 で originBudgetExceeded→originAvailable=false、:197-200 で originTrusted に伝播) が、1 要素 48-86ms × 予算 1500ms なので実質 20-30 要素で打ち切られ、実サイト規模では来歴軸が常に出せない状態になる。ただし v1 の popup (entrypoints/popup/main.ts) は design-scan もカバレッジも一切送っておらず到達不能なので、提出判断には影響しない。
 
 ### [missed] 【medium・#4 の真の根本原因】同一要素のスタイル変化に対する無効化が一切無い (src/inspector.ts:159 の `if (element === this.currentElement) return;` + obse
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
+- 状態: **✅ 一部 v0.4.14** (クリック時は同一要素でも必ず再計測するよう変更 (⌘Click の古い値での誤答を閉じる)。ホバー静止中の live 追従は issue #19) / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
 - 影響: 【medium・#4 の真の根本原因】同一要素のスタイル変化に対する無効化が一切無い (src/inspector.ts:159 の `if (element === this.currentElement) return;` + observer 0 件)。finder は resize の「枠のズレ」だけを medium で挙げているが、実測すると**値そのものが古いブレークポイント/古いテーマのまま可視で残る**: (a) @media 跨ぎの resize でバッジが「背景色#c62828 内余白16px 角丸12px」→ computed は #2e7d32 / 5px / 3px、野良値警告 (4px 外の 5px/3px) も出ない。(b) JS で element.style.backgroundColor='#6a1b9a'; padding='7px' に変えて 2px
 
 ### [missed] 【low〜medium・1 行修正】disable() が pending rAF を cancel しない (src/inspector.ts:113-128 に cancelAnimationFrame が無い / :153-161 で
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (disable() で cancelAnimationFrame。unit が OFF 後の show 復活ゼロを固定) / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
 - 影響: 【low〜medium・1 行修正】disable() が pending rAF を cancel しない (src/inspector.ts:113-128 に cancelAnimationFrame が無い / :153-161 で rafId に積む)。pointermove → (rAF 未発火) → Esc の順に噛むと、disable の hideAll の**後**に rAF が select→overlay.show() を実行し、モード OFF (toast「インスペクト OFF」/ pill 消滅 / クリックは素通り) なのに枠とバッジが display:block で**リロードまで永久に残る** (リスナは解除済みなのでマウスを動かしても更新も消去もされない)。実測: 同一タスクで pointermove→Escape を合成すると 1/1 で再現 (box=
 
 ### [missed] 【low〜medium・第一印象を壊す】全フレーム配信 (background.ts:185 / popup/main.ts の frameId 未指定) の副作用として、モード ON でフレーム数だけモードピルとトーストが重複する。実測:
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.13** (告知 (ピル/トースト) をトップフレーム限定に。e2e (iframe-sync) が重複ゼロを固定) / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
 - 影響: 【low〜medium・第一印象を壊す】全フレーム配信 (background.ts:185 / popup/main.ts の frameId 未指定) の副作用として、モード ON でフレーム数だけモードピルとトーストが重複する。実測: 同一オリジン iframe 1 つのページで pill が 2 個 (親子とも pillOn=true)。トーストも各フレームの Inspector.enable (src/inspector.ts:104-107) が自フレームの overlay に出すので同数出る。広告/埋め込みを多数持つ実サイトでは初回 ON で「ピルとトーストが画面のあちこちに湧く」= 壊れて見える。#2 と根は同じだが、Esc を押す前の**最初の 1 操作**で見える症状なので別途潰す価値がある (子フレームでは pill/toast を出さず top のみ、が最小)。
 
 ### [missed] 【low】ホバー前の Alt+Click が完全に無反応。src/inspector.ts:176-178 は currentInfo が null だと preventDefault だけして黙って return する。実測: モード O
 
-- 状態: **⬜ 未対応** / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
+- 状態: **✅ v0.4.14** (クリック時の resync で対象を取得。それでも取れない場合は理由をトーストで出す (unit で固定)) / 観点: `ux-breakage (missed)` / 反証: `MISSED` / —
 - 影響: 【low】ホバー前の Alt+Click が完全に無反応。src/inspector.ts:176-178 は currentInfo が null だと preventDefault だけして黙って return する。実測: モード ON 直後にホバーせず Alt+Click → トーストも パネルも出ず box は一度も表示されない。ON トースト (public/_locales/ja/messages.json:228) は「Alt+クリック: 描画元を見る」と明示的に案内しているので、案内した操作が無反応 = 直近で潰したはずの類型がここにも残っている (#6 の ↑ と同型)。「先に要素をホバーしてください」相当のトースト 1 行で閉じる。
 

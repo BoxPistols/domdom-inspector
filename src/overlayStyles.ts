@@ -35,25 +35,30 @@ export const OVERLAY_CSS = `
       /* ダークページで背景と同化しないための輪郭線 */
       .badge, .toast, .panel, .stats, .rctl, .tree { border: 1px solid rgba(255,255,255,0.18); }
       .badge .name { font-weight: 700; display: block; }
+      .badge .name .cdot {
+        display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+        margin-right: 6px; border: 1px solid rgba(255,255,255,0.7);
+      }
       .badge .meta { opacity: 0.8; display: block; }
       .badge .file { opacity: 0.95; display: block; margin-top: 2px; }
       /* エディタで開く操作ヒント (⌘Click) */
-      .badge .file .ehint { opacity: 0.55; font-size: 11px; }
+      .badge .file .ehint { opacity: 0.75; font-size: 11px; }
       /* デザイン情報は 1 プロパティ = 1 チップで折返し表示 (1 行連結より読める) */
       .badge .design { display: flex; flex-wrap: wrap; gap: 3px 6px; margin-top: 4px; color: #a5d8ff; }
       .badge .chip {
         display: inline-flex; align-items: center; gap: 4px;
         padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.08);
       }
-      .badge .chip .lb { opacity: 0.65; }
+      .badge .chip .lb { opacity: 0.8; }
       .badge .chip .sw {
         width: 10px; height: 10px; border-radius: 3px; flex: none;
         border: 1px solid rgba(255,255,255,0.6);
+        background-size: auto, 6px 6px;
       }
       /* 宣言された CSS 変数名 (実装トークン): 主表示は紫系 (Figma tk=緑/黄・design 値=青と分離) */
       .badge .chip .var { color: #c0a5ff; font-weight: 600; }
       /* 変数名優先時の生値: 従属表示 (淡色・小) */
-      .badge .chip .raw { opacity: 0.5; font-size: 11px; }
+      .badge .chip .raw { opacity: 0.75; font-size: 11px; }
       /* デザイントークン照合の注釈: 一致=緑でトークン名 / 野良値=黄で最近傍 */
       .badge .chip .tk { font-size: 11px; padding-left: 2px; }
       .badge .chip .tk.ok { color: #7ddb99; }
@@ -86,7 +91,7 @@ export const OVERLAY_CSS = `
         font: inherit;
         color: #fff;
         background: rgba(255,255,255,0.14);
-        border: 1px solid rgba(255,255,255,0.28);
+        border: 1px solid rgba(255,255,255,0.45);
         border-radius: 6px;
         padding: 3px 10px;
         cursor: pointer;
@@ -116,6 +121,7 @@ export const OVERLAY_CSS = `
       }
       .panel .row.jumpable { cursor: pointer; }
       .panel .row.jumpable:hover { background: rgba(255,255,255,0.08); }
+      .panel .row.jumpable:focus-visible { outline: 2px solid #60a5fa; outline-offset: -2px; }
       .panel .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; }
       .panel .file { opacity: 0.65; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .render-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; }

@@ -115,10 +115,13 @@ export const DEFAULT_SETTINGS: Settings = {
   openEditorOnClick: true,
   badgeDetail: 'normal',
   showVarNames: true,
+  // 白ページ上のハイライト枠が SC 1.4.11 (非テキスト 3:1) を満たす明度にする
+  // (旧: #2196f3/#4caf50/#9e9e9e は緑 2.78:1 / グレー 2.68:1 で未達だった)。
+  // 検算は overlayContrast.test.ts — 値を変えるならテストが機械で弾く
   colors: {
-    mui: '#2196f3',
-    custom: '#4caf50',
-    thirdParty: '#9e9e9e',
+    mui: '#1976d2',
+    custom: '#2e7d32',
+    thirdParty: '#616161',
   },
   pathMappings: [],
   recordKey: 'r',
@@ -308,7 +311,7 @@ export const DEFAULT_STRINGS: UiStrings = {
   offGridWarn: '{label} {values}px (not on the {grid}px grid)',
   tokenNear: '≠ token · near {name}',
   tokenNone: '≠ token',
-  themeTokensLoaded: 'MUI theme detected — {colors} colors / {sizes} sizes added as tokens',
+  themeTokensLoaded: 'MUI theme detected — color tokens: {colors} / size tokens: {sizes}',
 };
 
 /** page (MAIN world) と bridge (ISOLATED) 間の postMessage 識別子 */

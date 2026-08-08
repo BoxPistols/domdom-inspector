@@ -140,3 +140,35 @@ describe('走査の暴走・循環に対する堅牢性 (レビュー指摘の�
     expect(visits).toBeLessThan(200);
   });
 });
+
+describe('unmount 済み FiberRoot の解放 (メモリリーク / 探索コスト増の防止)', () => {
+  const theme = { palette: { primary: {} }, typography: {}, shape: {} };
+
+  it('containerInfo が文書から外れた root を Set から捨てる', () => {
+    const dead = document.createElement('div'); // どこにも append しない = isConnected false
+    const roots = new Set<unknown>([
+      { current: { memoizedProps: { value: theme } }, containerInfo: dead },
+    ]);
+
+    // 死んだ root はテーマ供給元として使わず、Set からも消える (GC 可能に)
+    expect(findMuiTheme(roots)).toBeNull();
+    expect(roots.size).toBe(0);
+  });
+
+  it('接続中の root は従来どおりテーマを返し、捨てられない', () => {
+    const live = document.createElement('div');
+    document.body.appendChild(live);
+    const roots = new Set<unknown>([
+      { current: { memoizedProps: { value: theme } }, containerInfo: live },
+    ]);
+
+    expect(findMuiTheme(roots)).toBe(theme);
+    expect(roots.size).toBe(1);
+    live.remove();
+  });
+
+  it('containerInfo を持たない root (テスト用の素の形) は従来どおり走査する', () => {
+    const roots = new Set<unknown>([{ current: { memoizedProps: { value: theme } } }]);
+    expect(findMuiTheme(roots)).toBe(theme);
+  });
+});

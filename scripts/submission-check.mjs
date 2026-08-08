@@ -139,6 +139,23 @@ try {
 }
 check('成果物に外部エンドポイントが残っていない', bundleNet === '', bundleNet || 'なし');
 
+// **出荷される JS 自体**にも送信 API が無いこと。src の grep が 0 件でも、バンドラが
+// polyfill (Vite の modulepreload 等) で fetch( を注入すると「grep で再現証明できる」
+// という申告が出荷物に対しては成立しなくなる (実際に 1 件混入していた)
+let bundleFetch = '';
+try {
+  bundleFetch = sh(
+    `grep -rlE "fetch\\(|XMLHttpRequest|WebSocket\\(|sendBeacon|EventSource\\(" .output/chrome-mv3 --include="*.js" || true`,
+  );
+} catch {
+  bundleFetch = '';
+}
+check(
+  '出荷 JS に送信 API が無い (polyfill 混入の検知)',
+  bundleFetch === '',
+  bundleFetch || '0 件',
+);
+
 // ---- ⑥ スクリーンショット (実寸を PNG ヘッダから読む) ----------------------
 /** PNG の IHDR から幅と高さを読む (ライブラリ不要) */
 function pngSize(file) {

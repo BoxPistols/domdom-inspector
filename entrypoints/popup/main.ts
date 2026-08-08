@@ -32,7 +32,8 @@ function applyI18n() {
 }
 
 // 職域スイッチ (designer/engineer) は機能差が無いため除去済みの単一モード
-// (Settings.role 型は dormant で温存)。render/tree は issue #4/#5 で再配線済み。
+// (Settings.role 型は dormant で温存)。render/tree は **v1 の配線から外してある**
+// (実装温存 — issue #4/#5。「再配線済み」と書いてあった旧コメントは v0.4 以前の断面)。
 // 表示設定 (badgeDetail / showVarNames / autoTheme) の UI は v1 で外した (issue #12)。
 // Settings の値は既定のまま効き続けるので、動作は変わらない
 const editorEl = $<HTMLSelectElement>('editor');
@@ -220,11 +221,13 @@ async function detectSite() {
   }
 
   if (isBlobTab && siteOrigin != null && siteTabId != null) {
-    // blob タブは allSitesGranted がないと executeScript できない
+    // blob タブは allSitesGranted がないと executeScript できない。
+    // **理由を取り違えない**: 「http/https 以外だから不可」ではなく「全サイト許可があれば
+    // 使える」— 誤った理由は直下のボタンで解決できることから利用者を遠ざける
     btn.disabled = !allSitesGranted;
     status.textContent = allSitesGranted
       ? msg('siteTarget').replace('{origin}', `blob: (${siteOrigin})`)
-      : msg('siteUnavailable');
+      : msg('siteBlobNeedsAllSites');
   } else if (isUnknownUrlTab && allSitesGranted) {
     // URL が読めないので許可の要求先が決められない。全サイト許可済みなら注入だけ試せる
     btn.disabled = false;

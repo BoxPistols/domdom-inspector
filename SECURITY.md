@@ -70,6 +70,9 @@
 # ① ネットワーク送信系 API の使用有無 — **テストを除けばヒット 0 件**
 grep -rniE "fetch\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|axios" src entrypoints \
   --include="*.ts" | grep -v "\.test\.ts"
+# ①' 出荷される JS (ビルド成果物) にも無い — バンドラの polyfill 混入まで検知する
+#    (以前は Vite の modulepreload polyfill 由来の fetch( が 1 件あった。ビルド設定で除去済み)
+grep -rlE "fetch\(|XMLHttpRequest|WebSocket\(|sendBeacon|EventSource\(" .output/chrome-mv3 --include="*.js"
 # ② 動的コード評価・外部 script 注入の有無 — ヒットなし
 grep -rniE "importScripts|createElement\(.script" src entrypoints
 # ③ 外部ホスト参照 — ヒットは温存してある src/aiProviders.ts の公式エンドポイント 2 つ

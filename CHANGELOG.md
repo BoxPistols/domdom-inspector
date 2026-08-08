@@ -11,6 +11,62 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.14 (2026-08-08) — 監査残件の一括対応 (medium 10 件 + low/missed)
+
+深掘り監査 (`docs/audit-20260807-deep.md`) の**未対応 43 件すべてに決着をつけた**:
+修正 36 / issue 化 3 ([#17](https://github.com/BoxPistols/domdom-inspector/issues/17)
+[#18](https://github.com/BoxPistols/domdom-inspector/issues/18)
+[#19](https://github.com/BoxPistols/domdom-inspector/issues/19)) / 修正しない判断 4 (理由を文書に記載)。
+
+### 操作系 (誤答と無反応を閉じる)
+- **↑↓ を奪いすぎない**: 選択なし・履歴なしの ↑↓ はページに返す (キースクロールが死んでいた)。
+  テキスト入力中・修飾キー付き (⌘↑ 等) も奪わない
+- **クリック時は同一要素でも再計測**: ホバー中に JS がスタイルを書き換えても、少なくとも
+  クリックの瞬間は現在の値を測り直す (⌘Click の古い値での誤答を閉じる。live 追従は #19)
+- **disable() が未実行の rAF を破棄**: OFF 直前の pointermove が積んだ rAF が hideAll の後に
+  走り、枠とバッジがリロードまで残った (1/1 再現) のを修正
+- **ホバー前の Alt+Click が無反応だった**のを解消 (resync で対象を取得、取れなければ理由をトースト)
+
+### a11y / コントラスト (機械検証つき)
+- **`overlayContrast.test.ts` 新設**: バッジ文字 (4.5:1)・UI 部品境界 (3:1)・popup トークンを
+  **色定数から毎回計算**して検証。コメントに数値を書く方式を全廃 (実測とズレたまま残るため)
+- ハイライト枠の既定 3 色を白ページ上 3:1 以上に変更 (緑 2.78:1 / グレー 2.68:1 だった)。
+  バッジ名は白文字 + 色ドットに分離 (枠と文字で要求が矛盾するため)
+- 半透明色のスウォッチを市松の上に描画 (暗背景と合成され実際とかけ離れた色に見えた)
+- ピル ✕ に aria-label / トーストに role=status + aria-live / 描画元パネルの行を
+  キーボード到達可能に (tabindex + Enter/Space)
+- popup の入力欄の枠を 3:1 に (`--border-input` 新設。装飾の区切り線と分離)
+
+### popup
+- **ja の既定表示が 604px で Chrome の 600px 上限を超えていた** → 余白圧縮で en 564 / ja 576px。
+  e2e が ja の実文字列で 600px 未満を固定
+- blob: タブで全サイト許可が無いとき「http/https 以外」と**誤った理由**を出していた →
+  「全サイト許可があれば使える」と正しい解決策を出す (`siteBlobNeedsAllSites` 新設)
+- 到達不能な CSS (.cov-* / .ai-badge / #coverageTop / .q / .hc-*) を削除
+- ヘルプに「:hover の値を測っている」注意を明記 / 凡例を「グレー = その他ライブラリ / 素の DOM」に
+
+### 申告の再現性
+- **出荷 JS から fetch( を除去** (Vite の modulepreload polyfill が 1 件混入していた —
+  無効化 + `check:submission` に出荷 JS の grep を追加 = 21 項目に)
+- `https://127.0.0.1/*` を静的 match に追加 (文書の「localhost / 127.0.0.1 は自動対応」と一致)
+- PRIVACY に単一目的の段落と contextMenus 権限を追記 / PUBLISHING §4-2 の stale な要旨を修正 /
+  STORE_LISTING のプレーンテキスト欄から `**` を除去
+
+### 配線と bundle
+- **design-scan の配線を撤去** (送信側の popup UI が無いのに受信側が残り、ページからの偽装で
+  全ページスキャンを起動できた)。designScan/coverage 一式 6.1 kB が bundle から消えた (issue #10 に復元手順)
+- overlay の未到達 4 サーフェス (canvas/stats/rctl/tree) を遅延生成に (ページごとの DOM 汚染を解消)。
+  e2e が「ホバー後も DOM に無い」を固定
+- モード OFF 中はテーマ発見のトーストを出さない (overlay の DOM 注入もしない)。次の ON で通知
+- unmount 済み FiberRoot を Set から解放 (SPA でのメモリリークと探索コスト増)
+- ページが overlay host を外してもモードピルごと復元 (終了導線だけが消えた)
+
+### i18n / 用語
+- en=rogue value / ja=野良値 に統一。「1 colors」の単複問題を形式変更で解消。
+  「13/5px」が分数に見える区切りを「13px / 5px」に。editorHint ja の英語残りを解消
+- i18n.test に **popup main.ts の msg() 参照キー検査**と **DEFAULT_STRINGS↔en 本文一致検査**を追加
+  (typo 注入で赤になることを確認済み)
+
 ## 0.4.13 (2026-08-07) — 監査で残っていた high 3 件 (iframe / 提出画像 / 偽装)
 
 深掘り監査 (`docs/audit-20260807-deep.md`) の未対応 high をすべて閉じた。

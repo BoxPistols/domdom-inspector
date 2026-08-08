@@ -59,6 +59,10 @@
   "siteUnknownUrl": {
     "message": "This tab does not report a URL (a blob: preview, for example). With all-sites access granted, the inspector can still be injected — press the button to try."
   },
+  "siteBlobNeedsAllSites": {
+    "message": "This tab is a blob: preview. Grant \"Enable on all sites\" above once, then this button injects into it.",
+    "description": "popup: blob: タブで全サイト許可が無いときの理由と解決策 (誤って「http/https 以外」と言わない)"
+  },
   "siteTarget": {
     "message": "Target: {origin}"
   },
@@ -291,7 +295,7 @@
     "message": "≠ token"
   },
   "themeTokensLoaded": {
-    "message": "MUI theme detected — {colors} colors / {sizes} sizes added as tokens",
+    "message": "MUI theme detected — color tokens: {colors} / size tokens: {sizes}",
     "description": "Toast when the MUI theme is auto-extracted (FR-14). {colors}/{sizes} are counts."
   },
   "treeUnavailableProd": {

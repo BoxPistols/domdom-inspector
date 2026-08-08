@@ -83,3 +83,40 @@ describe('popup の data-i18n キーは両 locale に実在する', () => {
     expect(missing).toEqual([]);
   });
 });
+
+/**
+ * popup/main.ts が `msg('key')` で直接参照するキーも両 locale に実在すること。
+ * data-i18n の検査 (上) は HTML 側しか守れず、TS 側の参照は typo しても
+ * 実行時に黙って空文字列になる (siteBlobNeedsAllSites 追加時に穴だと気づいた)。
+ */
+describe('popup main.ts の msg() 参照キーは両 locale に実在する', () => {
+  const ts = readFileSync('entrypoints/popup/main.ts', 'utf8');
+  const used = [...ts.matchAll(/msg\('([^']+)'\)/g)].map((m) => m[1]);
+
+  it('msg() の参照が 1 件以上拾えている (抽出正規表現の自壊検知)', () => {
+    expect(used.length).toBeGreaterThan(3);
+  });
+
+  for (const locale of ['en', 'ja'] as const) {
+    it(`${locale}: 全 msg() キーが存在する`, () => {
+      const messages = loadLocale(locale);
+      const missing = used.filter((k) => !(k in messages));
+      expect(missing).toEqual([]);
+    });
+  }
+});
+
+/**
+ * DEFAULT_STRINGS (コード内フォールバック) と en locale は**本文まで一致**すること。
+ * どちらも英語で、bridge が i18n を届ける前の初期表示は DEFAULT_STRINGS が出る。
+ * 乖離すると「一瞬だけ別の英文が見える」上に、どちらが正か分からなくなる。
+ */
+describe('DEFAULT_STRINGS と en locale の本文一致', () => {
+  it('全キーの message が一致する', () => {
+    const en = loadLocale('en') as Record<string, { message: string }>;
+    const mismatches = Object.entries(DEFAULT_STRINGS)
+      .filter(([k, v]) => en[k] && en[k].message !== v)
+      .map(([k, v]) => `${k}: code="${v}" en="${en[k].message}"`);
+    expect(mismatches).toEqual([]);
+  });
+});

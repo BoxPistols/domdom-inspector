@@ -121,15 +121,21 @@ const VAR_FIXTURE_HTML = `<!DOCTYPE html>
 const CASCADE_FIXTURE_HTML = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Cascade traps</title>
 <style>
-  :root { --wrong: #ff0000; --right: #00ff00; --layered: #0000ff; --unlayered: #ffff00; }
+  :root { --wrong: #ff0000; --right: #00ff00; --layered: #0000ff; --unlayered: #ffff00; --same-green: #008000; }
   :where(#hero) .btn { color: var(--wrong); }
   .btn { color: var(--right); }
   @layer base { #panel .chip { background-color: var(--layered); } }
   .chip { background-color: var(--unlayered); }
+  /* ③ 監査 (2026-08-07) が blocker 級として実測した形。**同じ色**に解決する 2 宣言で、
+     レイヤ内の方が specificity が高い (0,2,0 > 0,1,0)。値が一致するので「変数名だけが嘘」
+     になり、値の突き合わせでは気づけない。勝者は非レイヤの .only なので var 名は出ない */
+  @layer base { .a.b { color: var(--same-green); } }
+  .only { color: rgb(0, 128, 0); }
 </style></head>
 <body style="margin:0">
   <div id="hero"><button id="btn" class="btn">where trap</button></div>
   <div id="panel"><span id="chip" class="chip">layer trap</span></div>
+  <p id="samecolor" class="a b only">layer trap (same value)</p>
 </body></html>`;
 
 /** fixture ページを開き MAIN world content script の確立を待つ */
@@ -360,6 +366,16 @@ test('カスケードの勝者だけを由来として出す (:where / @layer)',
   // @layer を素通りしていた頃はこちらが出ていた
   expect(await badgeText(page)).not.toContain('--layered');
 
+  // ③ **値が同じで変数名だけが嘘**になる形 (監査が blocker 級として実測したもの)。
+  // レイヤ内の .a.b (0,2,0) が非レイヤの .only (0,1,0) より specificity は高いが、
+  // 通常宣言はレイヤ無しが勝つ。勝者に var が無いので**変数名は出さず生値を出す**のが正しい
+  await page.hover('#samecolor');
+  await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('#008000');
+  expect(
+    await badgeText(page),
+    '由来でない変数名 (--same-green) を由来として出してはいけない',
+  ).not.toContain('--same-green');
+
   await page.close();
 });
 
@@ -417,6 +433,72 @@ test('ページが投げた空の settings で計測が凍らない', async () =
   await page.hover('#chip');
   await expect.poll(() => badgeText(page), { timeout: 3000 }).toContain('--unlayered');
   expect(await badgeText(page)).not.toContain('--right');
+
+  await page.close();
+});
+
+/**
+ * v1 で到達不能なサーフェス (render/tree) の実 DOM を作らないこと (監査 2026-08-07)。
+ * 以前は mount のたびに canvas + 2D context / stats / rctl / tree の 4 要素を
+ * 使われないままページごとに注入していた。遅延生成に変えた回帰を固定する。
+ */
+test('モード ON + ホバーでも到達不能なサーフェスの DOM を作らない', async () => {
+  const page = await openFixture();
+  await activate(page);
+  await page.hover('#target');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  const surfaces = await page.evaluate(() => {
+    const host = document.querySelector('domdom-inspector-overlay') as
+      | (Element & { __openRoot?: ShadowRoot })
+      | null;
+    const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+    if (!root) return null;
+    return {
+      canvas: root.querySelectorAll('.render-canvas').length,
+      stats: root.querySelectorAll('.stats').length,
+      rctl: root.querySelectorAll('.rctl').length,
+      tree: root.querySelectorAll('.tree').length,
+      // 生きているサーフェスは存在する (テストが「何も無いから 0」になっていない証拠)
+      badge: root.querySelectorAll('.badge').length,
+    };
+  });
+  expect(surfaces).toEqual({ canvas: 0, stats: 0, rctl: 0, tree: 0, badge: 1 });
+
+  await page.close();
+});
+
+/**
+ * ページ側 JS が overlay host ごと DOM から外しても、次の描画で**ピルごと**復元される
+ * (以前はモード ON のまま終了導線 (ピル) だけが消えた — 監査 2026-08-07)。
+ */
+test('ページが overlay を外してもモードピルが復元される', async () => {
+  const page = await openFixture();
+  await activate(page);
+  await page.hover('#target');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  const pillVisible = () =>
+    page.evaluate(() => {
+      const host = document.querySelector('domdom-inspector-overlay') as
+        | (Element & { __openRoot?: ShadowRoot })
+        | null;
+      const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+      return !!root?.querySelector('.inspect-pill.on');
+    });
+  expect(await pillVisible(), 'ON 直後はピルが出ている').toBe(true);
+
+  // ページが host を丸ごと外す (仮想 DOM の巻き戻し・body 差し替え相当)
+  await page.evaluate(() => document.querySelector('domdom-inspector-overlay')?.remove());
+  await expect(page.locator('domdom-inspector-overlay')).not.toBeAttached();
+
+  // 次のホバーで overlay が再マウントされ、ピルも一緒に戻る。
+  // いったん #target の外 (素の body) へ動かして選択を変えないと、同一要素の
+  // pointermove は早期 return して再描画が走らない
+  await page.mouse.move(600, 400);
+  await page.hover('#target');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+  await expect.poll(pillVisible, { timeout: 3000 }).toBe(true);
 
   await page.close();
 });
