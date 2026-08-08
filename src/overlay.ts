@@ -115,7 +115,10 @@ export class Overlay {
     this.inspectPillEl = el('div', 'inspect-pill');
     root.append(this.box, this.badge, this.panel, this.inspectPillEl, this.toastEl);
     document.documentElement.appendChild(this.host);
-    // ページ側に host を外されて作り直した場合、モード ON ならピルを復元する
+    // ページ側に host を外されて作り直した場合、モード ON ならピルを復元する。
+    // **再配線時の申し送り (issue #4/#5)**: rctl / tree / stats にはこの復元機構が無い
+    // (v1 では到達不能なので放置している既存の非対称)。render/tree を再配線するなら、
+    // ピルと同様に「最後に表示した状態」を保持して再マウント時に復元すること
     if (this.pill) this.renderPill(this.pill);
   }
 

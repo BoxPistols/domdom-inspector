@@ -259,7 +259,7 @@ export class Inspector {
     const me = event as MouseEvent;
     // **押した瞬間の座標から対象を引き直す。** hover 時の情報をそのまま使うと、
     // スクロール後 / 選択要素が DOM から消えた後に「別要素のソース」を開く誤答になる。
-    // 現在の選択と一致していれば select は走らない (無駄な再計測をしない)
+    // 同一要素でも必ず再計測する (ホバー中のスタイル書き換えを拾う — resync の docstring 参照)
     this.resyncToPointer(me.clientX, me.clientY);
     // Alt+Click: 描画元 (owner) の一覧を出し、行クリックでそのファイルをエディタで開く。
     // モード ON のトーストで案内している操作なので、必ずここで応答する
@@ -339,9 +339,13 @@ export class Inspector {
   private onKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     // **入力中・修飾キー付きの ↑↓ は奪わない。** テキスト入力のカーソル移動や
-    // ⌘↑ (ページ先頭へ) はページの操作であって、インスペクタのナビゲーションではない
+    // ⌘↑ (ページ先頭へ) はページの操作であって、インスペクタのナビゲーションではない。
+    // composedPath()[0] を使う: event.target は shadow 境界でホストに再ターゲットされる
+    // ため、Web Components 内の入力欄 (Lit/Ionic 等) を event.target だけで判定すると
+    // ガードが黙って破れる (contextmenu ハンドラと同じ罠)
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-    if (isEditableTarget(event.target)) return;
+    const innermost = event.composedPath?.()[0] ?? event.target;
+    if (isEditableTarget(innermost)) return;
     // **選択が無いときは preventDefault しない。** スクロール後は選択を捨てる仕様
     // (onViewportChange) なので、ここで奪うと「↑ が無反応 + ページのキースクロールも
     // 死んでいる」という説明のつかない状態になる。選択が無ければページに返す
@@ -359,9 +363,13 @@ export class Inspector {
       }
       return;
     }
-    // ↓: 遡った履歴が無ければページに返す (常に奪うとキースクロールが死ぬ)
-    const child = this.navStack.pop();
-    if (!child?.isConnected) return;
+    // ↓: 遡った履歴が無ければページに返す (常に奪うとキースクロールが死ぬ)。
+    // DOM から消えた要素は履歴として無効なので**まとめて捨ててから**判定する
+    // (先頭 1 件だけ pop して返すと、履歴を消費したのにページへ流れてスクロールが走り、
+    // onViewportChange が残りの履歴ごと選択を消す — 1 押下で状態が丸ごと飛ぶ)
+    let child = this.navStack.pop();
+    while (child && !child.isConnected) child = this.navStack.pop();
+    if (!child) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     this.keyboardNav = true;

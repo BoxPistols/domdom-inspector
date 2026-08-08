@@ -75,9 +75,13 @@ grep -rniE "fetch\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|axios" src e
 grep -rlE "fetch\(|XMLHttpRequest|WebSocket\(|sendBeacon|EventSource\(" .output/chrome-mv3 --include="*.js"
 # ② 動的コード評価・外部 script 注入の有無 — ヒットなし
 grep -rniE "importScripts|createElement\(.script" src entrypoints
-# ③ 外部ホスト参照 — ヒットは温存してある src/aiProviders.ts の公式エンドポイント 2 つ
-#    (api.openai.com / generativelanguage.googleapis.com) とコメント内の例のみ。
-#    **どこからも呼ばれていない** (①が 0 件であることが上位の証拠)
+# ③ 外部ホスト参照 — ヒットは 3 種のみ:
+#    (a) 温存してある src/aiProviders.ts の公式エンドポイント 2 つ
+#        (api.openai.com / generativelanguage.googleapis.com) — **どこからも呼ばれていない**
+#        (①が 0 件であることが上位の証拠)
+#    (b) src/matches.ts の対象オリジン (http/https の localhost / 127.0.0.1) — loopback で
+#        外部ホストではない (content script のマッチパターン)
+#    (c) コメント内の例
 grep -rniE "https?://[a-z0-9.-]+" src entrypoints
 # ④ 永続化するもの(settings / popupDevOpen のみ。ページ由来のデータは無い)
 grep -rnE "storage\.(local|sync)\.set" src entrypoints

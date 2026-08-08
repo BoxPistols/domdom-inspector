@@ -555,6 +555,52 @@ describe('操作系の細部 (監査 2026-08-07 の未対応分を固定)', () =
     expect(down2.defaultPrevented, '履歴がある ↓ はナビゲーションが消費').toBe(true);
   });
 
+  it('shadow DOM 内の入力欄でも ↑↓ を奪わない (event.target はホストに再ターゲットされる)', () => {
+    const { inspector } = make();
+    const el = document.createElement('div');
+    const host = document.createElement('x-field');
+    document.body.append(el, host);
+    inspector.inspectAt(el); // 選択あり = 奪う条件は揃っている
+
+    // 実 UA では shadow 内の input からのキーイベントは target=ホスト /
+    // composedPath()[0]=input で届く。その形を作る
+    const innerInput = document.createElement('input');
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
+    Object.defineProperty(ev, 'target', { value: host });
+    Object.defineProperty(ev, 'composedPath', { value: () => [innerInput, host, document.body] });
+    window.dispatchEvent(ev);
+    expect(ev.defaultPrevented, 'shadow 内の入力欄のカーソル移動を奪わない').toBe(false);
+  });
+
+  it('↓ は DOM から消えた履歴をまとめて捨て、生きた履歴があれば消費する', () => {
+    const { inspector, calls } = make();
+    const grandparent = document.createElement('section');
+    const parent = document.createElement('div');
+    const child = document.createElement('span');
+    grandparent.appendChild(parent);
+    parent.appendChild(child);
+    document.body.appendChild(grandparent);
+
+    inspector.inspectAt(child);
+    // ↑↑ で履歴 [child, parent] を積む
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true }));
+
+    // 先頭 (parent) だけ DOM から消す — child は parent の子なので一緒に消える。
+    // 両方 stale になった状態で ↓ を押すと、以前は 1 件だけ pop してページに返していた
+    // (履歴を消費したのにスクロールが走り、onViewportChange が全状態を消す)
+    parent.remove();
+    const down = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true, bubbles: true });
+    window.dispatchEvent(down);
+    expect(down.defaultPrevented, '全履歴が stale ならページに返す').toBe(false);
+
+    // stale 履歴は掃除されている = もう一度押しても二重消費しない
+    const down2 = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true, bubbles: true });
+    window.dispatchEvent(down2);
+    expect(down2.defaultPrevented).toBe(false);
+    void calls;
+  });
+
   it('テキスト入力中・修飾キー付きの ↑↓ は奪わない', () => {
     const { inspector } = make();
     const el = document.createElement('div');
@@ -562,8 +608,11 @@ describe('操作系の細部 (監査 2026-08-07 の未対応分を固定)', () =
     document.body.append(el, input);
     inspector.inspectAt(el); // 選択あり = 奪う条件は揃っている
 
+    // 実 UA では input からのイベントは target=input / composedPath()[0]=input で
+    // window に届く。テストは window に直接 dispatch するため両方を偽装する
     const inInput = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
     Object.defineProperty(inInput, 'target', { value: input });
+    Object.defineProperty(inInput, 'composedPath', { value: () => [input, document.body] });
     window.dispatchEvent(inInput);
     expect(inInput.defaultPrevented, '入力欄のカーソル移動を奪わない').toBe(false);
 
