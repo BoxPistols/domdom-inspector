@@ -15,35 +15,25 @@
           "BTTTriggerBelongsToPreset": "Default",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
-          "BTTTriggerTypeDescription": "🔍 Inspect",
+          "BTTTriggerTypeDescription": "要素検査",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
           "BTTUUID": "CE20C5C7-E8E6-4B2C-A5A0-4219DE0415C3",
+          "BTTPredefinedActionType": 137,
+          "BTTPredefinedActionName": "ターミナルコマンドを実行（非同期、ノンブロッキング）",
+          "BTTTerminalCommand": "/bin/bash \"$HOME/.claude/btt/domdom-press.sh\" root",
           "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
           "BTTNotes": "domdom-touchbar",
-          "BTTOrder": 100,
+          "BTTOrder": 300,
           "BTTMergeIntoTouchBarGroups": 0,
-          "BTTActionsToExecute": [
-            {
-              "BTTTriggerBelongsToPreset": "Default",
-              "BTTTriggerParentUUID": "CE20C5C7-E8E6-4B2C-A5A0-4219DE0415C3",
-              "BTTIsPureAction": true,
-              "BTTUUID": "2802AD5F-1D94-4452-8D18-2B56FA6F77A1",
-              "BTTPredefinedActionType": 264,
-              "BTTPredefinedActionName": "",
-              "BTTShortcutToSend": "59,34",
-              "BTTOrder": 0
-            }
-          ],
-          "BTTWidgetName": "🔍 Inspect",
+          "BTTWidgetName": "要素検査",
           "BTTTriggerConfig": {
             "BTTTouchBarButtonCornerRadius": 6,
             "BTTTouchBarItemPlacement": 0,
-            "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"🔍 Inspect\",\"background_color\":\"22,104,212,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
+            "BTTTouchBarShellScriptString": ". \"$HOME/.claude/btt/domdom-widget.sh\" root",
             "BTTTouchBarAlwaysShowButton": false,
             "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 104,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 2
+            "BTTTouchBarScriptUpdateInterval": 1
           },
           "BTTBelongsToApp": "Global"
         },
@@ -51,71 +41,51 @@
           "BTTTriggerBelongsToPreset": "Default",
           "BTTTriggerType": 642,
           "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
-          "BTTTriggerTypeDescription": "esc",
-          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
-          "BTTUUID": "E883654B-F93C-4813-A512-7D1074B8FFD2",
-          "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
-          "BTTNotes": "domdom-touchbar",
-          "BTTOrder": 104,
-          "BTTMergeIntoTouchBarGroups": 0,
-          "BTTActionsToExecute": [
-            {
-              "BTTTriggerBelongsToPreset": "Default",
-              "BTTTriggerParentUUID": "E883654B-F93C-4813-A512-7D1074B8FFD2",
-              "BTTIsPureAction": true,
-              "BTTUUID": "189A07F0-86FB-4950-9A63-4F85005A8C29",
-              "BTTPredefinedActionType": 264,
-              "BTTPredefinedActionName": "",
-              "BTTShortcutToSend": "53",
-              "BTTOrder": 0
-            }
-          ],
-          "BTTWidgetName": "esc",
-          "BTTTriggerConfig": {
-            "BTTTouchBarButtonCornerRadius": 6,
-            "BTTTouchBarItemPlacement": 0,
-            "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"esc\",\"background_color\":\"74,81,99,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
-            "BTTTouchBarAlwaysShowButton": false,
-            "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 76,
-            "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 2
-          },
-          "BTTBelongsToApp": "Global"
-        },
-        {
-          "BTTTriggerBelongsToPreset": "Default",
-          "BTTTriggerType": 642,
-          "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
-          "BTTTriggerTypeDescription": "⚙︎",
+          "BTTTriggerTypeDescription": "拡張設定",
           "BTTTriggerClass": "BTTTriggerTypeTouchBar",
           "BTTUUID": "82EEC69E-B0F4-402C-A76E-446F2592830B",
+          "BTTPredefinedActionType": 137,
+          "BTTPredefinedActionName": "ターミナルコマンドを実行（非同期、ノンブロッキング）",
+          "BTTTerminalCommand": "/bin/bash \"$HOME/.claude/btt/domdom-press.sh\" prefs",
           "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
           "BTTNotes": "domdom-touchbar",
-          "BTTOrder": 105,
+          "BTTOrder": 301,
           "BTTMergeIntoTouchBarGroups": 0,
-          "BTTActionsToExecute": [
-            {
-              "BTTTriggerBelongsToPreset": "Default",
-              "BTTTriggerParentUUID": "82EEC69E-B0F4-402C-A76E-446F2592830B",
-              "BTTIsPureAction": true,
-              "BTTUUID": "E9D06BA4-91E8-4250-863A-BA3AC69C1888",
-              "BTTPredefinedActionType": 264,
-              "BTTPredefinedActionName": "",
-              "BTTShortcutToSend": "59,2",
-              "BTTOrder": 0
-            }
-          ],
-          "BTTWidgetName": "⚙︎",
+          "BTTWidgetName": "拡張設定",
           "BTTTriggerConfig": {
             "BTTTouchBarButtonCornerRadius": 6,
             "BTTTouchBarItemPlacement": 0,
-            "BTTTouchBarShellScriptString": "shopt -s nocasematch; b=$(lsappinfo info -only bundleID \"$(lsappinfo front)\" 2>/dev/null); case \"$b\" in *com.google.chrome*) printf '{\"text\":\"⚙︎\",\"background_color\":\"74,81,99,255\",\"font_color\":\"255,255,255,255\",\"hidden\":false}';; *) printf '{\"text\":\"\",\"hidden\":true}';; esac",
+            "BTTTouchBarShellScriptString": ". \"$HOME/.claude/btt/domdom-widget.sh\" prefs",
             "BTTTouchBarAlwaysShowButton": false,
             "BTTTouchBarButtonFontSize": 12,
-            "BTTTBWidgetWidth": 76,
             "BTTTouchBarFreeSpaceAfterButton": 4,
-            "BTTTouchBarScriptUpdateInterval": 2
+            "BTTTouchBarScriptUpdateInterval": 1
+          },
+          "BTTBelongsToApp": "Global"
+        },
+        {
+          "BTTTriggerBelongsToPreset": "Default",
+          "BTTTriggerType": 642,
+          "BTTTriggerTypeDescriptionReadOnly": "シェルスクリプト / タスクウィジェット",
+          "BTTTriggerTypeDescription": "検査終了",
+          "BTTTriggerClass": "BTTTriggerTypeTouchBar",
+          "BTTUUID": "E883654B-F93C-4813-A512-7D1074B8FFD2",
+          "BTTPredefinedActionType": 137,
+          "BTTPredefinedActionName": "ターミナルコマンドを実行（非同期、ノンブロッキング）",
+          "BTTTerminalCommand": "/bin/bash \"$HOME/.claude/btt/domdom-press.sh\" esc",
+          "BTTShellScriptWidgetGestureConfig": "/bin/bash:::-c",
+          "BTTNotes": "domdom-touchbar",
+          "BTTOrder": 302,
+          "BTTMergeIntoTouchBarGroups": 0,
+          "BTTWidgetName": "検査終了",
+          "BTTTriggerConfig": {
+            "BTTTouchBarButtonCornerRadius": 6,
+            "BTTTouchBarItemPlacement": 0,
+            "BTTTouchBarShellScriptString": ". \"$HOME/.claude/btt/domdom-widget.sh\" esc",
+            "BTTTouchBarAlwaysShowButton": false,
+            "BTTTouchBarButtonFontSize": 12,
+            "BTTTouchBarFreeSpaceAfterButton": 4,
+            "BTTTouchBarScriptUpdateInterval": 0.3
           },
           "BTTBelongsToApp": "Global"
         }
