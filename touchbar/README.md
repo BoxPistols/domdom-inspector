@@ -160,6 +160,11 @@ BTT の権限で送られるので追加の許可が要らない。
 出るまで最大 1 秒かかり「効いていない」と読まれる。0.3 秒を BTT が実際に守ることは
 心拍で実測した (3.2 回/秒。小数を受け付ける)。
 
+> **このコストは常時かかる。** BTT は `hidden` を返したウィジェットもポーリングし続けるので、
+> **Chrome を終了していても同じだけ回る**。間隔はトリガーごとの静的な設定で、実行中に
+> 変えられない。旧構成が 2 秒だったのは表示制御にしか使っていなかったため。
+> 気になるなら `install.mjs` の `ROLES` で `esc` の `interval` を上げる (遅延と引き換え)。
+
 **front を引くのは root だけ**で、結果を `~/.claude/btt/domdom.front` に書いて他の 2 つへ
 渡す。3 個とも `lsappinfo` を呼ぶと 25.8ms × 3 が毎ティック走る。
 
@@ -198,24 +203,38 @@ node touchbar/install.mjs --verify # 実機の現状を期待値と突き合わ�
 ```
 
 `install.mjs` は `domdom-widget.sh` / `domdom-press.sh` を `~/.claude/btt/` へ配置し、
-同じディレクトリに 2 つの生成ファイルを書く。
+同じディレクトリに 2 つの生成ファイルを書く。**どちらもシェルに直書きできない値**で、
+スクリプトはこの 2 つだけを見る。
 
 - `domdom.keys` — Chrome の実バインドから変換した送信キー (`role=キーコード`)
-- `domdom.uuids` — 押下直後に展開を反映させるための UUID。**作成後の実値**で書く
+- `domdom.labels` — ロケールで選んだラベル (`role=ラベル`)
 
-**Chrome の設定を読むので、拡張が読み込まれていないと install は失敗する。** これは仕様で、
-黙って古いキーを使い続けるより早く気づけるため。
+**前提: Chrome 側に 2 つのショートカットが割り当たっていること。**
+`toggle-inspect` が無ければ install は失敗する (黙って古いキーを使い続けるより早く
+気づけるため)。`_execute_action` (popup) が無い場合は**失敗せず、`拡張設定` のボタンを
+作らない**で警告を出す。manifest が `suggested_key` を持つのは `toggle-inspect` だけ
+(提出チェックがコマンド 1 つを強制している) なので、**popup のショートカットは
+`chrome://extensions/shortcuts` で手で割り当てる**。
+
+`--plan` と `--verify` は実機に触らない。定義の検査 (絵文字 / ラベル長 / 幅の揃い) は
+**実機を触る前**に走り、引っかかればトリガーを消す前に止まる。
 
 **642 ウィジェットは作り直すと BTT を再起動するまで実行されない。**
 
 ### 他のマシン
 
 ```sh
-open touchbar/domdom-inspector.bttpreset
+node touchbar/install.mjs
 ```
 
-プリセットのシェル文字列は `$HOME` 表記なので、`~/.claude/btt/` に 2 本の `.sh` を
-置けばそのまま動く (`install.mjs` を流すのが確実)。
+**`.bttpreset` の import だけでは動かない。** プリセットにはトリガーの定義しか無く、
+`~/.claude/btt/` の 2 本の `.sh` と、`domdom.keys` / `domdom.labels` が必要になる。
+足りないとウィジェットは (エラーではなく) **隠れる**ので、原因が見えない。
+`install.mjs` はそれらを全部置いたうえで実機を作り直す。
+
+同梱のプリセットは記録用で、`node touchbar/install.mjs --preset` で書き出す。
+**install の本流では書かない** — ラベルはロケール由来なので、英語環境で流した人が
+追跡対象のファイルに意図しない差分を作ってしまう。
 
 ### 元に戻す
 
@@ -237,7 +256,8 @@ osascript -e 'tell application "BetterTouchTool" to get_triggers "{}"' > btt-bac
   2026-08-15 に実測。旧 264 (キー送信) が残ると押下時の front 再照合を素通りしてキーが直接飛ぶ。
   **消したいときは `delete_trigger` → `add_new_trigger` で作り直す**
 - **`add_new_trigger` は `BTTUUID` を受け付けない** (BTT が採番して 36 文字で返す)。
-  UUID を前提にした設定ファイル (`domdom.uuids` 等) は**作成後の実値**で書く
+  UUID を前提にした設定を持つなら**作成後の実値**で書き直す。いまは UUID に依存する
+  ものは無い (`refresh_widget` が無効と分かって捨てた)
 - **`BTTPredefinedActionType: 264` (キー送信) を主アクションとして渡すと保存されず落ちる。**
   サブアクションにするか、`137` からスクリプト経由で `trigger_action` に渡す
 - **`BTTShellScriptWidgetGestureConfig` (`/bin/bash:::-c`) はトップレベルに置く。**
