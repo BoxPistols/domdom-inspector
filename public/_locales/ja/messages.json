@@ -314,7 +314,7 @@
     "message": "プレースホルダ: {file} (先頭スラッシュ込みの絶対パス) / {line} / {column}。"
   },
   "hintPathMappings": {
-    "message": "1 行 1 件、from=to 形式。ブラウザが報告するパスと手元のディスク上のパスが違うとき (Docker・リモート開発・monorepo) に必要です。最初に一致した prefix を置換します。"
+    "message": "1 行 1 件、<code>from=to</code>。<code> @ オリジン</code> を後ろに付けるとそのページだけに適用します (部分一致)。ブラウザが報告するパスとディスク上のパスが違うときに必要です — 例: Next.js は /src/app/page.tsx のようなプロジェクト相対パスを報告するので <code>/src=/Users/me/myapp/src @ localhost:3000</code> と書きます。最初に一致した prefix が使われます。"
   },
   "modeNotEnabledHere": {
     "message": "このサイトはまだ有効化されていません — 上の「現在のサイトで有効化…」を先に押してください。(localhost は不要です)"

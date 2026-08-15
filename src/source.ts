@@ -5,10 +5,20 @@ import type { PathMapping, SourceLocation } from './types';
  * - dev サーバ URL (http://localhost:3000/src/App.tsx?t=123) → /src/App.tsx
  * - Vite の /@fs/абс パス → 絶対パス
  * - webpack-internal:///./src/App.tsx → /src/App.tsx
+ * - Next.js (webpack) のレイヤ `(app-pages-browser)/./src/...` → /src/...
+ * - Turbopack の `[project]/src/...` → /src/...
  * 出力は先頭スラッシュ有りに揃える (バンドラ間でパスマッピングの prefix 一致を安定させるため)。
  * 最後にユーザー定義のパスマッピング (prefix 置換) を適用する。
+ *
+ * pageOrigin は「今見ているページのオリジン」。オリジン限定付きのマッピングは、
+ * これに部分一致するときだけ適用する — /src のようなプロジェクト相対 prefix は
+ * どのプロジェクトにもあるため、無条件の対応表だと別プロジェクトの検査で誤爆する。
  */
-export function normalizeSourcePath(fileName: string, mappings: PathMapping[] = []): string {
+export function normalizeSourcePath(
+  fileName: string,
+  mappings: PathMapping[] = [],
+  pageOrigin = '',
+): string {
   let path = fileName;
 
   const webpackInternal = path.match(/^webpack-internal:\/{3}(?:\.\/)?(.*)$/);
@@ -26,12 +36,30 @@ export function normalizeSourcePath(fileName: string, mappings: PathMapping[] = 
   // クエリ・ハッシュ除去 (Vite の ?t= キャッシュバスター等)
   path = path.replace(/[?#].*$/, '');
 
+  // Next.js (webpack) のレイヤ名 `(app-pages-browser)` `(rsc)` 等と Turbopack の
+  // `[project]` は**ビルド内部の名前空間で、ファイルシステムに存在しない**。
+  // 残したままエディタへ送ると「パスが存在しません」になる (Antigravity で実発生)。
+  // 先頭セグメントだけを剥がす — Next のルートグループ `app/(marketing)/page.tsx` は
+  // 実在するディレクトリだが、パスの途中にしか現れないので巻き込まない
+  path = path.replace(/^\/?\([\w-]+\)(?=\/)/, '').replace(/^\/?\[project\](?=\/)/, '');
+  // レイヤを剥いだ後などに残る `./` セグメントを潰す (`/(x)/./src/...` → `/src/...`)
+  path = path.replace(/\/\.(?=\/)/g, '');
+
+  // 相対パス (ソース注釈属性の `views/index.ejs` 等) も先頭スラッシュに揃える。
+  // 揃えないとマッピングの from (慣例的に `/views` と書く) が黙って一致しない
+  if (!path.startsWith('/')) path = '/' + path;
+
   // Vite が絶対パスを公開する /@fs/ prefix
   if (path.startsWith('/@fs/')) {
     path = path.slice('/@fs'.length);
   }
 
-  for (const { from, to } of mappings) {
+  for (const { from, to, origin } of mappings) {
+    // オリジン限定付きは、ページのオリジンが分かっていて一致するときだけ使う。
+    // 不明なとき (テストや将来の呼び出し漏れ) に適用してしまうと誤爆に戻る
+    if (origin && !(pageOrigin && pageOrigin.toLowerCase().includes(origin.toLowerCase()))) {
+      continue;
+    }
     if (from && path.startsWith(from)) {
       path = to + path.slice(from.length);
       break;

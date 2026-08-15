@@ -195,7 +195,7 @@
       <label for="pathMappings"><span data-i18n="labelPathMappings">Path mappings</span></label>
       <textarea id="pathMappings" rows="2" spellcheck="false" placeholder="/app=/Users/me/project"></textarea>
       <div class="hint" data-i18n="hintPathMappings">
-        One per line, <code>from=to</code>. Needed when the path the browser reports is not the path on your disk (Docker, remote dev, monorepo). The first matching prefix is replaced.
+        One per line, <code>from=to</code>, optionally scoped with <code> @ origin</code> (substring match). Needed when the path the browser reports is not the path on your disk — e.g. Next.js reports project-relative paths like /src/app/page.tsx, so map <code>/src=/Users/me/myapp/src @ localhost:3000</code>. The first matching prefix wins.
       </div>
 
       <button id="configureShortcuts" class="secondary" data-i18n="btnConfigureShortcuts">

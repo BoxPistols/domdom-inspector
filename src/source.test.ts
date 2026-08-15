@@ -115,3 +115,59 @@ describe('isBundledSource (バンドル出力の検知 → ジャンプ抑制)',
     expect(isBundledSource('index.js')).toBe(false); // ハッシュ無しの素の js は許容
   });
 });
+
+describe('normalizeSourcePath — バンドラ内部の名前空間 (実機の「パスが存在しません」対応)', () => {
+  it('Next.js (webpack) のレイヤ名を剥がす (Antigravity で実発生した形)', () => {
+    expect(
+      normalizeSourcePath('webpack-internal:///(app-pages-browser)/./src/app/page.tsx'),
+    ).toBe('/src/app/page.tsx');
+    expect(normalizeSourcePath('(app-pages-browser)/./src/app/page.tsx')).toBe(
+      '/src/app/page.tsx',
+    );
+    expect(normalizeSourcePath('(rsc)/./src/app/layout.tsx')).toBe('/src/app/layout.tsx');
+  });
+
+  it('Turbopack の [project] を剥がす', () => {
+    expect(normalizeSourcePath('[project]/src/app/page.tsx')).toBe('/src/app/page.tsx');
+  });
+
+  it('Next のルートグループ (実在ディレクトリ) は巻き込まない', () => {
+    expect(normalizeSourcePath('/src/app/(marketing)/page.tsx')).toBe(
+      '/src/app/(marketing)/page.tsx',
+    );
+    expect(
+      normalizeSourcePath('webpack-internal:///(app-pages-browser)/./src/app/(shop)/page.tsx'),
+    ).toBe('/src/app/(shop)/page.tsx');
+  });
+
+  it('相対パス (ソース注釈属性由来) も先頭スラッシュに揃える', () => {
+    expect(normalizeSourcePath('views/index.ejs')).toBe('/views/index.ejs');
+  });
+});
+
+describe('normalizeSourcePath — オリジン限定マッピング', () => {
+  const mappings = [
+    { from: '/src', to: '/Users/me/proj-a/src', origin: 'localhost:3000' },
+    { from: '/src', to: '/Users/me/proj-b/src', origin: 'localhost:3333' },
+    { from: '/views', to: '/Users/me/express/views' }, // 無限定
+  ];
+
+  it('ページのオリジンに一致するものだけ適用する (複数プロジェクトの誤爆防止)', () => {
+    expect(normalizeSourcePath('/src/App.tsx', mappings, 'http://localhost:3000')).toBe(
+      '/Users/me/proj-a/src/App.tsx',
+    );
+    expect(normalizeSourcePath('/src/App.tsx', mappings, 'http://localhost:3333')).toBe(
+      '/Users/me/proj-b/src/App.tsx',
+    );
+  });
+
+  it('無限定のマッピングはどのオリジンでも効く', () => {
+    expect(normalizeSourcePath('/views/index.ejs', mappings, 'http://localhost:9999')).toBe(
+      '/Users/me/express/views/index.ejs',
+    );
+  });
+
+  it('オリジン不明のときは限定付きを適用しない (誤爆より不適用)', () => {
+    expect(normalizeSourcePath('/src/App.tsx', mappings)).toBe('/src/App.tsx');
+  });
+});

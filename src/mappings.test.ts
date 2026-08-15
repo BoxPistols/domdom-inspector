@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMappings } from './mappings';
+import { parseMappings, serializeMappings } from './mappings';
 
 describe('parseMappings', () => {
   it('空文字は空配列', () => {
@@ -22,5 +22,20 @@ describe('parseMappings', () => {
       { from: '/a', to: '/x' },
       { from: '/b', to: '/y' },
     ]);
+  });
+});
+
+describe('parseMappings / serializeMappings — オリジン限定', () => {
+  it('` @ origin` をオリジン限定として読む', () => {
+    expect(parseMappings('/src=/abs/src @ localhost:3000')).toEqual([
+      { from: '/src', to: '/abs/src', origin: 'localhost:3000' },
+    ]);
+  });
+  it('限定なしは origin キー自体を持たない (保存形を汚さない)', () => {
+    expect(parseMappings('/src=/abs/src')).toEqual([{ from: '/src', to: '/abs/src' }]);
+  });
+  it('往復で一致する (popup の 編集 → 保存 → 再表示 で内容が変わらない)', () => {
+    const text = '/src=/abs/a @ localhost:3000\n/views=/abs/views';
+    expect(serializeMappings(parseMappings(text))).toBe(text);
   });
 });

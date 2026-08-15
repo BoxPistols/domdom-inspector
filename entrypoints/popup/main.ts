@@ -3,7 +3,7 @@
 //   - カバレッジ: https://github.com/BoxPistols/domdom-inspector/issues/10 (side panel として再導入)
 //   - AI 監査:    https://github.com/BoxPistols/domdom-inspector/issues/11
 //   - 表示設定:   https://github.com/BoxPistols/domdom-inspector/issues/12 (計測条件として率の隣へ)
-import { parseMappings } from '../../src/mappings';
+import { parseMappings, serializeMappings } from '../../src/mappings';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -74,7 +74,7 @@ async function load() {
   editorEl.value = settings.editor;
   customTemplateEl.value = settings.customUrlTemplate;
   // 保存形は PathMapping[]。編集は 1 行 1 件のテキストで行う (parseMappings と対)
-  pathMappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
+  pathMappingsEl.value = serializeMappings(settings.pathMappings);
   sourceAttrEl.value = settings.sourceAttr;
   syncEditorRows();
   void applyShortcutHints();

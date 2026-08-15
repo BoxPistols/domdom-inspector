@@ -314,7 +314,7 @@
     "message": "Placeholders: {file} (absolute path, leading slash included), {line}, {column}."
   },
   "hintPathMappings": {
-    "message": "One per line, from=to. Needed when the path the browser reports is not the path on your disk (Docker, remote dev, monorepo). The first matching prefix is replaced."
+    "message": "One per line, <code>from=to</code>, optionally scoped with <code> @ origin</code> (substring match). Needed when the path the browser reports is not the path on your disk — e.g. Next.js reports project-relative paths like /src/app/page.tsx, so map <code>/src=/Users/me/myapp/src @ localhost:3000</code>. The first matching prefix wins."
   },
   "modeNotEnabledHere": {
     "message": "Not enabled on this site yet — use \"Enable on current site…\" above first. (localhost works without this.)"

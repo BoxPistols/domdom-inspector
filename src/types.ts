@@ -57,6 +57,12 @@ export interface InspectInfo {
 export interface PathMapping {
   from: string;
   to: string;
+  /**
+   * 適用先ページのオリジン (部分一致、省略可)。/src のようなプロジェクト相対 prefix は
+   * どのプロジェクトにもあるため、複数プロジェクトを検査する環境ではオリジンで
+   * 限定しないと別プロジェクトの検査で誤ったパスに書き換わる。
+   */
+  origin?: string;
 }
 
 export interface Settings {

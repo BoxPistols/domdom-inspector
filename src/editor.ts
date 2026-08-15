@@ -13,7 +13,10 @@ const EDITOR_TEMPLATES: Record<Exclude<Settings['editor'], 'custom'>, string> = 
 
 /** パスマッピング適用後の絶対パス (先頭スラッシュ 1 つに正規化) */
 function absPath(settings: Settings, loc: SourceLocation): string {
-  return '/' + normalizeSourcePath(loc.fileName, settings.pathMappings).replace(/^\/+/, '');
+  // オリジン限定付きマッピングの判定用。MAIN world では検査中のページのオリジン。
+  // location が無い環境 (テスト等) では空 = 限定付きマッピングは適用されない
+  const pageOrigin = typeof location !== 'undefined' ? location.origin : '';
+  return '/' + normalizeSourcePath(loc.fileName, settings.pathMappings, pageOrigin).replace(/^\/+/, '');
 }
 
 /** 設定とソース位置からエディタ起動 URL を組み立てる (FR-08) */
