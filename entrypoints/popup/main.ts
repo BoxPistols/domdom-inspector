@@ -71,6 +71,47 @@ devSectionEl.addEventListener('toggle', () => {
   void browser.storage.local.set({ popupDevOpen: devSectionEl.open });
 });
 
+/**
+ * 検査したページから検出したプロジェクトのルート候補を出す。
+ *
+ * 拡張はディスクを見られないので、正解は分からない。**候補として出し、押したら
+ * 対応表に 1 行入れるところまで**をやる (パスが本当に正しいかは利用者が確かめる)。
+ * 文字列の出所はページなので、ここを経由せず自動で設定へ入れてはいけない。
+ */
+async function renderRootCandidates() {
+  const box = $<HTMLElement>('rootCandidates');
+  const list = $<HTMLElement>('rootList');
+  list.replaceChildren();
+  // **アクティブタブの URL に依存しない。** tabs.query は権限が無いと url を伏せるため、
+  // それを前提にすると「候補はあるのに出ない」が起きる (実機の検証で踏んだ)。
+  // 保存済みの `roots:<host>` を列挙する
+  const all = await browser.storage.local.get(null);
+  const entries = Object.entries(all)
+    .filter(([k, v]) => k.startsWith('roots:') && Array.isArray(v) && v.length)
+    .slice(0, 4) as [string, string[]][];
+  if (!entries.length) return;
+  for (const [key, roots] of entries) {
+    const host = key.slice('roots:'.length);
+    for (const root of roots.slice(0, 3)) {
+      const line = `/src=${root}/src @ ${host}`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'secondary';
+      btn.textContent = line;
+      btn.addEventListener('click', () => {
+        const cur = pathMappingsEl.value.trim();
+        // 既に同じ行があれば増やさない (押すたびに重複させない)
+        if (!cur.split('\n').some((l) => l.trim() === line)) {
+          pathMappingsEl.value = cur ? `${cur}\n${line}` : line;
+        }
+        void save();
+      });
+      list.append(btn);
+    }
+  }
+  box.hidden = false;
+}
+
 async function load() {
   const stored = await browser.storage.local.get('settings');
   const settings: Settings = { ...DEFAULT_SETTINGS, ...(stored.settings ?? {}) };
@@ -451,7 +492,13 @@ async function toggleAllSites() {
 }
 
 $('enableAll').addEventListener('click', () => void toggleAllSites());
-void refreshAllSites().then(() => detectSite());
+void refreshAllSites()
+  .then(() => detectSite())
+  // 候補の提示は検査したページの host に紐づく (detectSite で siteOrigin が決まる)
+  .then(() => renderRootCandidates())
+  .catch(() => {
+    // 候補が出せなくても本体機能には影響しない
+  });
 
 // モード切替 (Alt+Shift+I / Alt+Shift+R) の再割当は Chrome 純正ページに委ねる
 // (拡張からショートカットを直接書き換える API は存在しないため)

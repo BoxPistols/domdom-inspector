@@ -62,6 +62,9 @@
            display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
       /* 版数。どのビルドを見ているかを拡張管理ページを開かずに判別するためのもの。
          主役ではないので控えめにするが、コントラストは本文と同じ基準を満たす色を使う */
+      #rootList { display: flex; flex-direction: column; gap: 4px; margin: 0 0 8px; }
+      #rootList button { font-size: 11px; text-align: left; padding: 5px 8px; word-break: break-all;
+                         font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
       h1 .ver { font-size: 11px; font-weight: 400; font-variant-numeric: tabular-nums;
                 color: var(--muted); letter-spacing: 0; }
 
@@ -198,6 +201,14 @@
       </div>
 
       <label for="pathMappings"><span data-i18n="labelPathMappings">Path mappings</span></label>
+      <!-- 検査したページから検出したプロジェクトのルート候補。押すと下の対応表に 1 行入る。
+           **ページ由来の文字列なので確定はここ (拡張 UI) でしか行わない** -->
+      <div id="rootCandidates" hidden>
+        <div class="hint" data-i18n="hintRootCandidates">
+          Detected from the inspected page. Click to insert a line, then check it points at your project.
+        </div>
+        <div id="rootList"></div>
+      </div>
       <textarea id="pathMappings" rows="2" spellcheck="false" placeholder="/app=/Users/me/project"></textarea>
       <div class="hint" data-i18n="hintPathMappings">
         One per line, <code>from=to</code>, optionally scoped with <code> @ origin</code> (substring match). Needed when the path the browser reports is not the path on your disk — e.g. Next.js reports project-relative paths like /src/app/page.tsx, so map <code>/src=/Users/me/myapp/src @ localhost:3000</code>. The first matching prefix wins.

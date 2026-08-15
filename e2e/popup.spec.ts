@@ -160,3 +160,45 @@ test('版数が見出しに出る (⟳ が効いたか拡張管理ページを�
   expect(shown).toMatch(/^v\d+\.\d+\.\d+$/);
   await page.close();
 });
+
+test('プロジェクトのルート候補を提示し、押すと対応表に 1 行入る', async () => {
+  const page = await context.newPage();
+  // 検査したページで検出した体で候補を置く (bridge が書くのと同じキー)
+  const [sw] = context.serviceWorkers();
+  // **前のテストが残した設定に依存しない。** 同一 persistent context を共有しているため、
+  // 対応表が空である前提を自分で作らないと、通し実行でだけ落ちる (実際に踏んだ)
+  // `chrome` は SW 側のグローバル。e2e の tsconfig には型が無いので局所的に宣言する
+  type ChromeStorage = {
+    storage: { local: { get(k: string): Promise<Record<string, unknown>>; set(v: object): Promise<void>; remove(k: string): Promise<void> } };
+  };
+  await sw.evaluate(async () => {
+    const c = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+    const cur = ((await c.storage.local.get('settings')).settings as object) ?? {};
+    await c.storage.local.set({
+      settings: { ...cur, pathMappings: [] },
+      'roots:localhost:5173': ['/Users/me/proj'],
+    });
+  });
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  await page.evaluate(() => {
+    (document.getElementById('devSection') as HTMLDetailsElement).open = true;
+  });
+
+  const line = '/src=/Users/me/proj/src @ localhost:5173';
+  const btn = page.locator('#rootList button', { hasText: line });
+  await expect(btn).toBeVisible();
+
+  await btn.click();
+  await expect(page.locator('#pathMappings')).toHaveValue(line);
+
+  // 押すたびに重複させない (同じ行が積み上がると対応表が壊れる)
+  await btn.click();
+  await expect(page.locator('#pathMappings')).toHaveValue(line);
+
+  await sw.evaluate(() =>
+    (globalThis as unknown as { chrome: ChromeStorage }).chrome.storage.local.remove(
+      'roots:localhost:5173',
+    ),
+  );
+  await page.close();
+});

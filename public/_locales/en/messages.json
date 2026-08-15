@@ -335,12 +335,15 @@
     "message": "For non-React pages: if the server annotates elements with a source attribute (value like path:line), the extension opens it. Common conventions (data-v-inspector, data-source, data-inspector-*) are always read; put your own attribute name here."
   },
   "editorNeedsMapping": {
-    "message": "{path} is a project-relative path, so the editor cannot find it. Add this line to Path mappings in the popup: {mapping}"
+    "message": "{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}"
   },
   "editorCopyMapping": {
     "message": "Copy the line"
   },
   "editorMappingCopied": {
     "message": "Copied — paste it into Path mappings and replace the placeholder with your project path"
+  },
+  "hintRootCandidates": {
+    "message": "Detected from the inspected page. Click to insert a line, then check it points at your project (the extension cannot read your disk, so it cannot verify this)."
   }
 }

@@ -335,12 +335,15 @@
     "message": "React 以外のページ用: サーバーが要素にソース位置の属性 (値は path:line 形式) を書き出していれば、それを開きます。一般的な規格 (data-v-inspector / data-source / data-inspector-*) は常に読みます。独自の属性名はここに入れてください。"
   },
   "editorNeedsMapping": {
-    "message": "{path} はプロジェクト相対パスのため、エディタからは見つけられません。popup の「パスの対応表」に次の 1 行を追加してください: {mapping}"
+    "message": "{path} はプロジェクト相対パスのため、エディタからは見つけられません。popup の「高度な設定 → パスの対応表」に次の 1 行を追加してください: {mapping}"
   },
   "editorCopyMapping": {
     "message": "この 1 行をコピー"
   },
   "editorMappingCopied": {
     "message": "コピーしました — 「パスの対応表」に貼り、プレースホルダを実際のプロジェクトのパスに置き換えてください"
+  },
+  "hintRootCandidates": {
+    "message": "検査したページから検出した候補です。押すと下の対応表に 1 行入ります。**正しいかは確認してください** — 拡張はディスクを読めないので検証できません (モノレポでは 1 段足りないことがあります)。"
   }
 }

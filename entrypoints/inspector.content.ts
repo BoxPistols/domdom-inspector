@@ -1,8 +1,10 @@
+import { getFiberFromElement } from '../src/fiber';
 import { installHook } from '../src/hook';
 import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
 import { Overlay } from '../src/overlay';
 import { DEV_MATCHES } from '../src/matches';
+import { extractRootCandidates } from '../src/sourceRoots';
 import { EMPTY_TOKEN_DICT, parseMuiTheme, type TokenDict } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, PAGE_SOURCE } from '../src/types';
 
@@ -64,6 +66,41 @@ export default defineContentScript({
         applyingRemoteState = false;
       }
     };
+    /**
+     * **プロジェクトのルート候補**を集めて bridge へ渡す (popup が提示するため)。
+     *
+     * 拡張はディスクを見られないので、どこにプロジェクトがあるかは原理的に未知。
+     * ページが漏らす絶対パス (Vite の `/@fs/…` 等) から候補を作り、**確定は popup
+     * (拡張 UI) で人が 1 回選ぶ**。ここで自動的に設定へ書き込んではいけない —
+     * MAIN world はページと同一信頼境界なので、ページが仕込んだ文字列で
+     * 「⌘Click したら任意のローカルパスがエディタで開く」状態を作れてしまう。
+     *
+     * モードを ON にした時だけ走らせる (常時ページを走査しない)。
+     */
+    const collectRootCandidates = () => {
+      const sources: string[] = [];
+      for (const r of performance.getEntriesByType('resource')) sources.push(r.name);
+      for (const s of document.querySelectorAll('script[src]')) {
+        sources.push((s as HTMLScriptElement).src);
+      }
+      // React の位置情報はスタックに入っている (React 19 は _debugSource を廃止)
+      let scanned = 0;
+      for (const el of Array.from(document.querySelectorAll('*'))) {
+        if (scanned >= 120) break;
+        const fiber = getFiberFromElement(el);
+        const stack: unknown = fiber?._debugStack;
+        const text = typeof stack === 'string' ? stack : (stack as Error | undefined)?.stack;
+        if (text) {
+          sources.push(text);
+          scanned += 1;
+        }
+      }
+      const roots = extractRootCandidates(sources);
+      if (roots.length) {
+        window.postMessage({ source: PAGE_SOURCE, type: 'source-roots', roots }, '*');
+      }
+    };
+    let rootsCollected = false;
     const inspector = new Inspector(hookState, overlay, strings, {
       announce: isTopFrame,
       onStateChange: (enabled) => {
@@ -72,6 +109,11 @@ export default defineContentScript({
         if (enabled && isTopFrame && pendingThemeToast) {
           overlay.toast(pendingThemeToast);
           pendingThemeToast = null;
+        }
+        // ルート候補は ON になった最初の 1 回だけ集める (常時走査しない)
+        if (enabled && !rootsCollected) {
+          rootsCollected = true;
+          collectRootCandidates();
         }
         broadcastState(enabled);
       },
@@ -270,5 +312,6 @@ export default defineContentScript({
     // 同期の i18n push は確実に失われ、そのタブの overlay 文言が英語で固定されていた。
     // 押し込みではなく「受け手が用意できたら引き取る」形にして取りこぼしを消す。
     window.postMessage({ source: PAGE_SOURCE, type: 'ready' }, '*');
+
   },
 });

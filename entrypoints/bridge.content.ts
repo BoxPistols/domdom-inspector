@@ -118,6 +118,23 @@ export default defineContentScript({
       // MAIN world でモードの ON/OFF が変わった → **同じタブの全フレームへ配る**よう
       // background に依頼する (issue #14)。ページが偽装しても起きるのは
       // 「そのタブのインスペクトモードが入る/切れる」だけで、ページ外への作用はない。
+      // MAIN world が集めた「プロジェクトのルート候補」を保存する (popup が提示する)。
+      // **ページが仕込める文字列**なので、ここでは保存するだけで一切適用しない。
+      // 実際にパスの対応表へ入れるかは popup で人が選ぶ (拡張 UI での確認を必ず挟む)。
+      // オリジン単位に保存し、他サイトの候補が混ざらないようにする
+      if (d.type === 'source-roots' && Array.isArray(d.roots)) {
+        const roots = d.roots
+          .filter((r: unknown): r is string => typeof r === 'string' && r.startsWith('/'))
+          .slice(0, 5)
+          .map((r: string) => r.slice(0, 300));
+        if (roots.length) {
+          safe(() =>
+            browser.storage.local.set({ [`roots:${location.host}`]: roots }),
+          )?.catch(() => {
+            // 保存できなくても本体機能には影響しない (候補提示が出ないだけ)
+          });
+        }
+      }
       if (d.type === 'inspect-state' && typeof d.on === 'boolean') {
         // sendMessage は無効化コンテキストでは**同期 throw** するので、
         // `.catch()` だけでは素通りする (実機でこれが uncaught になっていた)

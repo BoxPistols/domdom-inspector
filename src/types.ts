@@ -275,7 +275,7 @@ export const DEFAULT_STRINGS: UiStrings = {
     'Nothing opened — your editor may not be installed, or its URL scheme is not registered.',
   editorCopyPath: 'Copy path',
   editorPathCopied: 'Path copied',
-  editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Add this line to Path mappings in the popup: {mapping}',
+  editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}',
   editorCopyMapping: 'Copy the line',
   editorMappingCopied: 'Copied — paste it into Path mappings and replace the placeholder with your project path',
   editorCopyHints: 'Copy search hints',
