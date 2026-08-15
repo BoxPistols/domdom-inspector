@@ -3,8 +3,10 @@ import {
   isBundledSource,
   isMuiPath,
   isNodeModulesPath,
+  looksProjectRelative,
   normalizeSourcePath,
   parseStackLocation,
+  suggestMapping,
 } from './source';
 
 describe('normalizeSourcePath', () => {
@@ -171,3 +173,49 @@ describe('normalizeSourcePath — オリジン限定マッピング', () => {
     expect(normalizeSourcePath('/src/App.tsx', mappings)).toBe('/src/App.tsx');
   });
 });
+
+describe('isBundledSource — バンドラの配信ディレクトリ (実機で取りこぼした形)', () => {
+  it('Next.js / Turbopack のチャンクを検出する', () => {
+    // Turbopack のハッシュは base36。16 進前提の判定では当たらず、実機で
+    // 「このコンピューターに存在しません」を出していた
+    expect(isBundledSource('/_next/static/chunks/_0wzpx8i._.js')).toBe(true);
+    expect(isBundledSource('/_next/static/chunks/main-app.js')).toBe(true);
+    expect(isBundledSource('http://localhost:3000/_next/static/chunks/app/page.js')).toBe(true);
+  });
+
+  it('他のバンドラの配信ディレクトリも検出する', () => {
+    expect(isBundledSource('/static/js/main.js')).toBe(true);
+    expect(isBundledSource('/assets/index-4f2a.js')).toBe(true);
+    expect(isBundledSource('/node_modules/.vite/deps/react.js')).toBe(true);
+    expect(isBundledSource('/_nuxt/entry.js')).toBe(true);
+  });
+
+  it('実ソースは通す (過検出しない)', () => {
+    expect(isBundledSource('/src/app/page.tsx')).toBe(false);
+    expect(isBundledSource('/Users/me/proj/src/components/Button.tsx')).toBe(false);
+    expect(isBundledSource('/views/index.ejs')).toBe(false);
+    // ディレクトリ名に assets を含むだけの実ソースは巻き込まない
+    expect(isBundledSource('/src/assets-manager/loader.ts')).toBe(false);
+  });
+});
+
+describe('looksProjectRelative / suggestMapping', () => {
+  it('プロジェクト相対に見えるパスを検出する', () => {
+    expect(looksProjectRelative('/src/app/page.tsx')).toBe(true);
+    expect(looksProjectRelative('/views/index.ejs')).toBe(true);
+    expect(looksProjectRelative('/css/app.css')).toBe(true);
+  });
+
+  it('ディスク上の絶対パスは通す (開けるものを止めない)', () => {
+    expect(looksProjectRelative('/Users/me/proj/src/App.tsx')).toBe(false);
+    expect(looksProjectRelative('/home/me/proj/src/App.tsx')).toBe(false);
+    expect(looksProjectRelative('/Volumes/work/proj/src/App.tsx')).toBe(false);
+  });
+
+  it('貼ればそのまま効く 1 行を作る', () => {
+    expect(suggestMapping('/src/app/page.tsx', 'localhost:3000')).toBe(
+      '/src=<プロジェクトの絶対パス>/src @ localhost:3000',
+    );
+    expect(suggestMapping('/views/index.ejs')).toBe('/views=<プロジェクトの絶対パス>/views');
+  });
+})

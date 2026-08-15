@@ -173,6 +173,10 @@ export interface UiStrings {
   /** 開けないときの「手がかりをコピー」ボタンと完了トースト */
   editorCopyHints: string;
   editorHintsCopied: string;
+  /** 解決したパスがプロジェクト相対で、そのままでは開けないときの案内 */
+  editorNeedsMapping: string;
+  editorCopyMapping: string;
+  editorMappingCopied: string;
   ownerPanelTitle: string;
   /** 描画元リストが空 (素の DOM / production ビルド) のときの説明 */
   chainEmpty: string;
@@ -271,6 +275,9 @@ export const DEFAULT_STRINGS: UiStrings = {
     'Nothing opened — your editor may not be installed, or its URL scheme is not registered.',
   editorCopyPath: 'Copy path',
   editorPathCopied: 'Path copied',
+  editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Add this line to Path mappings in the popup: {mapping}',
+  editorCopyMapping: 'Copy the line',
+  editorMappingCopied: 'Copied — paste it into Path mappings and replace the placeholder with your project path',
   editorCopyHints: 'Copy search hints',
   editorHintsCopied: 'Search hints copied — paste into your editor’s search',
   ownerPanelTitle: 'Rendered by (click to open editor)',

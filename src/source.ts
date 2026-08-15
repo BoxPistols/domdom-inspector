@@ -125,8 +125,48 @@ export function isMuiPath(fileName: string): boolean {
 export function isBundledSource(fileName: string): boolean {
   const base = fileName.split(/[\\/]/).pop() ?? '';
   return (
-    /[-_.][0-9a-f]{6,}(?:[-_.]|\.[cm]?jsx?$)/i.test(base) || // 埋め込みハッシュ
-    /\/assets\//.test(fileName) || // ビルド出力の慣例ディレクトリ
+    // **配信ディレクトリで判定するのを先に置く。** ハッシュの字種はバンドラごとに違い
+    // (Turbopack は base36 で `_0wzpx8i._.js`)、16 進前提の判定では取りこぼす。
+    // 取りこぼすと**コンパイル済みチャンクのパスをそのままエディタへ送る**ことになり、
+    // 「このコンピューターに存在しません」で終わる (実機で発生)
+    BUNDLE_DIRS.test(fileName) ||
+    /[-_.][0-9a-f]{6,}(?:[-_.]|\.[cm]?jsx?$)/i.test(base) || // 埋め込みハッシュ (16 進)
     /\.(chunk|bundle)\.[cm]?jsx?$/i.test(base) // *.chunk.js / *.bundle.js
   );
+}
+
+/** バンドラが出力を置く配信パス。ここに入っているものは実ソースではない */
+const BUNDLE_DIRS =
+  /(^|\/)(?:_next\/static|\.next|static\/chunks|static\/js|assets|\.vite\/deps|_nuxt|build\/static)\//;
+
+/**
+ * 「プロジェクト相対パス」に見えるか (= ディスク上の絶対パスになっていない)。
+ *
+ * Next.js (webpack) は `(app-pages-browser)/./src/app/page.tsx` のように**プロジェクト
+ * 相対**でソース位置を報告する。レイヤ名を剥がすと `/src/app/page.tsx` になるが、
+ * これはディスク上には存在しない。**エディタの scheme URL は絶対パスしか受けず、
+ * エディタが開いている作業フォルダは解決に使われない**ため、そのまま送ると必ず失敗する。
+ *
+ * 判定は「先頭セグメントがプロジェクト内の慣例ディレクトリか」。Docker の `/app` の
+ * ように実在する絶対パスを誤判定することはあるが、その場合も対処 (パスマッピングの
+ * 追加) は同じなので、案内として誤らない。
+ */
+const PROJECT_DIRS = new Set([
+  'src', 'app', 'pages', 'components', 'lib', 'views', 'styles', 'css', 'public',
+  'packages', 'apps', 'server', 'client', 'routes', 'layouts', 'templates',
+]);
+
+export function looksProjectRelative(path: string): boolean {
+  const first = path.replace(/^\/+/, '').split('/')[0] ?? '';
+  return PROJECT_DIRS.has(first.toLowerCase());
+}
+
+/**
+ * 追加すべきパスマッピングの 1 行を組み立てる (利用者がそのまま貼れる形)。
+ * 「開けません」で終わらせず、**何をどこに書けば開くようになるか**まで渡す。
+ */
+export function suggestMapping(path: string, host = ''): string {
+  const first = path.replace(/^\/+/, '').split('/')[0] ?? '';
+  const scope = host ? ` @ ${host}` : '';
+  return `/${first}=<プロジェクトの絶対パス>/${first}${scope}`;
 }

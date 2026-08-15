@@ -13,7 +13,12 @@ import { DEFAULT_SETTINGS, DEFAULT_STRINGS } from './types';
  * 「開かなかった」と見なしてパスのコピー導線を出す。
  */
 
-const LOC = { fileName: 'http://localhost:5173/src/App.tsx', lineNumber: 42, columnNumber: 7 };
+// **ディスク上の絶対パス**を使う。以前はここが `/src/App.tsx` (プロジェクト相対) で、
+// 「実際には開けないパス」を正常系として固定してしまっていた — 実機で
+// 「このコンピューターに存在しません」が出続けた症状そのものをテストが見逃していた
+const LOC = { fileName: '/Users/me/proj/src/App.tsx', lineNumber: 42, columnNumber: 7 };
+/** マッピング未設定のプロジェクト相対パス (Next.js / Vite dev が報告する形) */
+const RELATIVE_LOC = { fileName: '/src/app/page.tsx', lineNumber: 12, columnNumber: 3 };
 
 /** closed shadow DOM の中身をテストから読むため open を強制する (e2e と同じ手法) */
 function patchShadow() {
@@ -57,7 +62,7 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
 
     const text = toastEl()?.textContent ?? '';
     // パス:行 を必ず見せる (開かなかったときに手で辿れるように)
-    expect(text).toContain('/src/App.tsx:42');
+    expect(text).toContain('/Users/me/proj/src/App.tsx:42');
     expect(text).not.toContain(DEFAULT_STRINGS.editorNotOpened);
     // まだコピーボタンは出さない
     expect(toastEl()?.querySelector('button')).toBeNull();
@@ -74,7 +79,7 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
     vi.advanceTimersByTime(200);
     const el = toastEl();
     expect(el?.textContent).toContain(DEFAULT_STRINGS.editorNotOpened);
-    expect(el?.textContent).toContain('/src/App.tsx:42');
+    expect(el?.textContent).toContain('/Users/me/proj/src/App.tsx:42');
     expect(el?.querySelector('button')?.textContent).toBe(DEFAULT_STRINGS.editorCopyPath);
     // 操作できる状態になっている (既定のトーストは pointer-events: none)
     expect(el?.classList.contains('interactive')).toBe(true);
@@ -102,7 +107,7 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
     vi.advanceTimersByTime(1300);
 
     toastEl()?.querySelector('button')?.click();
-    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('/src/App.tsx:42'));
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('/Users/me/proj/src/App.tsx:42'));
     // 成功したことを言う (黙って終わらせない)
     await vi.waitFor(() => expect(toastEl()?.textContent).toBe(DEFAULT_STRINGS.editorPathCopied));
   });
@@ -112,7 +117,51 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
       { ...DEFAULT_SETTINGS, pathMappings: [{ from: '/src', to: '/Users/me/app/src' }] },
       DEFAULT_STRINGS,
     );
-    overlay.openEditor(LOC);
+    // マッピングの対象になるのは相対側のパス (絶対パスは書き換え対象にならない)
+    overlay.openEditor({ ...LOC, fileName: 'http://localhost:5173/src/App.tsx' });
     expect(toastEl()?.textContent).toContain('/Users/me/app/src/App.tsx:42');
+  });
+});
+
+describe('Overlay.openEditor — プロジェクト相対パスは送らずに設定方法を出す', () => {
+  it('エディタを起動せず、追加すべき 1 行を提示する', () => {
+    const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+    const clicks: string[] = [];
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      overlay.openEditor(RELATIVE_LOC);
+    } finally {
+      HTMLAnchorElement.prototype.click = origClick;
+    }
+    // 開けないと分かっているものを投げない (投げると editor が「存在しません」を出すだけ)
+    expect(clicks).toEqual([]);
+    const text = toastEl()?.textContent ?? '';
+    expect(text).toContain('/src/app/page.tsx');
+    expect(text).toContain('/src=');
+    // 操作可能なトースト (コピーできる) であること
+    expect(toastEl()?.querySelector('button')).not.toBeNull();
+  });
+
+  it('マッピングを設定すれば従来どおり起動する (対処が実際に効く)', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      pathMappings: [{ from: '/src', to: '/Users/me/proj/src' }],
+    };
+    const overlay = new Overlay(settings, DEFAULT_STRINGS);
+    const clicks: string[] = [];
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      overlay.openEditor(RELATIVE_LOC);
+    } finally {
+      HTMLAnchorElement.prototype.click = origClick;
+    }
+    expect(clicks).toHaveLength(1);
+    expect(clicks[0]).toContain('/Users/me/proj/src/app/page.tsx');
   });
 });

@@ -1,6 +1,6 @@
 import { isColorValue } from './designStyle';
-import { buildEditorUrl, formatSourceRef } from './editor';
-import { isBundledSource } from './source';
+import { buildEditorUrl, formatSourceRef, needsPathMapping, resolvedPath } from './editor';
+import { isBundledSource, suggestMapping } from './source';
 import { buildSearchHints } from './sourceAttr';
 import { el } from './overlayDom';
 import {
@@ -425,6 +425,21 @@ export class Overlay {
    * アンカーには data-domdom-editor を付け、インスペクタのクリック抑止を素通りさせる。
    */
   openEditor(loc: { fileName: string; lineNumber: number; columnNumber: number }) {
+    // **開けないと分かっているパスは送らない。** プロジェクト相対のまま送ると
+    // エディタが「このコンピューターに存在しません」を出すだけで、利用者には
+    // 何を直せばよいか分からない (実機で繰り返し発生した)。設定すべき 1 行まで渡す
+    if (needsPathMapping(this.settings, loc)) {
+      const path = resolvedPath(this.settings, loc);
+      const host = typeof location !== 'undefined' ? location.host : '';
+      const line = suggestMapping(path, host);
+      this.toastAction(
+        this.strings.editorNeedsMapping.replace('{path}', path).replace('{mapping}', line),
+        this.strings.editorCopyMapping,
+        () => void this.copyToClipboard(line, this.strings.editorMappingCopied),
+        14000,
+      );
+      return;
+    }
     const url = buildEditorUrl(this.settings, loc);
     const ref = formatSourceRef(this.settings, loc);
 

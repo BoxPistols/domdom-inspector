@@ -1,4 +1,4 @@
-import { normalizeSourcePath } from './source';
+import { looksProjectRelative, normalizeSourcePath } from './source';
 import type { Settings, SourceLocation } from './types';
 
 // {file} は先頭スラッシュ込みで展開される (二重スラッシュ防止のため template 側に / を書かない)
@@ -39,4 +39,20 @@ export function buildEditorUrl(settings: Settings, loc: SourceLocation): string 
  */
 export function formatSourceRef(settings: Settings, loc: SourceLocation): string {
   return `${absPath(settings, loc)}:${loc.lineNumber}`;
+}
+
+/**
+ * 解決後のパスが**そのままでは開けない**か (プロジェクト相対のまま) を返す。
+ *
+ * エディタの scheme URL は絶対パスしか受けず、エディタが開いている作業フォルダは
+ * 解決に使われない。相対のまま送ると必ず「このコンピューターに存在しません」になる。
+ * 送る前に判定して、代わりに**何を設定すれば開くか**を出すために使う。
+ */
+export function needsPathMapping(settings: Settings, loc: SourceLocation): boolean {
+  return looksProjectRelative(absPath(settings, loc));
+}
+
+/** 開けないときに提示する「解決後のパス」(利用者が対応表を書く手がかりになる) */
+export function resolvedPath(settings: Settings, loc: SourceLocation): string {
+  return absPath(settings, loc);
 }
