@@ -1,7 +1,9 @@
+import { winningRuleRef } from './cssVars';
 import { detectReactOnPage, getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
 import { isBundledSource } from './source';
+import { resolveSourceAttr } from './sourceAttr';
 import {
   DEFAULT_SETTINGS,
   DEFAULT_STRINGS,
@@ -276,7 +278,7 @@ export class Inspector {
     }
     // Cmd(Mac)/Ctrl(Win)+Click で該当ソースをエディタで開く (dev の実ソースのみ)
     if (!me.metaKey && !me.ctrlKey) return;
-    this.openEditorFor(this.currentInfo);
+    this.openEditorFor(this.currentElement, this.currentInfo);
   };
 
   /**
@@ -292,20 +294,57 @@ export class Inspector {
 
   /** 右クリックメニュー「ソースをエディタで開く」: モード ON を必要としない */
   openEditorAt(element: Element) {
-    this.openEditorFor(inspectElement(element, this.settings.muiSkip));
+    this.openEditorFor(element, inspectElement(element, this.settings.muiSkip));
   }
 
   /**
    * ジャンプ可能ならエディタを開き、**不可なら理由をトーストで言う**。
    * 黙って何もしないと「押しても無反応」= 一番わかりにくい壊れ方になる。
+   *
+   * 開く手段は 3 段 (上から順に精度が高い):
+   * 1. React dev ビルドの jumpTarget (_debugSource 由来。行番号まで正確)
+   * 2. ソース注釈属性 (data-v-inspector / data-source 等。フレームワーク非依存 —
+   *    Express/EJS でもサーバーが書き出していれば行番号まで開ける)
+   * 3. cascade で勝っている外部 CSS ファイル (行番号は取れない — CSSOM が公開して
+   *    おらず、探すには fetch が要る。送信経路ゼロの提出前提を壊すので選ばない)
    */
-  private openEditorFor(info: InspectInfo | null) {
+  private openEditorFor(element: Element | null, info: InspectInfo | null) {
     const jt = info?.jumpTarget;
     if (jt && !isBundledSource(jt.fileName)) {
       this.overlay.openEditor(jt);
       return;
     }
+    if (element) {
+      const attr = resolveSourceAttr(element, this.settings.sourceAttr);
+      if (attr) {
+        this.overlay.openEditor(attr);
+        return;
+      }
+      const css = winningRuleRef(element);
+      // 自オリジンの CSS だけ自動で開く。CDN 等のクロスオリジンはローカルに実体が
+      // 無い可能性が高く、開けない URL をエディタに投げるより手がかりに回す
+      if (css?.href && this.isOwnOrigin(css.href)) {
+        this.overlay.openEditor({ fileName: css.href, lineNumber: 1, columnNumber: 1 });
+        return;
+      }
+      // どの経路でも開けない: 理由 + エディタ側で検索するための手がかりを渡す
+      this.overlay.toastAction(
+        this.explainNoJump(info),
+        this.strings.editorCopyHints,
+        () => void this.overlay.copySearchHints(element, css),
+      );
+      return;
+    }
     this.overlay.toast(this.explainNoJump(info));
+  }
+
+  /** href が現在のページと同一オリジンか (解釈不能な URL は false) */
+  private isOwnOrigin(href: string): boolean {
+    try {
+      return new URL(href, window.location.href).origin === window.location.origin;
+    } catch {
+      return false;
+    }
   }
 
   /** ジャンプできない理由を実状態から選ぶ (取り違えると「理由が嘘」になる) */

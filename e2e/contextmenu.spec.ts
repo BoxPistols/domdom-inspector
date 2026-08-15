@@ -138,7 +138,7 @@ test('「ソースをエディタで開く」は開けない要素でも理由�
   await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
   await expect
     .poll(async () => await overlayText(page), { timeout: 3000 })
-    .toMatch(/not a React component|React コンポーネントではない/);
+    .toMatch(/No source location found|ソース位置が見つかりません/);
 
   await page.close();
 });

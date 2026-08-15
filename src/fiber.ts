@@ -30,9 +30,19 @@ export function getFiberFromElement(element: Element): Fiber | null {
         return (node as any)[key];
       }
     }
-    node = node.parentElement;
+    // **parentElement だけで遡らない。** shadow root の直下では parentElement が null に
+    // なるため、web component 内の要素が React アプリ上でも「React ではない」と誤答した
+    // (インスペクタは open shadow を貫通して最内要素を選べるので、この経路は普通に踏む)。
+    // ホストへ抜けて遡りを続ける。
+    node = node.parentElement ?? hostOf(node);
   }
   return null;
+}
+
+/** node が shadow root 直下なら、その root のホスト要素 (無ければ null) */
+function hostOf(node: Element): Element | null {
+  const root = node.getRootNode?.();
+  return root && root !== document && 'host' in root ? ((root as ShadowRoot).host ?? null) : null;
 }
 
 /**

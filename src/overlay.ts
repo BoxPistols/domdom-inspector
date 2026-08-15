@@ -1,6 +1,7 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl, formatSourceRef } from './editor';
 import { isBundledSource } from './source';
+import { buildSearchHints } from './sourceAttr';
 import { el } from './overlayDom';
 import {
   clampBadgePosition,
@@ -463,6 +464,15 @@ export class Overlay {
         () => void this.copyToClipboard(ref, this.strings.editorPathCopied),
       );
     }, EDITOR_LAUNCH_GRACE_MS);
+  }
+
+  /**
+   * どの経路でも開けなかったとき、エディタ側で検索するための手がかりをコピーする
+   * (セレクタ / クラス / テキスト / 勝っている CSS の所在)。「開けません」で
+   * 終わらせない — 探す起点だけは必ず渡す。
+   */
+  copySearchHints(element: Element, css: { href: string | null; selector: string } | null) {
+    return this.copyToClipboard(buildSearchHints(element, css), this.strings.editorHintsCopied);
   }
 
   /** クリップボードへコピーし、結果をトーストで返す (失敗を黙らせない) */

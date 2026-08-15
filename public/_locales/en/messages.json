@@ -142,7 +142,7 @@
     "message": "Nothing to show — this element has no React owner (plain DOM, or a production build with names stripped)."
   },
   "noSourceDom": {
-    "message": "This element is not a React component, so it has no source file to open."
+    "message": "No source location found — not a React dev build, no source annotation attribute (data-source etc.), and no same-origin CSS to open."
   },
   "renderOn": {
     "message": "Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit"
@@ -302,7 +302,7 @@
     "message": "Component tree needs a development build — this page is a production build, where React strips component names. Design measurement and token matching still work."
   },
   "hintEditorUsage": {
-    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Development builds only — production builds carry no source location, so the extension tells you why instead. The editor you pick must be installed; if nothing opens, the extension offers the path to copy."
+    "message": "While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Resolution order: React dev build source, then a source annotation attribute (works on any framework), then the same-origin CSS file that styles the element. If none applies, the extension explains why and offers copyable search hints. The editor you pick must be installed."
   },
   "editorCustom": {
     "message": "Custom URL…"
@@ -321,5 +321,17 @@
   },
   "modeNotInspectable": {
     "message": "This page can't be inspected (not an http/https page)."
+  },
+  "editorCopyHints": {
+    "message": "Copy search hints"
+  },
+  "editorHintsCopied": {
+    "message": "Search hints copied — paste into your editor’s search"
+  },
+  "labelSourceAttr": {
+    "message": "Source annotation attribute"
+  },
+  "hintSourceAttr": {
+    "message": "For non-React pages: if the server annotates elements with a source attribute (value like path:line), the extension opens it. Common conventions (data-v-inspector, data-source, data-inspector-*) are always read; put your own attribute name here."
   }
 }

@@ -95,6 +95,12 @@ export interface Settings {
   /** ビルド時パス → ローカル絶対パスの書き換え */
   pathMappings: PathMapping[];
   /**
+   * ソース注釈属性の追加属性名 (例: data-my-loc)。値は `path:line[:col]` 形式。
+   * 既定規格 (data-v-inspector / data-source / data-inspector-* 等) は常に読む。
+   * 空文字なら追加なし。非 React ページでのエディタジャンプに使う。
+   */
+  sourceAttr: string;
+  /**
    * レンダー可視化モード中の「記録トグル」キー (ページ内、単一キー)。
    * モード切替 (Alt+Shift+I / Alt+Shift+R) は manifest commands 側で
    * chrome://extensions/shortcuts から任意再設定できるため、ここには含めない。
@@ -124,6 +130,7 @@ export const DEFAULT_SETTINGS: Settings = {
     thirdParty: '#616161',
   },
   pathMappings: [],
+  sourceAttr: '',
   recordKey: 'r',
   autoTheme: true,
 };
@@ -157,6 +164,9 @@ export interface UiStrings {
   /** フォールバックのコピーボタン */
   editorCopyPath: string;
   editorPathCopied: string;
+  /** 開けないときの「手がかりをコピー」ボタンと完了トースト */
+  editorCopyHints: string;
+  editorHintsCopied: string;
   ownerPanelTitle: string;
   /** 描画元リストが空 (素の DOM / production ビルド) のときの説明 */
   chainEmpty: string;
@@ -255,9 +265,11 @@ export const DEFAULT_STRINGS: UiStrings = {
     'Nothing opened — your editor may not be installed, or its URL scheme is not registered.',
   editorCopyPath: 'Copy path',
   editorPathCopied: 'Path copied',
+  editorCopyHints: 'Copy search hints',
+  editorHintsCopied: 'Search hints copied — paste into your editor’s search',
   ownerPanelTitle: 'Rendered by (click to open editor)',
   chainEmpty: 'Nothing to show — this element has no React owner (plain DOM, or a production build with names stripped).',
-  noSourceDom: 'This element is not a React component, so it has no source file to open.',
+  noSourceDom: 'No source location found — not a React dev build, no source annotation attribute (data-source etc.), and no same-origin CSS to open.',
   renderOn:
     'Render viz ON — re-rendered elements flash (blue→red = more frequent) / R: record / toggle again to exit',
   renderOnNoDev: 'Render viz ON — no dev build detected, timing unavailable (flash only)',

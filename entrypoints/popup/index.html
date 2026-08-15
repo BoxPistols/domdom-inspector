@@ -174,7 +174,7 @@
         <option value="custom" data-i18n="editorCustom">Custom URL…</option>
       </select>
       <div class="hint" data-i18n="hintEditorUsage">
-        While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Development builds only — production builds carry no source location, so the extension tells you why instead. The editor you pick must be installed; if nothing opens, the extension offers the path to copy.
+        While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Resolution order: React dev build source, then a source annotation attribute (works on any framework), then the same-origin CSS file that styles the element. If none applies, the extension explains why and offers copyable search hints. The editor you pick must be installed.
       </div>
 
       <!-- editor=custom のときだけ出す。Zed / Emacs 等を scheme で開くため -->
@@ -184,6 +184,12 @@
         <div class="hint" data-i18n="hintCustomTemplate">
           Placeholders: {file} (absolute path, leading slash included), {line}, {column}.
         </div>
+      </div>
+
+      <label for="sourceAttr"><span data-i18n="labelSourceAttr">Source annotation attribute</span></label>
+      <input id="sourceAttr" type="text" spellcheck="false" placeholder="data-my-loc" />
+      <div class="hint" data-i18n="hintSourceAttr">
+        For non-React pages: if the server annotates elements with a source attribute (value like path:line), the extension opens it. Common conventions (data-v-inspector, data-source, data-inspector-*) are always read; put your own attribute name here.
       </div>
 
       <label for="pathMappings"><span data-i18n="labelPathMappings">Path mappings</span></label>

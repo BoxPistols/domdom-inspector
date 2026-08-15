@@ -406,3 +406,81 @@ export function collectAuthoredVars(element: Element): Map<string, VarMatch> {
   }
   return out;
 }
+
+/** この要素にスタイルを当てている最強のルールの所在 (CSS ファイルを開くフォールバック用) */
+export interface WinningRuleRef {
+  /** 外部 CSS の URL。同一ページ内 <style> / adoptedStyleSheets なら null */
+  href: string | null;
+  /** マッチしたセレクタ (手がかり表示用) */
+  selector: string;
+}
+
+/**
+ * element にマッチするルールのうち cascade 最強のものの「所在」を返す。
+ *
+ * React の jumpTarget もソース注釈属性も無いページで「せめて勝っている CSS ファイルを
+ * 開く」ために使う。**行番号は返せない** — CSSOM はルールの行番号を公開しておらず、
+ * ファイルを読んで探すには fetch が要る (送信経路ゼロの提出前提を壊すので選ばない)。
+ *
+ * 勝敗はプロパティ単位でなくルール単位 (specificity → 出現順)。プロパティごとの厳密な
+ * 勝者は winningValues が持つが、「どのファイルを開くか」にはルールの所在で十分。
+ */
+export function winningRuleRef(element: Element): WinningRuleRef | null {
+  let best: { spec: number; order: number; ref: WinningRuleRef } | null = null;
+  const counter = { n: 0 };
+
+  const walk = (rules: CSSRuleList, href: string | null): void => {
+    for (const rule of Array.from(rules)) {
+      if (isStyleRule(rule)) {
+        let spec = -1;
+        let matched = '';
+        for (const branch of rule.selectorText.split(',')) {
+          const b = branch.trim();
+          if (!b) continue;
+          try {
+            if (element.matches(b)) {
+              const s = specificity(b);
+              if (s > spec) {
+                spec = s;
+                matched = b;
+              }
+            }
+          } catch {
+            // 不正 or 未対応セレクタは静かにスキップ (winningValues と同じ方針)
+          }
+        }
+        if (spec >= 0 && rule.style.length > 0) {
+          const order = counter.n++;
+          if (!best || spec > best.spec || (spec === best.spec && order > best.order)) {
+            best = { spec, order, ref: { href, selector: matched } };
+          }
+        }
+      }
+      const nested = (rule as CSSGroupingRule).cssRules;
+      if (nested) {
+        let ok = true;
+        const media = (rule as CSSMediaRule).media;
+        const cond = (rule as CSSSupportsRule).conditionText;
+        try {
+          if (media?.mediaText) ok = matchMedia(media.mediaText).matches;
+          else if (cond) ok = CSS.supports(cond);
+        } catch {
+          ok = true;
+        }
+        if (ok) walk(nested, href);
+      }
+    }
+  };
+
+  for (const sheet of sheetsFor(element)) {
+    let rules: CSSRuleList | null = null;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      continue; // cross-origin は読めない
+    }
+    if (!rules) continue;
+    walk(rules, sheet.href ?? null);
+  }
+  return best ? (best as { ref: WinningRuleRef }).ref : null;
+}

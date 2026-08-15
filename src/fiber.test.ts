@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   detectReactOnPage,
+  getFiberFromElement,
   getFiberName,
   getHostElementOfFiber,
   getParentComponentElement,
@@ -267,5 +268,55 @@ describe('detectReactOnPage — DOM から React の有無と dev 判定を取�
     // maxElements=2 では届かない
     expect(detectReactOnPage(document, 2).hasReact).toBe(false);
     expect(detectReactOnPage(document, 50).hasReact).toBe(true);
+  });
+});
+
+describe('getFiberFromElement と shadow 境界', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('通常の祖先の Fiber を見つける', () => {
+    const host = document.createElement('div');
+    attach(host, { tag: 5 });
+    const child = document.createElement('span');
+    host.appendChild(child);
+    expect(getFiberFromElement(child)).not.toBeNull();
+  });
+
+  it('shadow root をまたいでホスト側の Fiber を見つける (web component 内の要素)', () => {
+    // インスペクタは open shadow を貫通して最内要素を選べる。そこから Fiber へ遡れないと
+    // React アプリ内の web component を「React ではない」と誤答する (実際に踏んだ)
+    const host = document.createElement('div');
+    attach(host, { tag: 5 });
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const wrapper = document.createElement('div');
+    const inner = document.createElement('span');
+    wrapper.appendChild(inner);
+    root.appendChild(wrapper);
+    expect(getFiberFromElement(inner)).not.toBeNull();
+  });
+
+  it('多段の shadow でも遡れる', () => {
+    const outerHost = document.createElement('div');
+    attach(outerHost, { tag: 5 });
+    document.body.appendChild(outerHost);
+    const outerRoot = outerHost.attachShadow({ mode: 'open' });
+    const innerHost = document.createElement('div');
+    outerRoot.appendChild(innerHost);
+    const innerRoot = innerHost.attachShadow({ mode: 'open' });
+    const leaf = document.createElement('span');
+    innerRoot.appendChild(leaf);
+    expect(getFiberFromElement(leaf)).not.toBeNull();
+  });
+
+  it('本当に React が無ければ null (誤検出しない)', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: 'open' });
+    const inner = document.createElement('span');
+    root.appendChild(inner);
+    expect(getFiberFromElement(inner)).toBeNull();
   });
 });

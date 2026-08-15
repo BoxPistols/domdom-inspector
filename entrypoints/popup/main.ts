@@ -40,6 +40,7 @@ const editorEl = $<HTMLSelectElement>('editor');
 const customTemplateRowEl = $<HTMLElement>('customTemplateRow');
 const customTemplateEl = $<HTMLInputElement>('customTemplate');
 const pathMappingsEl = $<HTMLTextAreaElement>('pathMappings');
+const sourceAttrEl = $<HTMLInputElement>('sourceAttr');
 
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
@@ -74,6 +75,7 @@ async function load() {
   customTemplateEl.value = settings.customUrlTemplate;
   // 保存形は PathMapping[]。編集は 1 行 1 件のテキストで行う (parseMappings と対)
   pathMappingsEl.value = settings.pathMappings.map((m) => `${m.from}=${m.to}`).join('\n');
+  sourceAttrEl.value = settings.sourceAttr;
   syncEditorRows();
   void applyShortcutHints();
 }
@@ -90,12 +92,13 @@ async function save() {
     // 空なら既定に戻す (空テンプレートを保存するとジャンプが無言で壊れる)
     customUrlTemplate: customTemplateEl.value.trim() || DEFAULT_SETTINGS.customUrlTemplate,
     pathMappings: parseMappings(pathMappingsEl.value),
+    sourceAttr: sourceAttrEl.value.trim(),
   };
   await browser.storage.local.set({ settings });
   void applyShortcutHints();
 }
 
-for (const el of [editorEl, customTemplateEl, pathMappingsEl]) {
+for (const el of [editorEl, customTemplateEl, pathMappingsEl, sourceAttrEl]) {
   el.addEventListener('change', () => {
     // エディタ種別を変えたら URL テンプレート欄の出し入れを即反映する
     // (選べない設定を見せない / custom を選んだのに入力欄が無い、を作らない)

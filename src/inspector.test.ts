@@ -17,6 +17,7 @@ import { DEFAULT_STRINGS, type InspectInfo } from './types';
 function stubOverlay() {
   const calls = {
     toasts: [] as string[],
+    hintCopies: 0,
     editorOpened: [] as { fileName: string; lineNumber: number }[],
     chainPanels: [] as InspectInfo[],
     shown: [] as Element[],
@@ -25,6 +26,12 @@ function stubOverlay() {
   const overlay = {
     containsTarget: () => false,
     toast: (text: string) => calls.toasts.push(text),
+    // 開けないときは理由 + 手がかりコピーのアクション付きトーストになる。
+    // メッセージは同じ配列へ積む (既存の期待値をそのまま検証できる)
+    toastAction: (text: string) => calls.toasts.push(text),
+    copySearchHints: () => {
+      calls.hintCopies += 1;
+    },
     showModePill: () => calls.pills.push('show'),
     hideModePill: () => calls.pills.push('hide'),
     openEditor: (loc: { fileName: string; lineNumber: number; columnNumber: number }) =>
@@ -670,5 +677,40 @@ describe('操作系の細部 (監査 2026-08-07 の未対応分を固定)', () =
     expect(calls.toasts, '案内済みの操作を黙って無視しない').toEqual([
       DEFAULT_STRINGS.jumpUnresolved,
     ]);
+  });
+});
+
+describe('非 React ページのエディタジャンプ (3 段フォールバック)', () => {
+  it('ソース注釈属性があれば React 無しでも開く (Express/EJS の道)', () => {
+    const { overlay, calls } = stubOverlay();
+    const inspector = new Inspector(stubHook(false), overlay, DEFAULT_STRINGS);
+    const el = document.createElement('div');
+    el.setAttribute('data-source', 'views/index.ejs:42');
+    document.body.appendChild(el);
+    inspector.openEditorAt(el);
+    expect(calls.editorOpened).toEqual([{ fileName: 'views/index.ejs', lineNumber: 42 }]);
+    expect(calls.toasts).toEqual([]);
+  });
+
+  it('祖先の注釈でも開く (要素自身に無くても)', () => {
+    const { overlay, calls } = stubOverlay();
+    const inspector = new Inspector(stubHook(false), overlay, DEFAULT_STRINGS);
+    const wrap = document.createElement('section');
+    wrap.setAttribute('data-v-inspector', 'src/App.vue:7:3');
+    const leaf = document.createElement('span');
+    wrap.appendChild(leaf);
+    document.body.appendChild(wrap);
+    inspector.openEditorAt(leaf);
+    expect(calls.editorOpened).toEqual([{ fileName: 'src/App.vue', lineNumber: 7 }]);
+  });
+
+  it('何も無ければ理由トースト + 手がかりコピーの導線 (無反応にしない)', () => {
+    const { overlay, calls } = stubOverlay();
+    const inspector = new Inspector(stubHook(false), overlay, DEFAULT_STRINGS);
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    inspector.openEditorAt(el);
+    expect(calls.editorOpened).toEqual([]);
+    expect(calls.toasts).toEqual([DEFAULT_STRINGS.noSourceDom]);
   });
 });
