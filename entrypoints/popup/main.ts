@@ -42,6 +42,11 @@ const customTemplateEl = $<HTMLInputElement>('customTemplate');
 const pathMappingsEl = $<HTMLTextAreaElement>('pathMappings');
 const sourceAttrEl = $<HTMLInputElement>('sourceAttr');
 
+// 版数を見出しに出す。**同期フォルダ経由で配っているため、⟳ が効いたのか古いビルドを
+// 見ているのかを利用者が判別できる必要がある** (拡張管理ページを開かずに済ませる)。
+// manifest が正 (package.json の version を WXT が反映する)
+$('version').textContent = `v${browser.runtime.getManifest().version}`;
+
 // モード切替の実バインドを Chrome から取得して表示。commands.getAll() の shortcut は
 // OS 表記でレンダリングされる (Mac は ⌥⇧I、Windows は Alt+Shift+I) ため、そのまま OS 最適化される。
 async function applyShortcutHints() {

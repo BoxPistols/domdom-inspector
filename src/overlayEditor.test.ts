@@ -165,3 +165,42 @@ describe('Overlay.openEditor — プロジェクト相対パスは送らずに�
     expect(clicks[0]).toContain('/Users/me/proj/src/app/page.tsx');
   });
 });
+
+describe('Overlay.openEditor — ビルド出力は送らない (唯一の出口で止める)', () => {
+  const clicksOf = (loc: { fileName: string; lineNumber: number; columnNumber: number }) => {
+    const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+    const clicks: string[] = [];
+    const orig = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      overlay.openEditor(loc);
+    } finally {
+      HTMLAnchorElement.prototype.click = orig;
+    }
+    return clicks;
+  };
+
+  it('Next の CSS チャンクを送らない (実機で「存在しません」を出した形)', () => {
+    const clicks = clicksOf({
+      fileName: 'http://localhost:3000/_next/static/chunks/[root-of-the-server]__0ij2czq._.css',
+      lineNumber: 1,
+      columnNumber: 1,
+    });
+    expect(clicks).toEqual([]);
+    expect(toastEl()?.textContent).toBe(DEFAULT_STRINGS.sourceMinified);
+  });
+
+  it('Turbopack の JS チャンクも送らない', () => {
+    expect(
+      clicksOf({ fileName: '/_next/static/chunks/_0wzpx8i._.js', lineNumber: 4988, columnNumber: 275 }),
+    ).toEqual([]);
+  });
+
+  it('実ソースは従来どおり送る (止めすぎない)', () => {
+    expect(
+      clicksOf({ fileName: '/Users/me/proj/src/App.tsx', lineNumber: 42, columnNumber: 7 }),
+    ).toHaveLength(1);
+  });
+});

@@ -425,9 +425,16 @@ export class Overlay {
    * アンカーには data-domdom-editor を付け、インスペクタのクリック抑止を素通りさせる。
    */
   openEditor(loc: { fileName: string; lineNumber: number; columnNumber: number }) {
-    // **開けないと分かっているパスは送らない。** プロジェクト相対のまま送ると
-    // エディタが「このコンピューターに存在しません」を出すだけで、利用者には
-    // 何を直せばよいか分からない (実機で繰り返し発生した)。設定すべき 1 行まで渡す
+    // **ここが「エディタへ送る」唯一の出口。** 開けないと分かっているものは
+    // ここで止める — 呼び出し側 (React の jumpTarget / ソース注釈属性 / CSS) が
+    // 増えるたびに同じ判定を書き忘れ、実機で「存在しません」を繰り返し出した。
+    // 生成物 (バンドル出力) はディスク上の編集対象ではない
+    if (isBundledSource(loc.fileName)) {
+      this.toast(this.strings.sourceMinified);
+      return;
+    }
+    // **プロジェクト相対のまま送らない。** エディタの scheme URL は絶対パスしか受けず、
+    // 開いている作業フォルダは解決に使われないため必ず失敗する。設定すべき 1 行まで渡す
     if (needsPathMapping(this.settings, loc)) {
       const path = resolvedPath(this.settings, loc);
       const host = typeof location !== 'undefined' ? location.host : '';

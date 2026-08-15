@@ -58,7 +58,12 @@
         color: var(--text);
         background: var(--bg);
       }
-      h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: 0.01em; }
+      h1 { font-size: 14px; margin: 0 0 10px; letter-spacing: 0.01em;
+           display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+      /* 版数。どのビルドを見ているかを拡張管理ページを開かずに判別するためのもの。
+         主役ではないので控えめにするが、コントラストは本文と同じ基準を満たす色を使う */
+      h1 .ver { font-size: 11px; font-weight: 400; font-variant-numeric: tabular-nums;
+                color: var(--muted); letter-spacing: 0; }
 
       /* 動線 (サイトで使う → モード → 表示設定 → 詳細) を群で区切る */
       /* 既定表示を 600px 未満に保つ (Chrome の popup 上限でスクロールが出る)。余白で調整し文字は削らない */
@@ -135,7 +140,7 @@
     </style>
   </head>
   <body>
-    <h1 data-i18n="extName">DomDom Inspector</h1>
+    <h1><span data-i18n="extName">DomDom Inspector</span><span id="version" class="ver"></span></h1>
 
     <!-- ① このサイトで使う: デザイナーの主導線 (有効化 → 自動でインスペクト ON) -->
     <section class="section">

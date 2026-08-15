@@ -322,8 +322,10 @@ export class Inspector {
       }
       const css = winningRuleRef(element);
       // 自オリジンの CSS だけ自動で開く。CDN 等のクロスオリジンはローカルに実体が
-      // 無い可能性が高く、開けない URL をエディタに投げるより手がかりに回す
-      if (css?.href && this.isOwnOrigin(css.href)) {
+      // 無い可能性が高く、開けない URL をエディタに投げるより手がかりに回す。
+      // **ビルド出力の CSS も除く** — Next の `/_next/static/chunks/*.css` のような
+      // 生成物はディスク上の編集対象ではない (実機で「存在しません」を出した)
+      if (css?.href && this.isOwnOrigin(css.href) && !isBundledSource(css.href)) {
         this.overlay.openEditor({ fileName: css.href, lineNumber: 1, columnNumber: 1 });
         return;
       }

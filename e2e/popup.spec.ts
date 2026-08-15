@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, expect, test, type BrowserContext, type Page } from '@playwright/test';
@@ -144,5 +144,19 @@ test('既定表示の高さが ja でも 600px 未満 (popup のスクロール�
   });
   expect(height, 'details 閉の既定表示').toBeLessThan(600);
 
+  await page.close();
+});
+
+test('版数が見出しに出る (⟳ が効いたか拡張管理ページを開かずに判別できる)', async () => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  const shown = (await page.locator('#version').textContent())?.trim() ?? '';
+  // **ビルド成果物の manifest と突き合わせる。** ハードコードした版数だと bump の
+  // たびにテストが嘘になり、逆に UI 側の値をそのまま使うと何も検証しないテストになる
+  const built = JSON.parse(readFileSync(join(EXT_PATH, 'manifest.json'), 'utf8')) as {
+    version: string;
+  };
+  expect(shown).toBe(`v${built.version}`);
+  expect(shown).toMatch(/^v\d+\.\d+\.\d+$/);
   await page.close();
 });
