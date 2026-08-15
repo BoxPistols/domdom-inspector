@@ -19,13 +19,58 @@ export default defineContentScript({
   allFrames: true,
   matchOriginAsFallback: true,
   main() {
-    // 静的登録 + 動的登録 + executeScript の二重実行を防ぐガード
-    const w = window as unknown as { __MUI_BRIDGE_LOADED__?: boolean };
-    if (w.__MUI_BRIDGE_LOADED__) return;
-    w.__MUI_BRIDGE_LOADED__ = true;
+    // 静的登録 + 動的登録 + executeScript の二重実行を防ぐガード。
+    // **「生きている」ことまで見る。** 拡張を再読み込み/更新すると、既に開いていた
+    // タブにこの content script が孤児として残る。旗だけ見て早期 return すると、
+    // 新しく注入された側が黙って降りて**そのタブは再読み込みするまで直らない**
+    const w = window as unknown as { __MUI_BRIDGE_LOADED__?: () => boolean };
+    if (w.__MUI_BRIDGE_LOADED__?.()) return;
+
+    /**
+     * 拡張コンテキストが生きているか。無効化された content script では
+     * `browser.runtime.id` が undefined になり、以後の `browser.*` は
+     * **同期的に「Extension context invalidated」を throw する**
+     * (Promise を返さないので `.catch()` では拾えない)。
+     */
+    const alive = (): boolean => {
+      try {
+        return !!browser.runtime?.id;
+      } catch {
+        return false;
+      }
+    };
+    w.__MUI_BRIDGE_LOADED__ = alive;
+
+    /**
+     * 拡張 API 呼び出しの共通ラッパ。無効化されたら**自分を畳む**:
+     * 旗を落として次の注入に道を譲り、window のリスナも外す。
+     * 黙って例外を出し続けると、利用者のページのコンソールを汚し続ける。
+     */
+    let retired = false;
+    const retire = () => {
+      if (retired) return;
+      retired = true;
+      if (w.__MUI_BRIDGE_LOADED__ === alive) delete w.__MUI_BRIDGE_LOADED__;
+      window.removeEventListener('message', onPageMessage);
+    };
+    const safe = <T>(fn: () => T): T | undefined => {
+      if (retired) return undefined;
+      if (!alive()) {
+        retire();
+        return undefined;
+      }
+      try {
+        return fn();
+      } catch {
+        // 呼び出し中に無効化された (alive() の直後に更新が入るレース)
+        if (!alive()) retire();
+        return undefined;
+      }
+    };
 
     const pushSettings = async () => {
-      const stored = await browser.storage.local.get('settings');
+      const stored = await safe(() => browser.storage.local.get('settings'));
+      if (!stored) return;
       window.postMessage(
         {
           source: BRIDGE_SOURCE,
@@ -43,18 +88,25 @@ export default defineContentScript({
 
     // UiStrings の各キーを _locales から解決 (欠落時は英語既定にフォールバック)
     const pushStrings = () => {
-      const resolved = {} as UiStrings;
-      for (const key of Object.keys(DEFAULT_STRINGS) as (keyof UiStrings)[]) {
-        resolved[key] = browser.i18n.getMessage(key) || DEFAULT_STRINGS[key];
-      }
-      window.postMessage({ source: BRIDGE_SOURCE, type: 'i18n', payload: resolved }, '*');
+      const resolved = safe(() => {
+        const out = {} as UiStrings;
+        for (const key of Object.keys(DEFAULT_STRINGS) as (keyof UiStrings)[]) {
+          out[key] = browser.i18n.getMessage(key) || DEFAULT_STRINGS[key];
+        }
+        return out;
+      });
+      if (!resolved) return;
+      window.postMessage(
+        { source: BRIDGE_SOURCE, type: 'i18n', payload: resolved },
+        '*',
+      );
     };
 
     // MAIN world 側がリスナ登録を終えた合図。executeScript による即時注入では
     // bridge → inspector の順で別々に注入されるため、下の初回 push は
     // **inspector のリスナ登録より前に飛ぶ**。同期の pushStrings は確実に失われ、
     // そのタブの overlay 文言が既定の英語で固定されていた (決定論的な取りこぼし)。
-    window.addEventListener('message', (event: MessageEvent) => {
+    function onPageMessage(event: MessageEvent) {
       if (event.source !== window) return;
       const d = event.data;
       if (!d || d.source !== PAGE_SOURCE) return;
@@ -67,39 +119,59 @@ export default defineContentScript({
       // background に依頼する (issue #14)。ページが偽装しても起きるのは
       // 「そのタブのインスペクトモードが入る/切れる」だけで、ページ外への作用はない。
       if (d.type === 'inspect-state' && typeof d.on === 'boolean') {
-        browser.runtime.sendMessage({ type: 'inspect-state', on: d.on }).catch(() => {
-          // SW が落ちている / 応答が無い場合は諦める (次の操作で再送される)
-        });
+        // sendMessage は無効化コンテキストでは**同期 throw** するので、
+        // `.catch()` だけでは素通りする (実機でこれが uncaught になっていた)
+        safe(() =>
+          browser.runtime
+            .sendMessage({ type: 'inspect-state', on: d.on })
+            .catch(() => {
+              // SW が落ちている / 応答が無い場合は諦める (次の操作で再送される)
+            }),
+        );
       }
-    });
+    }
+    window.addEventListener('message', onPageMessage);
 
     pushStrings();
     void pushSettings();
     // 変更されたキーに対応する中継だけを行う (popupDevOpen 等の無関係な変更で
     // settings の再取得・postMessage を走らせない)
-    browser.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'local') return;
-      if ('settings' in changes) void pushSettings();
-    });
+    safe(() =>
+      browser.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'local') return;
+        if ('settings' in changes) void pushSettings();
+      }),
+    );
 
-    browser.runtime.onMessage.addListener((message) => {
-      if (message?.type === 'toggle-inspect') {
-        window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
-      }
-      // 冪等 ON / OFF (popup のサイト有効化直後 + フレーム間の状態同期)。
-      // 既に同じ状態なら何もしない = 何度配っても位相が反転しない (issue #14)
-      if (message?.type === 'inspect-on' || message?.type === 'inspect-off') {
-        window.postMessage({ source: BRIDGE_SOURCE, type: message.type }, '*');
-      }
-      // 右クリックメニュー (background) → MAIN world。対象要素は MAIN world 側が
-      // contextmenu イベントで控えているので、ここでは種別だけ渡す
-      if (message?.type === 'inspect-at-context' || message?.type === 'open-editor-at-context') {
-        window.postMessage({ source: BRIDGE_SOURCE, type: message.type }, '*');
-      }
-      // **design-scan の中継は v1 の配線から外した** (issue #10 — 送信側の popup UI が
-      // 存在しない)。再導入時は「sendResponse + return true」の往復中継をここに戻す
-      // (Chrome ネイティブ API ではリスナから Promise を返しても応答にならない)。
-      return false;
-    });
+    safe(() =>
+      browser.runtime.onMessage.addListener((message) => {
+        if (message?.type === 'toggle-inspect') {
+          window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
+        }
+        // 冪等 ON / OFF (popup のサイト有効化直後 + フレーム間の状態同期)。
+        // 既に同じ状態なら何もしない = 何度配っても位相が反転しない (issue #14)
+        if (message?.type === 'inspect-on' || message?.type === 'inspect-off') {
+          window.postMessage(
+            { source: BRIDGE_SOURCE, type: message.type },
+            '*',
+          );
+        }
+        // 右クリックメニュー (background) → MAIN world。対象要素は MAIN world 側が
+        // contextmenu イベントで控えているので、ここでは種別だけ渡す
+        if (
+          message?.type === 'inspect-at-context' ||
+          message?.type === 'open-editor-at-context'
+        ) {
+          window.postMessage(
+            { source: BRIDGE_SOURCE, type: message.type },
+            '*',
+          );
+        }
+        // **design-scan の中継は v1 の配線から外した** (issue #10 — 送信側の popup UI が
+        // 存在しない)。再導入時は「sendResponse + return true」の往復中継をここに戻す
+        // (Chrome ネイティブ API ではリスナから Promise を返しても応答にならない)。
+        return false;
+      }),
+    );
   },
 });

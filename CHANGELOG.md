@@ -11,6 +11,26 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.17 (2026-08-15) — 拡張のエラーページに溜まる 3 件を潰す
+
+実機の `chrome://extensions` エラーページで確認されたもの。いずれも機能は動くが、
+**利用者のページのコンソールと拡張のエラー欄を汚し続ける**うえ、1 件目は
+「更新後に開きっぱなしのタブが再読み込みするまで直らない」実害がある。
+
+- **Cannot create item with duplicate id (× 2)**: 右クリックメニューの作り直しが
+  5 箇所 (onInstalled / onStartup / SW 起動時 / 権限の追加・削除) から呼ばれ、
+  直列化されていなかった。SW 起動直後に同時実行されると
+  「A が removeAll → B が removeAll → A が create → B が create で重複」に並び替わる。
+  `serialize()` (新設・テスト付き) で 1 つずつ流す。あわせて `contextMenus.create` に
+  callback を渡して `runtime.lastError` を読む — **例外で来ないので try/catch では
+  拾えず**、未確認のままエラー欄に積み上がっていた
+- **Extension context invalidated**: 拡張を再読み込み/更新すると、既に開いていた
+  タブの content script が孤児になる。`browser.*` は以後**同期的に throw する**ため、
+  `sendMessage(...).catch()` は素通りしていた。生存確認 (`browser.runtime.id`) 付きの
+  ラッパを通し、無効化を検知したら**自分を畳む** (二重注入ガードの旗を落とし、
+  window のリスナを外す)。旗が残ったままだと新しく注入された bridge が黙って降り、
+  そのタブは再読み込みするまで復旧しなかった
+
 ## 0.4.16 (2026-08-15) — Next.js のジャンプ先が「パスが存在しません」になる
 
 Antigravity で実発生 (`/(app-pages-browser)/src/app/page.tsx:959:116 はこのコンピューターに

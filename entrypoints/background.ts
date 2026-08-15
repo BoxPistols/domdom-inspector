@@ -1,4 +1,5 @@
 import { DEV_MATCHES } from '../src/matches';
+import { serialize } from '../src/serialize';
 
 // v1 はデザイン計測のみ (tree/render は配線外し、実装は温存)
 const COMMANDS = new Set(['toggle-inspect']);
@@ -31,18 +32,39 @@ async function menuPatterns(): Promise<string[]> {
   return [...DEV_MATCHES, ...origins];
 }
 
-/** メニューを作り直す (重複 id で create が失敗するため removeAll してから) */
-async function createContextMenus(): Promise<void> {
+/**
+ * メニューを作り直す (重複 id で create が失敗するため removeAll してから)。
+ *
+ * **直列化が要る。** 呼び出し元は 5 つ (onInstalled / onStartup / SW 起動時の即時 /
+ * permissions の追加・削除) で、SW 起動直後は複数が同時に走る。async なので
+ * 「A が removeAll → B が removeAll → A が create → **B が create で重複**」と
+ * 並び替わり、`Cannot create item with duplicate id` が実機で出ていた。
+ *
+ * **`create` のエラーは例外で来ない。** callback を渡さないと `runtime.lastError` が
+ * 未確認のまま残り、拡張のエラーページに `Unchecked runtime.lastError` として溜まる。
+ * try/catch では拾えないので、callback で明示的に読む。
+ */
+const createContextMenus = serialize(() => rebuildContextMenus());
+
+async function rebuildContextMenus(): Promise<void> {
   const documentUrlPatterns = await menuPatterns();
   try {
     await browser.contextMenus.removeAll();
     for (const item of CONTEXT_ITEMS) {
-      browser.contextMenus.create({
-        id: item.id,
-        title: browser.i18n.getMessage(item.titleKey),
-        documentUrlPatterns,
-        contexts: ['all'],
-      });
+      browser.contextMenus.create(
+        {
+          id: item.id,
+          title: browser.i18n.getMessage(item.titleKey),
+          documentUrlPatterns,
+          contexts: ['all'],
+        },
+        () => {
+          // 読むこと自体が目的 (未確認だとエラーページに積み上がる)。
+          // 直列化してあるので通常は起きない = 起きたら別の原因なので握り潰さず残す
+          const err = browser.runtime.lastError;
+          if (err) console.warn('[domdom] contextMenus.create:', err.message);
+        },
+      );
     }
   } catch {
     // contextMenus が使えない環境では黙って諦める (他機能は動く)
