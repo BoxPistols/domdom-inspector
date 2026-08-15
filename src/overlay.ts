@@ -1,6 +1,6 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl, formatSourceRef, needsPathMapping, resolvedPath } from './editor';
-import { isBundledSource, suggestMapping } from './source';
+import { isBundledSource, looksLocalDev, suggestMapping } from './source';
 import { buildSearchHints } from './sourceAttr';
 import { el } from './overlayDom';
 import {
@@ -434,17 +434,25 @@ export class Overlay {
       return;
     }
     // **プロジェクト相対のまま送らない。** エディタの scheme URL は絶対パスしか受けず、
-    // 開いている作業フォルダは解決に使われないため必ず失敗する。設定すべき 1 行まで渡す
+    // 開いている作業フォルダは解決に使われないため必ず失敗する。
     if (needsPathMapping(this.settings, loc)) {
       const path = resolvedPath(this.settings, loc);
       const host = typeof location !== 'undefined' ? location.host : '';
-      const line = suggestMapping(path, host);
-      this.toastAction(
-        this.strings.editorNeedsMapping.replace('{path}', path).replace('{mapping}', line),
-        this.strings.editorCopyMapping,
-        () => void this.copyToClipboard(line, this.strings.editorMappingCopied),
-        14000,
-      );
+      // **対処を促してよいのは、その人が対処できるときだけ。** この拡張は Store で
+      // 配るので、利用者は他人のサイトを見に来た人でありうる。そこで
+      // 「ローカルの絶対パスを設定してください」と出しても実行できる人がいない
+      // (ソースがそのマシンに無い)。自分の開発環境のときだけ設定へ誘導する
+      if (looksLocalDev(host)) {
+        const line = suggestMapping(path, host);
+        this.toastAction(
+          this.strings.editorNeedsMapping.replace('{path}', path).replace('{mapping}', line),
+          this.strings.editorCopyMapping,
+          () => void this.copyToClipboard(line, this.strings.editorMappingCopied),
+          14000,
+        );
+      } else {
+        this.toast(this.strings.editorRemoteSource.replace('{path}', path), 6000);
+      }
       return;
     }
     const url = buildEditorUrl(this.settings, loc);

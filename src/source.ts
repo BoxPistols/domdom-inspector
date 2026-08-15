@@ -170,3 +170,23 @@ export function suggestMapping(path: string, host = ''): string {
   const scope = host ? ` @ ${host}` : '';
   return `/${first}=<プロジェクトの絶対パス>/${first}${scope}`;
 }
+
+/**
+ * そのページが「利用者自身の開発環境」とみなせるか。
+ *
+ * **パスの対応表を促してよいのは、ここが真のときだけ。** この拡張は Web Store で配る
+ * ため、利用者は任意のサイトを見に来た他人でありうる。他人のサイトで
+ * 「ローカルの絶対パスを設定してください」と出しても**実行できる人がいない**
+ * (ソースがそのマシンに無い)。理由の説明と手がかりのコピーに留める。
+ *
+ * 判定は保守的に。localhost / ループバック / *.local / *.test / 明示ポート付きの
+ * 内部ホストのみ。判断できないものは false に倒す (促さない側に倒す)。
+ */
+export function looksLocalDev(host: string): boolean {
+  const h = String(host).toLowerCase().split(':')[0];
+  if (!h) return false;
+  if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '0.0.0.0') return true;
+  if (h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.test')) return true;
+  // プライベート IP (社内の開発機を直接見る形)
+  return /^(?:10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(h);
+}

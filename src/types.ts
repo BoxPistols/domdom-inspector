@@ -175,6 +175,8 @@ export interface UiStrings {
   editorHintsCopied: string;
   /** 解決したパスがプロジェクト相対で、そのままでは開けないときの案内 */
   editorNeedsMapping: string;
+  /** 他人のサイト (自分の開発環境でない) でソース位置が相対だったとき */
+  editorRemoteSource: string;
   editorCopyMapping: string;
   editorMappingCopied: string;
   ownerPanelTitle: string;
@@ -276,6 +278,7 @@ export const DEFAULT_STRINGS: UiStrings = {
   editorCopyPath: 'Copy path',
   editorPathCopied: 'Path copied',
   editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}',
+  editorRemoteSource: 'Source is at {path} in that site’s project — not on this computer, so it cannot be opened.',
   editorCopyMapping: 'Copy the line',
   editorMappingCopied: 'Copied — paste it into Path mappings and replace the placeholder with your project path',
   editorCopyHints: 'Copy search hints',

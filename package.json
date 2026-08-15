@@ -1,6 +1,6 @@
 {
   "name": "domdom-inspector",
-  "version": "0.4.20",
+  "version": "0.4.21",
   "private": true,
   "type": "module",
   "description": "DomDom Inspector — DOM/HTML/CSS デザイン計測 (色/余白/角丸 + デザイントークン照合) Chrome 拡張",

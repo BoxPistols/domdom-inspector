@@ -3,6 +3,7 @@ import {
   isBundledSource,
   isMuiPath,
   isNodeModulesPath,
+  looksLocalDev,
   looksProjectRelative,
   normalizeSourcePath,
   parseStackLocation,
@@ -219,3 +220,26 @@ describe('looksProjectRelative / suggestMapping', () => {
     expect(suggestMapping('/views/index.ejs')).toBe('/views=<プロジェクトの絶対パス>/views');
   });
 })
+
+describe('looksLocalDev — 対処を促してよい相手か', () => {
+  it('自分の開発環境とみなせるものは true', () => {
+    for (const h of ['localhost', 'localhost:3000', '127.0.0.1:5173', 'app.localhost',
+                     'myapp.local', 'foo.test', '192.168.1.20:8080', '10.0.0.5']) {
+      expect(looksLocalDev(h)).toBe(true);
+    }
+  });
+
+  it('他人のサイトは false (実行できない指示を出さない)', () => {
+    for (const h of ['example.com', 'github.com', 'zenn.dev', 'app.vercel.app',
+                     'staging.example.co.jp', '']) {
+      expect(looksLocalDev(h)).toBe(false);
+    }
+  });
+
+  it('紛らわしいホスト名に引っかからない', () => {
+    // "localhost" を含むだけの外部ドメインを自分の環境と誤認しない
+    expect(looksLocalDev('localhost.example.com')).toBe(false);
+    expect(looksLocalDev('notlocal')).toBe(false);
+    expect(looksLocalDev('172.32.0.1')).toBe(false); // プライベート範囲外
+  });
+});

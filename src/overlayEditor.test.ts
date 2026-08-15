@@ -41,6 +41,24 @@ function toastEl(): HTMLElement | null {
   return root?.querySelector('.toast') as HTMLElement | null;
 }
 
+/**
+ * host を明示してオーバーレイ操作を行う。**happy-dom の既定 host は空文字**で、
+ * その場合は「自分の開発環境ではない」と判定される。どちらの枝を試しているのかを
+ * テスト側で必ず明示する (環境の既定値に依存させない)
+ */
+function withHost<T>(host: string, fn: () => T): T {
+  const orig = Object.getOwnPropertyDescriptor(window, 'location');
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: { ...window.location, host, origin: `https://${host}` },
+  });
+  try {
+    return fn();
+  } finally {
+    if (orig) Object.defineProperty(window, 'location', orig);
+  }
+}
+
 let restoreShadow: () => void;
 
 beforeEach(() => {
@@ -132,7 +150,7 @@ describe('Overlay.openEditor — プロジェクト相対パスは送らずに�
       clicks.push(this.href);
     };
     try {
-      overlay.openEditor(RELATIVE_LOC);
+      withHost('localhost:3000', () => overlay.openEditor(RELATIVE_LOC));
     } finally {
       HTMLAnchorElement.prototype.click = origClick;
     }
@@ -202,5 +220,26 @@ describe('Overlay.openEditor — ビルド出力は送らない (唯一の出口
     expect(
       clicksOf({ fileName: '/Users/me/proj/src/App.tsx', lineNumber: 42, columnNumber: 7 }),
     ).toHaveLength(1);
+  });
+});
+
+describe('Overlay.openEditor — 対処できる相手にだけ設定を促す', () => {
+  const openOn = (host: string) => {
+    withHost(host, () => new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC));
+    return toastEl();
+  };
+
+  it('自分の開発環境 (localhost) では設定方法を出す', () => {
+    const el = openOn('localhost:3000');
+    expect(el?.textContent).toContain('/src=');
+    expect(el?.querySelector('button')).not.toBeNull();
+  });
+
+  it('他人のサイトでは設定を促さない (実行できない指示を出さない)', () => {
+    const el = openOn('example.com');
+    // 対応表の書き方は出さない — そのマシンにソースが無いので設定しても開かない
+    expect(el?.textContent).not.toContain('/src=');
+    expect(el?.textContent).toContain('/src/app/page.tsx');
+    expect(el?.querySelector('button')).toBeNull();
   });
 });

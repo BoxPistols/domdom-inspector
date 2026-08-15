@@ -345,5 +345,8 @@
   },
   "hintRootCandidates": {
     "message": "Detected from the inspected page. Click to insert a line, then check it points at your project (the extension cannot read your disk, so it cannot verify this)."
+  },
+  "editorRemoteSource": {
+    "message": "Source is at {path} in that site’s project — not on this computer, so it cannot be opened."
   }
 }
