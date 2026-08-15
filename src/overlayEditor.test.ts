@@ -243,3 +243,25 @@ describe('Overlay.openEditor — 対処できる相手にだけ設定を促す',
     expect(el?.querySelector('button')).toBeNull();
   });
 });
+
+describe('Overlay.openEditor — 対応表の「~」を送らない', () => {
+  it('~ 入りに解決されたら送らず、直し方を言う (実機で踏んだ形)', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      pathMappings: [{ from: '/src', to: '~/dev/writing/dev-album/src' }],
+    };
+    const overlay = new Overlay(settings, DEFAULT_STRINGS);
+    const clicks: string[] = [];
+    const orig = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      withHost('localhost:3000', () => overlay.openEditor(RELATIVE_LOC));
+    } finally {
+      HTMLAnchorElement.prototype.click = orig;
+    }
+    expect(clicks).toEqual([]); // エディタには投げない (投げても必ず失敗する)
+    expect(toastEl()?.textContent).toBe(DEFAULT_STRINGS.editorTildePath);
+  });
+});

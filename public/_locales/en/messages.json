@@ -348,5 +348,8 @@
   },
   "editorRemoteSource": {
     "message": "Source is at {path} in that site’s project — not on this computer, so it cannot be opened."
+  },
+  "editorTildePath": {
+    "message": "The path mapping contains “~”, which editors do not expand — the open will always fail. In the popup → Advanced → Path mappings, replace ~ with the full absolute path (e.g. /Users/you/…)."
   }
 }

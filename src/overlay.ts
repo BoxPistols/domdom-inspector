@@ -433,6 +433,13 @@ export class Overlay {
       this.toast(this.strings.sourceMinified);
       return;
     }
+    // **「~」入りのパスを送らない。** エディタの scheme URL は ~ を展開せず文字どおりに
+    // 扱うため必ず「存在しません」になる (実機で発生 — 対応表に ~ を書くのは自然な間違い)。
+    // 拡張は home ディレクトリを知れないので展開はできず、直し方を言うところまで
+    if (/^\/?~/.test(resolvedPath(this.settings, loc))) {
+      this.toast(this.strings.editorTildePath, 10000);
+      return;
+    }
     // **プロジェクト相対のまま送らない。** エディタの scheme URL は絶対パスしか受けず、
     // 開いている作業フォルダは解決に使われないため必ず失敗する。
     if (needsPathMapping(this.settings, loc)) {
