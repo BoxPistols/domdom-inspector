@@ -1,5 +1,6 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl, formatSourceRef, needsPathMapping, resolvedPath } from './editor';
+import { openViaDevServer } from './openInEditor';
 import { isBundledSource, looksLocalDev, suggestMapping } from './source';
 import { buildSearchHints } from './sourceAttr';
 import { el } from './overlayDom';
@@ -425,6 +426,37 @@ export class Overlay {
    * アンカーには data-domdom-editor を付け、インスペクタのクリック抑止を素通りさせる。
    */
   openEditor(loc: { fileName: string; lineNumber: number; columnNumber: number }) {
+    // **本線は dev サーバ経由。** そのサーバは自分がプロジェクトなのでルートを知っており、
+    // 相対パスを渡すだけで開ける = 利用者の設定が要らない (Vue DevTools と同じ方式)。
+    // ローカル開発オリジンのときだけ試し、それ以外へは 1 バイトも出さない。
+    // 開けなければ従来のスキーム経路へ落ちる (dev サーバを持たない構成のため)
+    // **判定材料は呼び出し時点で捕まえる。** 非同期の続きで location を読み直すと、
+    // その間に変わった状態を見てしまう (テストでも実ページの遷移でも起きる)
+    const host = typeof location !== 'undefined' ? location.host : '';
+    const origin = typeof location !== 'undefined' ? location.origin : '';
+    if (looksLocalDev(host)) {
+      void openViaDevServer(origin, loc).then((opened) => {
+        if (opened) {
+          // 位置はサーバが解決したので、こちらのパス表示は出さない (嘘になりうる)
+          this.toast(this.strings.editorOpenedViaDevServer);
+        } else {
+          this.openEditorViaScheme(loc, host);
+        }
+      });
+      return;
+    }
+    this.openEditorViaScheme(loc, host);
+  }
+
+  /**
+   * OS のスキーム (`cursor://file…`) で開く従来経路。**絶対パスしか受けない**ため、
+   * ブラウザが知り得ない情報 (プロジェクトのディスク上の位置) を利用者に設定させる
+   * 必要がある。dev サーバ経路が使えないときだけここへ来る。
+   */
+  private openEditorViaScheme(
+    loc: { fileName: string; lineNumber: number; columnNumber: number },
+    host: string,
+  ) {
     // **ここが「エディタへ送る」唯一の出口。** 開けないと分かっているものは
     // ここで止める — 呼び出し側 (React の jumpTarget / ソース注釈属性 / CSS) が
     // 増えるたびに同じ判定を書き忘れ、実機で「存在しません」を繰り返し出した。
@@ -444,7 +476,6 @@ export class Overlay {
     // 開いている作業フォルダは解決に使われないため必ず失敗する。
     if (needsPathMapping(this.settings, loc)) {
       const path = resolvedPath(this.settings, loc);
-      const host = typeof location !== 'undefined' ? location.host : '';
       // **対処を促してよいのは、その人が対処できるときだけ。** この拡張は Store で
       // 配るので、利用者は他人のサイトを見に来た人でありうる。そこで
       // 「ローカルの絶対パスを設定してください」と出しても実行できる人がいない

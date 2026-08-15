@@ -100,7 +100,7 @@ token dictionary from the page itself; the right-click menu and "open in editor"
 element and its source while it is being measured (React dev builds only).
 All inspection is local and read-only, and the extension sends nothing anywhere.
 
-**Data usage disclosure (CWS form):** — v1 は**外部送信を一切持たない**
+**Data usage disclosure (CWS form):** — v1 は**第三者への送信を一切持たない**
 (BYOK AI 監査を v1 の配線から外したため。issue #11)。以下をそのまま選択・記入する。
 
 - **すべてのカテゴリを「収集しない」** — website content / personally identifiable
@@ -108,8 +108,10 @@ All inspection is local and read-only, and the extension sends nothing anywhere.
   personal communications / location / web history / user activity。
   拡張はページの DOM と computed style を**メモリ内で読むだけ**で、保存も送信もしない。
   保存するのは利用者自身の設定のみ (`chrome.storage.local`、端末内)。
-- **ネットワークリクエストを一切行わない。** `fetch` / `XMLHttpRequest` /
-  WebSocket の発行箇所がゼロであることを grep で再現証明できる (`SECURITY.md` の監査手順)。
+- **第三者への送信を一切行わない。** 発行するネットワーク要求は「利用者自身の
+  ローカル開発サーバへ、ソースをエディタで開くよう頼む」1 種類のみで、宛先は
+  localhost 等に限定される (`SECURITY.md` の監査手順で再現証明できる)。
+  ページの内容・入力値・利用状況は送らない。
 - Sold to third parties? No. Used for unrelated purposes? No. Used for creditworthiness? No.
 - Privacy policy URL: _(host PRIVACY.md at a public URL and paste it here — see
   `PUBLISHING.md` §2)_
@@ -164,7 +166,7 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 
 プライバシー
 - テレメトリ・独自サーバー・トラッキングなし。設定はローカル保存のみ。
-- 外部送信は一切ありません。 バックエンドを持たず、ネットワークリクエストを
+- 外部送信は一切ありません。 バックエンドを持たず、第三者へのネットワークリクエストを
   1 つも発行しません。
 - localhost の開発サーバはそのまま動作。その他のサイトは「現在のサイトで有効化」
   した時のみ検査対象になり、その場合もページを読むだけで、ページ内容の保存・
@@ -177,9 +179,9 @@ web ページの UI のデザイン値を計測し、そのページが依拠す
 見つけたデザイントークンと照合する。全機能がこの単一目的に奉仕する: MUI テーマ自動取得は
 ページ自身からトークン辞書を組み立て、右クリックメニューとエディタジャンプは計測中の
 要素とそのソースへ到達する (React の開発ビルドのみ)。
-検査はすべてローカルの読み取り専用で、外部送信は一切ない。
+検査はすべてローカルの読み取り専用で、外部への送信は一切ない。
 
-**データ利用の申告 (対訳):** **全カテゴリを「収集しない」**。v1 は外部送信を一切持たず
+**データ利用の申告 (対訳):** **全カテゴリを「収集しない」**。v1 は第三者への送信を持たず
 (BYOK AI 監査は v1 の配線から外した — issue #11)、ページの DOM と computed style は
 メモリ内で読むだけで保存も送信もしない。端末内に保存するのは利用者自身の設定
 (エディタの選択・パスマッピング) のみ。

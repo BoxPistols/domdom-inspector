@@ -52,7 +52,7 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 > - **掲載文と実装の一致**: v1 に無い機能を掲載文・審査官メモ・ポリシーのどこにも書かない
 >   (2026-08-06 に 4 文書を同時に狭めた)
 > - **単一目的の明確さ**: 「デザイン値の計測とデザインシステムとの照合」1 つに絞ってある
-> - **データ申告**: 全カテゴリ「収集しない」(送信経路ゼロ)。Public では申告の齟齬が
+> - **データ申告**: 全カテゴリ「収集しない」(第三者への送信ゼロ)。Public では申告の齟齬が
 >   停止理由になりやすい
 掲載文 [`STORE_LISTING.md`](./STORE_LISTING.md) / プライバシー本文 [`PRIVACY.md`](./PRIVACY.md)。
 
@@ -76,7 +76,8 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 > UI を変えたら回し直す (§7)。
 
 > **v1 は「データを一切収集しない」拡張である。** BYOK AI 監査 (唯一の送信経路だった) を
-> v1 の配線から外したため、`fetch` の発生箇所が 0 件になった。データ申告は §4-2 のとおり
+> v1 の配線から外した。残る `fetch` は「ローカル dev サーバにエディタで開くよう頼む」
+> 1 経路のみ (v0.4.23)。データ申告は §4-2 のとおり
 > 全カテゴリ「収集しない」で出す (`STORE_LISTING.md` / `PRIVACY.md` / `SECURITY.md` と四者同一)。
 > **再導入するときは申告を戻すこと**: https://github.com/BoxPistols/domdom-inspector/issues/11
 

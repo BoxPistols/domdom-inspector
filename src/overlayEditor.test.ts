@@ -59,6 +59,23 @@ function withHost<T>(host: string, fn: () => T): T {
   }
 }
 
+/**
+ * **dev サーバを持たない localhost** を作る。localhost では dev サーバ経路を先に
+ * 試すため、スキーム経路側の案内 (対応表 / `~`) を検証するには、その試行が
+ * 失敗する状態を明示的に作る必要がある (成功する環境に依存させない)。
+ */
+async function withLocalNoDevServer(fn: () => void): Promise<void> {
+  const orig = globalThis.fetch;
+  globalThis.fetch = (() => Promise.reject(new Error('no dev server'))) as typeof fetch;
+  try {
+    withHost('localhost:3000', fn);
+    // openViaDevServer が全エンドポイントを試し切るまで microtask を流す
+    for (let i = 0; i < 30; i += 1) await Promise.resolve();
+  } finally {
+    globalThis.fetch = orig;
+  }
+}
+
 let restoreShadow: () => void;
 
 beforeEach(() => {
@@ -73,10 +90,17 @@ afterEach(() => {
   restoreShadow();
 });
 
-describe('Overlay.openEditor — 開かなかったときのフォールバック', () => {
+describe('Overlay.openEditor — 開かなかったときのフォールバック (スキーム経路)', () => {
+  // **どの経路を試しているかを明示する。** vitest+happy-dom の既定 host は
+  // localhost:3000 で、そのままだと dev サーバ経路 (非同期) に入り、同期の
+  // アサーションが何も見ないまま通ってしまう。ここはスキーム経路の検証なので
+  // 開発サーバを持たないオリジンで回す
+  const openScheme = (overlay: Overlay, loc = LOC) =>
+    withHost('example.com', () => overlay.openEditor(loc));
+
   it('送った直後は「送った」だけを言い、成功を主張しない', () => {
     const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
-    overlay.openEditor(LOC);
+    openScheme(overlay);
 
     const text = toastEl()?.textContent ?? '';
     // パス:行 を必ず見せる (開かなかったときに手で辿れるように)
@@ -88,7 +112,7 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
 
   it('猶予時間内に blur が来なければコピー導線を出す', () => {
     const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
-    overlay.openEditor(LOC);
+    openScheme(overlay);
 
     // 猶予前は出さない (起動が遅いエディタで誤検知しないため)
     vi.advanceTimersByTime(1100);
@@ -105,7 +129,7 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
 
   it('エディタが起動して blur したらフォールバックを出さない', () => {
     const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
-    overlay.openEditor(LOC);
+    openScheme(overlay);
 
     window.dispatchEvent(new Event('blur'));
     vi.advanceTimersByTime(3000);
@@ -121,7 +145,7 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
       value: { writeText },
     });
     const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
-    overlay.openEditor(LOC);
+    openScheme(overlay);
     vi.advanceTimersByTime(1300);
 
     toastEl()?.querySelector('button')?.click();
@@ -136,13 +160,13 @@ describe('Overlay.openEditor — 開かなかったときのフォールバッ�
       DEFAULT_STRINGS,
     );
     // マッピングの対象になるのは相対側のパス (絶対パスは書き換え対象にならない)
-    overlay.openEditor({ ...LOC, fileName: 'http://localhost:5173/src/App.tsx' });
+    openScheme(overlay, { ...LOC, fileName: 'http://localhost:5173/src/App.tsx' });
     expect(toastEl()?.textContent).toContain('/Users/me/app/src/App.tsx:42');
   });
 });
 
 describe('Overlay.openEditor — プロジェクト相対パスは送らずに設定方法を出す', () => {
-  it('エディタを起動せず、追加すべき 1 行を提示する', () => {
+  it('エディタを起動せず、追加すべき 1 行を提示する', async () => {
     const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
     const clicks: string[] = [];
     const origClick = HTMLAnchorElement.prototype.click;
@@ -150,7 +174,7 @@ describe('Overlay.openEditor — プロジェクト相対パスは送らずに�
       clicks.push(this.href);
     };
     try {
-      withHost('localhost:3000', () => overlay.openEditor(RELATIVE_LOC));
+      await withLocalNoDevServer(() => overlay.openEditor(RELATIVE_LOC));
     } finally {
       HTMLAnchorElement.prototype.click = origClick;
     }
@@ -224,19 +248,21 @@ describe('Overlay.openEditor — ビルド出力は送らない (唯一の出口
 });
 
 describe('Overlay.openEditor — 対処できる相手にだけ設定を促す', () => {
-  const openOn = (host: string) => {
-    withHost(host, () => new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC));
+  const openOn = async (host: string) => {
+    const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+    if (host.startsWith('localhost')) await withLocalNoDevServer(() => overlay.openEditor(RELATIVE_LOC));
+    else withHost(host, () => overlay.openEditor(RELATIVE_LOC));
     return toastEl();
   };
 
-  it('自分の開発環境 (localhost) では設定方法を出す', () => {
-    const el = openOn('localhost:3000');
+  it('自分の開発環境 (localhost) では設定方法を出す', async () => {
+    const el = await openOn('localhost:3000');
     expect(el?.textContent).toContain('/src=');
     expect(el?.querySelector('button')).not.toBeNull();
   });
 
-  it('他人のサイトでは設定を促さない (実行できない指示を出さない)', () => {
-    const el = openOn('example.com');
+  it('他人のサイトでは設定を促さない (実行できない指示を出さない)', async () => {
+    const el = await openOn('example.com');
     // 対応表の書き方は出さない — そのマシンにソースが無いので設定しても開かない
     expect(el?.textContent).not.toContain('/src=');
     expect(el?.textContent).toContain('/src/app/page.tsx');
@@ -245,7 +271,7 @@ describe('Overlay.openEditor — 対処できる相手にだけ設定を促す',
 });
 
 describe('Overlay.openEditor — 対応表の「~」を送らない', () => {
-  it('~ 入りに解決されたら送らず、直し方を言う (実機で踏んだ形)', () => {
+  it('~ 入りに解決されたら送らず、直し方を言う (実機で踏んだ形)', async () => {
     const settings = {
       ...DEFAULT_SETTINGS,
       pathMappings: [{ from: '/src', to: '~/dev/writing/dev-album/src' }],
@@ -257,11 +283,67 @@ describe('Overlay.openEditor — 対応表の「~」を送らない', () => {
       clicks.push(this.href);
     };
     try {
-      withHost('localhost:3000', () => overlay.openEditor(RELATIVE_LOC));
+      await withLocalNoDevServer(() => overlay.openEditor(RELATIVE_LOC));
     } finally {
       HTMLAnchorElement.prototype.click = orig;
     }
     expect(clicks).toEqual([]); // エディタには投げない (投げても必ず失敗する)
     expect(toastEl()?.textContent).toBe(DEFAULT_STRINGS.editorTildePath);
+  });
+});
+
+describe('Overlay.openEditor — dev サーバ経路が本線', () => {
+  const stubFetch = (impl: () => Promise<unknown>) => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = impl as unknown as typeof fetch;
+    return () => {
+      globalThis.fetch = orig;
+    };
+  };
+  const flush = async () => {
+    for (let i = 0; i < 30; i += 1) await Promise.resolve();
+  };
+
+  it('dev サーバが開いたら、設定に関する案内を一切出さない', async () => {
+    // ここが本機能の要点。**利用者に絶対パスを書かせない**ことが目的なので、
+    // 成功時に対応表の話が出てはいけない
+    const restore = stubFetch(() =>
+      Promise.resolve({ status: 200, headers: new Headers() }),
+    );
+    const clicks: string[] = [];
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      // 相対パス = スキーム経路なら「対応表を書け」と言う条件。dev サーバ経路では言わない
+      withHost('localhost:3000', () =>
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC),
+      );
+      await flush();
+    } finally {
+      HTMLAnchorElement.prototype.click = origClick;
+      restore();
+    }
+    expect(toastEl()?.textContent).toBe(DEFAULT_STRINGS.editorOpenedViaDevServer);
+    expect(toastEl()?.textContent).not.toContain('/src=');
+    expect(clicks).toEqual([]); // スキームは使わない
+  });
+
+  it('他人のサイトへは要求を出さない (localhost 以外は 1 バイトも出さない)', async () => {
+    const calls: string[] = [];
+    const restore = stubFetch((...args: unknown[]) => {
+      calls.push(String(args[0]));
+      return Promise.resolve({ status: 200, headers: new Headers() });
+    });
+    try {
+      withHost('example.com', () =>
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(LOC),
+      );
+      await flush();
+    } finally {
+      restore();
+    }
+    expect(calls).toEqual([]);
   });
 });

@@ -5,11 +5,20 @@
 ## TL;DR
 
 **この拡張はページを「読む」が、「送らない・保存しない・外部コードを実行しない」。**
-- **ネットワーク送信経路がゼロ。** `fetch` / `XMLHttpRequest` / `WebSocket` /
-  `sendBeacon` / `EventSource` の**発生箇所が 1 つも無い**ことを grep で再現証明できる
-  (下記の監査手順)。v0.4.2 までは BYOK AI 監査が唯一の送信経路だったが、v1 の配線から
-  外した (実装は温存 / 再導入時は申告も戻す —
-  https://github.com/BoxPistols/domdom-inspector/issues/11)。
+- **外部への送信経路がゼロ。** 拡張が発行するネットワーク要求は**ただ 1 種類**で、
+  それは「**利用者自身のローカル開発サーバに、このファイルをエディタで開くよう頼む**」
+  要求だけ (`src/openInEditor.ts`)。宛先はページ自身のオリジンで、しかも
+  `looksLocalDev` が真のとき (localhost / 127.0.0.1 / `*.local` / `*.test` /
+  プライベート IP) **に限る**。それ以外のサイトでは 1 バイトも出さない。
+  送る内容は**そのページ自身が生成したソースパスと行番号**だけで、DOM・テキスト・
+  入力値・利用者データは一切含まない。第三者のサーバへは何も送らない。
+  - なぜ必要か: エディタの `cursor://file…` は**絶対パスしか受けず、ブラウザは
+    プロジェクトのディスク上の位置を原理的に知り得ない**。dev サーバは自分が
+    プロジェクトなのでそれを知っている。Vue DevTools / Nuxt DevTools /
+    react-dev-inspector と同じ方式 (v0.4.23 で採用)。
+  - v0.4.2 までは BYOK AI 監査が別の送信経路だったが、v1 の配線から外した
+    (実装は温存 / 再導入時は申告も戻す —
+    https://github.com/BoxPistols/domdom-inspector/issues/11)。
 - リモートコード実行なし(動的コード評価・外部 script 皆無、MV3 準拠)。
 - ページの内容(DOM/テキスト/入力値/スクショ)を保存・送信しない。保存するのは
   ユーザー設定のみ。**認証情報を一切保存しない。**
@@ -67,12 +76,15 @@
 
 誰でも再現できる (src / entrypoints を検索):
 ```sh
-# ① ネットワーク送信系 API の使用有無 — **テストを除けばヒット 0 件**
+# ① ネットワーク送信系 API の使用箇所 — **src/openInEditor.ts の 1 ファイルのみ**
+#    (XMLHttpRequest / WebSocket / sendBeacon / EventSource / axios はヒット 0 件)
 grep -rniE "fetch\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|axios" src entrypoints \
   --include="*.ts" | grep -v "\.test\.ts"
-# ①' 出荷される JS (ビルド成果物) にも無い — バンドラの polyfill 混入まで検知する
-#    (以前は Vite の modulepreload polyfill 由来の fetch( が 1 件あった。ビルド設定で除去済み)
-grep -rlE "fetch\(|XMLHttpRequest|WebSocket\(|sendBeacon|EventSource\(" .output/chrome-mv3 --include="*.js"
+# ①' その唯一の経路が「ローカル開発オリジンのときだけ」呼ばれることを確認する
+grep -n "looksLocalDev" src/overlay.ts        # 呼び出し側のガード
+grep -n "localhost\|127.0.0.1\|192.168" src/source.ts   # 判定の中身
+# ①'' 出荷される JS (ビルド成果物) の送信 API も上記 1 経路に由来するものだけ
+grep -rlE "XMLHttpRequest|WebSocket\(|sendBeacon|EventSource\(" .output/chrome-mv3 --include="*.js"
 # ② 動的コード評価・外部 script 注入の有無 — ヒットなし
 grep -rniE "importScripts|createElement\(.script" src entrypoints
 # ③ 外部ホスト参照 — ヒットは 3 種のみ:
@@ -101,7 +113,7 @@ CI では console.log の混入検知・型検査・テスト・ビルドを毎 
 | `optional_host_permissions: *://*/*` | デプロイ済みサイトを検査可能にする | **既定では未付与**。localhost 以外はユーザーが「有効化」で明示許可した時のみ |
 
 **単一目的**: ページ要素のデザイン値(色/余白/角丸/タイポグラフィ)をローカルで計測・表示し、
-ユーザーのデザイントークンと照合する。それ以外の目的なし。外部送信は無い。
+ユーザーのデザイントークンと照合する。それ以外の目的なし。外部への送信は無い。
 
 ## 企業導入の推奨運用
 

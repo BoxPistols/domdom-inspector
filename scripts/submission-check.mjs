@@ -114,46 +114,66 @@ for (const [label, pat] of [
 // ---- ⑤ 送信経路ゼロ (申告の根拠) -------------------------------------------
 // 4 文書 (SECURITY / PRIVACY / STORE_LISTING / PUBLISHING) が「外部送信なし」を主張している。
 // その根拠が崩れていないかを毎回測る。
-let netHits = '';
+// ネットワーク要求は **1 経路だけ**許す: 「ローカル dev サーバにエディタで開くよう
+// 頼む」要求。0 件を要求すると実現できない機能があり、無制限に許すと申告が嘘になる。
+// **経路が 1 つであること + それが localhost ガードの内側にあること**を実測する
+// (詳細は SECURITY.md / docs/editor-jump-support.md)。
+const ALLOWED_NET_FILE = 'src/openInEditor.ts';
+
+let netFiles = [];
 try {
-  netHits = sh(
-    `grep -rniE "fetch\\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource" src entrypoints --include="*.ts" | grep -v "\\.test\\.ts" || true`,
-  );
+  netFiles = sh(
+    `grep -rlE "fetch\\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|axios" src entrypoints --include="*.ts" | grep -v "\\.test\\.ts" || true`,
+  )
+    .split('\n')
+    .filter(Boolean);
 } catch {
-  netHits = '';
+  netFiles = [];
 }
+const extraNet = netFiles.filter((f) => f !== ALLOWED_NET_FILE);
+// **「見つからないから pass」を作らない。** 許可した 1 経路が *存在すること* も要求する。
+// 存在しないのに通るなら、この検査は何も見ていない (実際に一度その状態になった)
 check(
-  '送信 API の発生箇所が 0 件 (Data usage「収集しない」の根拠)',
-  netHits === '',
-  netHits === '' ? '0 件' : netHits.split('\n').slice(0, 3).join(' / '),
+  `送信 API は ${ALLOWED_NET_FILE} の 1 経路のみ (監査 grep に当たること)`,
+  extraNet.length === 0 && netFiles.includes(ALLOWED_NET_FILE),
+  extraNet.length > 0
+    ? `想定外: ${extraNet.join(', ')}`
+    : netFiles.includes(ALLOWED_NET_FILE)
+      ? `1 経路 (${ALLOWED_NET_FILE})`
+      : `${ALLOWED_NET_FILE} が grep に当たらない — 監査手順が嘘になる`,
 );
 
-// 出荷物にも残っていないこと (tree-shake の確認)
-let bundleNet = '';
+// その 1 経路が「ローカル開発オリジンのときだけ」呼ばれること。ガードを外すと
+// 任意のサイトへ要求を出す拡張になり、4 文書の申告が一斉に嘘になる
+let guarded = false;
 try {
-  bundleNet = sh(
-    `grep -rlE "api\\.openai\\.com|generativelanguage\\.googleapis\\.com" .output/chrome-mv3 || true`,
-  );
+  const overlay = readFileSync('src/overlay.ts', 'utf8');
+  guarded =
+    /looksLocalDev\(/.test(overlay) &&
+    overlay.indexOf('looksLocalDev(') < overlay.indexOf('openViaDevServer(');
 } catch {
-  bundleNet = '';
-}
-check('成果物に外部エンドポイントが残っていない', bundleNet === '', bundleNet || 'なし');
-
-// **出荷される JS 自体**にも送信 API が無いこと。src の grep が 0 件でも、バンドラが
-// polyfill (Vite の modulepreload 等) で fetch( を注入すると「grep で再現証明できる」
-// という申告が出荷物に対しては成立しなくなる (実際に 1 件混入していた)
-let bundleFetch = '';
-try {
-  bundleFetch = sh(
-    `grep -rlE "fetch\\(|XMLHttpRequest|WebSocket\\(|sendBeacon|EventSource\\(" .output/chrome-mv3 --include="*.js" || true`,
-  );
-} catch {
-  bundleFetch = '';
+  guarded = false;
 }
 check(
-  '出荷 JS に送信 API が無い (polyfill 混入の検知)',
-  bundleFetch === '',
-  bundleFetch || '0 件',
+  '送信経路が looksLocalDev ガードの内側にある (localhost 以外へ出さない)',
+  guarded,
+  guarded ? 'overlay.ts で looksLocalDev → openViaDevServer の順' : 'ガードが見つからない',
+);
+
+// 宛先が既知の launch-editor エンドポイントに限られていること (任意 URL を叩けない)
+let endpointsOnly = false;
+try {
+  const mod = readFileSync(ALLOWED_NET_FILE, 'utf8');
+  const hosts = mod.match(/https?:\/\/[^\s'"`]+/g) ?? [];
+  endpointsOnly =
+    hosts.length === 0 && /__open-in-editor|__nextjs_launch-editor|__open-stack-frame-in-editor/.test(mod);
+} catch {
+  endpointsOnly = false;
+}
+check(
+  '宛先はページ自身のオリジン + 既知エンドポイントのみ (外部ホストの直書き無し)',
+  endpointsOnly,
+  endpointsOnly ? '外部ホストの直書き 0 件' : '外部ホストらしき URL がある',
 );
 
 // ---- ⑥ スクリーンショット (実寸を PNG ヘッダから読む) ----------------------
