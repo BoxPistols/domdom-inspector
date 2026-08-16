@@ -92,6 +92,8 @@ export const OVERLAY_CSS = `
         gap: 10px;
         max-width: min(560px, 90vw);
       }
+      /* 本文は折り返して全部見せる (パスは長い)。ボタンは縮めない */
+      .toast.interactive .tmsg { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
       .toast.interactive button {
         flex: none;
         font: inherit;
@@ -102,6 +104,9 @@ export const OVERLAY_CSS = `
         padding: 3px 10px;
         cursor: pointer;
       }
+      /* 閉じる。自動で消さない代わりに、必ず自分で消せるようにする */
+      .toast.interactive button.tx { padding: 3px 8px; opacity: 0.7; }
+      .toast.interactive button.tx:hover { opacity: 1; }
       .toast.interactive button:hover { background: rgba(255,255,255,0.24); }
       .panel {
         display: none;

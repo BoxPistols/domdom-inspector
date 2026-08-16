@@ -220,6 +220,14 @@ export default defineContentScript({
       'keydown',
       (event) => {
         if (event.key !== 'Escape') return;
+        // 操作可能トーストは**自動で消さない**ので、Esc でも消せるようにする
+        // (押す気が無いときに閉じる手段が ✕ だけだと、狙って押す手間が残る)
+        if (overlay.hasInteractiveToast()) {
+          overlay.hideToast();
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
         // **ハイライトを先に消す。** モードより後に置くと、Esc 1 回でモードが切れて
         // ハイライトだけがページに残る (自力で戻せない汚れ)
         if (overlay.hasValueHighlight()) {

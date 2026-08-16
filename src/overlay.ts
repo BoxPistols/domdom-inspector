@@ -529,7 +529,6 @@ export class Overlay {
           this.strings.editorNeedsMapping.replace('{path}', path).replace('{mapping}', line),
           this.strings.editorCopyMapping,
           () => void this.copyToClipboard(line, this.strings.editorMappingCopied),
-          14000,
         );
       } else {
         this.toast(this.strings.editorRemoteSource.replace('{path}', path), 6000);
@@ -738,23 +737,56 @@ export class Overlay {
    * 操作できるトースト (本文 + ボタン 1 つ)。押せる要素を出すので既定より長く出す。
    * ハイライト枠やバッジと違い pointer-events を有効にする必要があるため class で切り替える。
    */
-  toastAction(message: string, actionLabel: string, onAction: () => void, ms = 9000) {
+  /**
+   * 操作を求めるトースト。**自動では消さない。**
+   *
+   * 以前は 9〜14 秒で消していたが、トーストは画面下中央に固定で出るため、要素から
+   * ボタンまでポインタを運ぶ間に消えてしまい**押せなかった** (実機の報告)。
+   * 押させたいものを時間で消すのは、操作を求めておいて取り上げるのと同じ。
+   *
+   * 代わりに閉じる手段を 2 つ置く: ボタンを押す / ✕ を押す。
+   * (`hideAll` と Esc でも消えるので、画面に居座り続けることはない)
+   */
+  toastAction(message: string, actionLabel: string, onAction: () => void) {
     this.ensureMounted();
     this.toastEl.classList.add('interactive');
     this.toastEl.replaceChildren();
-    this.toastEl.append(el('span', undefined, message));
+    this.toastEl.append(el('span', 'tmsg', message));
     const button = el('button', undefined, actionLabel) as HTMLButtonElement;
     button.type = 'button';
     button.addEventListener('click', (event) => {
       event.stopPropagation();
       onAction();
+      // 押したら役目は終わり。結果は onAction 側が別のトーストで伝える
+      this.hideToast();
     });
-    this.toastEl.append(button);
+    const close = el('button', 'tx', '✕') as HTMLButtonElement;
+    close.type = 'button';
+    close.title = this.strings.panelClose;
+    close.setAttribute('aria-label', this.strings.panelClose);
+    close.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.hideToast();
+    });
+    this.toastEl.append(button, close);
     this.toastEl.style.display = 'block';
+    // **タイマーを張らない。** 前回の自動消去が残っていたら止める
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => {
-      this.toastEl.style.display = 'none';
-      this.toastEl.classList.remove('interactive');
-    }, ms);
+    this.toastTimer = undefined;
+  }
+
+  /** トーストを閉じる (操作可能トーストの後始末も含む) */
+  hideToast() {
+    clearTimeout(this.toastTimer);
+    this.toastTimer = undefined;
+    if (!this.toastEl) return;
+    this.toastEl.style.display = 'none';
+    this.toastEl.classList.remove('interactive');
+  }
+
+  /** 操作可能トーストが出ているか (Esc の消費判断に使う) */
+  hasInteractiveToast(): boolean {
+    return !!this.toastEl && this.toastEl.classList.contains('interactive')
+      && this.toastEl.style.display === 'block';
   }
 }

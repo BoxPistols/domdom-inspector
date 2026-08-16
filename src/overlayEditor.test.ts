@@ -376,3 +376,56 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
     expect(calls).toEqual([]);
   });
 });
+
+/**
+ * **操作を求めるトーストを時間で消さない** (2026-08-17 の実機報告)。
+ *
+ * トーストは画面下中央に固定で出るため、要素からボタンまでポインタを運ぶ間に
+ * 消えてしまい**押せなかった**。押させたいものを時間で取り上げるのは誤り。
+ */
+describe('操作可能トーストは自動で消えない', () => {
+  it('時間が経っても消えない (押しに行く間に消えると操作を取り上げることになる)', () => {
+    vi.useFakeTimers();
+    try {
+      const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+      overlay.toastAction('msg', 'do it', () => {});
+      vi.advanceTimersByTime(120_000);
+      expect(toastEl()?.style.display, '2 分経っても出ている').toBe('block');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('閉じる手段が本文と一緒にある (✕)', () => {
+    const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+    overlay.toastAction('msg', 'do it', () => {});
+    const buttons = [...(toastEl()?.querySelectorAll('button') ?? [])];
+    expect(buttons.map((b) => b.textContent)).toEqual(['do it', '✕']);
+    (buttons[1] as HTMLButtonElement).click();
+    expect(toastEl()?.style.display).toBe('none');
+  });
+
+  it('操作を押したら閉じる (押した後も居座らない)', () => {
+    let called = 0;
+    const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+    overlay.toastAction('msg', 'do it', () => {
+      called += 1;
+    });
+    (toastEl()?.querySelector('button') as HTMLButtonElement).click();
+    expect(called).toBe(1);
+    expect(toastEl()?.style.display).toBe('none');
+  });
+
+  it('**通常のトーストは従来どおり自動で消える** (常時居座らせない)', () => {
+    vi.useFakeTimers();
+    try {
+      const overlay = new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS);
+      overlay.toast('plain');
+      expect(toastEl()?.style.display).toBe('block');
+      vi.advanceTimersByTime(5000);
+      expect(toastEl()?.style.display).toBe('none');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
