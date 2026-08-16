@@ -145,7 +145,7 @@ popup には構造的な欠陥が 1 つあり、それが検算ループを原�
 | クロスオリジン CSS は `continue` でスキップされる | `src/cssVars.ts:136-139`。勝者宣言が読めないシートにあり下位に読める宣言があると、**その下位宣言が勝者として来歴判定される** = 欠測ではなく誤答 |
 | `checkVisibility()` が無い環境ではガードで素通りする | `src/designScan.ts:114-119`。**その事実を申告するフラグが無い** |
 | `src/coverage.ts` は境界契約の 2 つのリストどちらにも入っていない | `src/boundaries.test.ts` の `DESIGN_PATH` と `eslint.config.js` の `files`。現状 import は `tokenDict`/`tokenLint`/`types` のみでクリーンだが、**ロジックを足すなら塞ぐのが筋** |
-| `wxt.config.ts` に `minimum_chrome_version` が無い | `docs/assessment-20260802-store-readiness.md:147` が指摘済み。`world:"MAIN"` / `matchOriginAsFallback` / `checkVisibility()` / `storage.session` に依存しているので**本来必要** |
+| ~~`wxt.config.ts` に `minimum_chrome_version` が無い~~ **2026-08-16 解消済み** | `wxt.config.ts` が `minimum_chrome_version: '119'` を宣言済み (`matchOriginAsFallback` の 119 を上限として採用)。`pnpm check:submission` が毎回実測する。**Phase A で新たに触る必要は無い** |
 
 ---
 
@@ -630,11 +630,15 @@ Preply も Lighthouse も「率は日ごとに揺れる」「単一の数値で�
 assert も 5 本増やした (**来歴ゲートが過剰発火して数値が静かに消える**のを機械で防ぐため。
 false に倒れた場合の症状は「エラーではなく欠測」なので、目視では気づけない)。
 
-**先に片付けるブロッカー** (この作業の diff に混ぜない):
-`PRIVACY.md` 冒頭と「Render report you copy yourself」節が **v1 に存在しない機能を宣言している**
-(提出前ブロッカー。カバレッジ画面に Copy 導線を残す以上、この節は「カバレッジ計測の
-Markdown コピー」として書き直しが同時に必要) / `STORE_LISTING.md:16-18` が自己申告している
-`PUBLISHING.md §4-2` の未同期 / AI 既定 ON と掲載文 "Off until you configure a key" の食い違い。
+**先に片付けるブロッカー** (この作業の diff に混ぜない) — **2026-08-16 に 3 件とも解消を確認**:
+
+| ブロッカー | 状態 (実測) |
+|---|---|
+| `PRIVACY.md` の「Render report you copy yourself」節が v1 に無い機能を宣言 | ✅ 解消。当該節は既に無い (`grep -n "Render report" PRIVACY.md` が 0 件)。ただし**別の嘘が残っていた** — en 側の "makes no network requests of any kind" が v0.4.23 の変更に追従しておらず、196227d で修正 + `src/docsConsistency.test.ts` が再発を走査する |
+| `STORE_LISTING.md:16-18` が自己申告する `PUBLISHING.md §4-2` の未同期 | ✅ 解消。`PUBLISHING.md` §4-2 は Single purpose を**複製せず STORE_LISTING を指す**書き方になっている (単一ソース化済み) |
+| AI 既定 ON と掲載文 "Off until you configure a key" の食い違い | ✅ 解消。AI は v1 の配線から外れ (#11)、掲載文にも当該文言は無い。記述が残るのは当時の記録 (`docs/assessment-20260802-store-readiness.md`) のみ |
+
+したがって **Phase A は追加のブロッカー解消なしで着手できる**。
 
 **申告に足す 1 行** (2 箇所、英日): `STORE_LISTING.md` の Permission justification と
 `SECURITY.md` の権限表に `sidePanel: 計測結果を対象ページと並べて表示するため。
