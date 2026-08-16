@@ -112,6 +112,74 @@ Vite も Next も `/src/app/page.tsx` のように**プロジェクト相対**�
 ここで止める。経路ごとに同じ判定を書いていた頃は、経路が増えるたびに書き忘れて
 同じ症状 (「存在しません」) を 3 回出した。
 
+## dev サーバは 200 を返すが、エディタは開かない (2026-08-16 実測)
+
+**一番よく踏む失敗。拡張側は正常でも「何をやっても開かない」になる。**
+
+### 何が起きているか
+
+Vite の `launch-editor-middleware` はこう書かれている:
+
+```js
+launch(path.resolve(srcRoot, file), specifiedEditor, onErrorCallback);
+res.end();   // ← launch の完了を待たない
+```
+
+`res.end()` が同期的に呼ばれるので、**起動に失敗しても 200 が返る**。
+拡張はレスポンスからは成否を判別できない (これは実装の不足ではなく構造的な限界)。
+
+失敗の理由は **dev サーバのログにだけ**出る:
+
+```
+Could not open vite.config.ts in the editor.
+The editor process exited with an error: spawn code --wait ENOENT
+  ('code --wait' command does not exist in 'PATH').
+```
+
+### 原因: `EDITOR="code --wait"`
+
+`launch-editor` の `guessEditor()` は次の順に決める:
+
+1. `process.env.LAUNCH_EDITOR`
+2. 起動中のプロセスから推測 (`ps x -o comm=` を既知エディタの一覧と突き合わせ)
+3. `process.env.VISUAL` → `process.env.EDITOR`
+
+このうち **1 と 3 はシェル解釈しない** (`return [process.env.EDITOR]`)。
+`EDITOR="code --wait"` は git のために置くことが多い一般的な設定だが、
+この値は「`code --wait` という名前の実行ファイル」として spawn され、必ず ENOENT になる。
+
+2 の推測も外れやすい。既知エディタの一覧は VS Code / Cursor / Sublime / JetBrains 等の
+**アプリのパス決め打ち**で、一覧に無いエディタ (実測では Antigravity IDE) が起動中でも
+何にも一致しない。
+
+### 直し方 (利用者側)
+
+dev サーバを起動するときに `LAUNCH_EDITOR` を**引数なしのコマンド名**で渡す:
+
+```
+LAUNCH_EDITOR=cursor pnpm dev
+LAUNCH_EDITOR=code   pnpm dev
+```
+
+`EDITOR` / `VISUAL` を変えてもよいが、**引数を含めると必ず失敗する** (`code --wait` は不可)。
+`LAUNCH_EDITOR` は他の用途に影響しないので、こちらを勧める。
+**dev サーバの再起動が要る** (環境変数は起動時に固定される)。
+
+### 拡張側の対応 (v0.4.29)
+
+**「開いた」と断定しない。** dev サーバは結果を返さないので、拡張は知りようがない。
+
+以前は 200 を成功として扱っていたため、2 つの実害があった:
+
+1. 実際には何も起きていないのに成功と表示していた (誤答)
+2. **動くはずのスキーム起動へ二度と到達しなかった** — 成功扱いだと分岐が
+   フォールバックへ落ちない。押しても何も起きず、理由も出ない状態になる
+
+現在は「依頼しました。何も開かない場合、理由はサーバ側のログに出ています」と伝え、
+**同じトーストに「直接開く」を置いて**スキーム起動へ逃げられるようにしてある。
+
+---
+
 ## 踏んだ罠 (再発しやすいもの)
 
 - **`isBundledSource` のハッシュ判定を字種でやらない。** Turbopack は base36

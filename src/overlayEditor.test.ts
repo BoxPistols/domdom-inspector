@@ -304,6 +304,33 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
     for (let i = 0; i < 30; i += 1) await Promise.resolve();
   };
 
+  it('依頼が空振りしたとき、トーストの導線からスキーム起動へ逃げられる', async () => {
+    // スキーム経路は絶対パスなら対応表なしで開ける (相対パスだと案内トーストに化ける)
+    const ABSOLUTE_LOC = { fileName: '/Users/me/app/src/page.tsx', lineNumber: 12, columnNumber: 3 };
+    const restore = stubFetch(() => Promise.resolve({ status: 200, headers: new Headers() }));
+    const clicks: string[] = [];
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      withHost('localhost:3000', () =>
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(ABSOLUTE_LOC),
+      );
+      await flush();
+      expect(clicks, '依頼の時点ではスキームを開かない').toEqual([]);
+      // 利用者が「直接開く」を押す
+      withHost('localhost:3000', () => {
+        toastEl()?.querySelector('button')?.click();
+      });
+      await flush();
+    } finally {
+      HTMLAnchorElement.prototype.click = origClick;
+      restore();
+    }
+    expect(clicks.length, 'スキーム起動へ到達すること').toBeGreaterThan(0);
+  });
+
   it('dev サーバが開いたら、設定に関する案内を一切出さない', async () => {
     // ここが本機能の要点。**利用者に絶対パスを書かせない**ことが目的なので、
     // 成功時に対応表の話が出てはいけない
@@ -325,8 +352,18 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
       HTMLAnchorElement.prototype.click = origClick;
       restore();
     }
-    expect(toastEl()?.textContent).toBe(DEFAULT_STRINGS.editorOpenedViaDevServer);
+    expect(toastEl()?.textContent).toContain(DEFAULT_STRINGS.editorOpenedViaDevServer);
     expect(toastEl()?.textContent).not.toContain('/src=');
+    // **成功と断定しない。** dev サーバは launch-editor の完了を待たず 200 を返すので、
+    // 拡張は結果を知りようがない (実測: EDITOR="code --wait" だと ENOENT で落ちるが 200)
+    expect(
+      DEFAULT_STRINGS.editorOpenedViaDevServer,
+      '「開いた」と断定する文言にしない',
+    ).not.toMatch(/\bopened it\b|開きました/);
+    // 空振りしたときの逃げ道が同じトーストにあること。以前はここで成功扱いにしていたため
+    // **実際には動くスキーム起動へ二度と到達しなかった**
+    const action = toastEl()?.querySelector('button');
+    expect(action?.textContent, '直接開く導線が無い').toBe(DEFAULT_STRINGS.editorOpenDirect);
     expect(clicks).toEqual([]); // スキームは使わない
   });
 

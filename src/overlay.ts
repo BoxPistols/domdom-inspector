@@ -432,8 +432,21 @@ export class Overlay {
     if (looksLocalDev(host)) {
       void openViaDevServer(origin, loc).then((opened) => {
         if (opened) {
-          // 位置はサーバが解決したので、こちらのパス表示は出さない (嘘になりうる)
-          this.toast(this.strings.editorOpenedViaDevServer);
+          // **「開いた」とは言えない。** dev サーバ (Vite の launch-editor-middleware) は
+          // `launch()` の完了を待たず同期的に `res.end()` するので、**起動に失敗しても
+          // 200 が返る**。実測: `EDITOR="code --wait"` (git 用の一般的な設定) だと
+          // launch-editor は値をシェル解釈せず 1 コマンド名として spawn するため
+          // ENOENT で落ち、理由は dev サーバのログにだけ出る。
+          //
+          // よって (1) 成功と断定しない (2) **空振りしたときの逃げ道を同じトーストに置く**。
+          // 以前はここで成功扱いにしていたため、実際には動くスキーム起動へ二度と
+          // 到達しなかった (押しても何も起きないまま、原因も分からない状態になる)。
+          this.toastAction(
+            this.strings.editorOpenedViaDevServer,
+            this.strings.editorOpenDirect,
+            () => this.openEditorViaScheme(loc, host),
+            12000,
+          );
         } else {
           this.openEditorViaScheme(loc, host);
         }
