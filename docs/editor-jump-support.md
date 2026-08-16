@@ -165,6 +165,40 @@ LAUNCH_EDITOR=code   pnpm dev
 `LAUNCH_EDITOR` は他の用途に影響しないので、こちらを勧める。
 **dev サーバの再起動が要る** (環境変数は起動時に固定される)。
 
+### 一覧に無いエディタ (Antigravity IDE 等) の場合
+
+`launch-editor` は**エディタ名で引数の形を決める**。`-r -g file:line:col` (VS Code 系) を
+受け取れるのは basename が次のいずれかのときだけ:
+
+```
+code / Code / code-insiders / Code - Insiders / codium / trae / cursor / vscodium / VSCodium
+```
+
+実測 (2026-08-16): `antigravity` は launch-editor 内に **0 件**。よって
+`LAUNCH_EDITOR=antigravity-ide` としても switch に当たらず、既定の分岐
+
+```js
+if (process.env.LAUNCH_EDITOR) return [fileName, lineNumber, columnNumber];
+```
+
+が選ばれる。つまり `antigravity-ide /path/File.tsx 276 36` と実行され、
+**276 と 36 が別のファイル名として渡る**。開いても行には飛ばない。
+
+**回避策**: `code` という名前の symlink を **PATH に載せないディレクトリ**に置き、
+`LAUNCH_EDITOR` にその絶対パスを渡す。`path.basename()` で判定されるので
+これで VS Code 系の引数形式が選ばれ、実体は任意のエディタでよい。
+
+```sh
+mkdir -p ~/.local/launch-editor
+ln -sfn "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" \
+        ~/.local/launch-editor/code
+LAUNCH_EDITOR=$HOME/.local/launch-editor/code pnpm dev
+```
+
+PATH に載せないので、既存の `code` / `cursor` は一切影響を受けない。
+Antigravity の CLI は `-g --goto <file:line[:character]>` に対応しており
+(`--help` で確認)、この形で行・桁まで飛ぶ。
+
 ### 拡張側の対応 (v0.4.29)
 
 **「開いた」と断定しない。** dev サーバは結果を返さないので、拡張は知りようがない。
