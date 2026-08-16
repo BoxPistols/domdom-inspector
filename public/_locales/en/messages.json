@@ -420,5 +420,95 @@
   },
   "panelOpenFailed": {
     "message": "Could not open the coverage panel. Your Chrome may not support side panels, or the tab could not be resolved — try reopening this popup."
+  },
+  "panelBasisTitle": {
+    "message": "What this measurement covers"
+  },
+  "panelMatchTitle": {
+    "message": "Matched against your tokens"
+  },
+  "panelPerElement": {
+    "message": "per element"
+  },
+  "panelPerValue": {
+    "message": "per distinct value"
+  },
+  "panelOffendersTitle": {
+    "message": "Fix these first"
+  },
+  "panelCeiling": {
+    "message": "A match means the value equals one of your tokens. It does not mean the design is right. iframes, shadow DOM and hidden elements are out of scope."
+  },
+  "panelRateNone": {
+    "message": "not measured"
+  },
+  "panelRateClamped": {
+    "message": "Rounded away from 100% / 0% because some values do differ. All percentages are rounded."
+  },
+  "panelLowSample": {
+    "message": "few"
+  },
+  "panelLowSampleHint": {
+    "message": "Fewer than 10 values were judged, so this percentage moves a lot with one value."
+  },
+  "panelMatchLegend": {
+    "message": "A value counts as matched when it equals one of your tokens. Spacing is also checked against the {grid}px grid."
+  },
+  "panelOverall": {
+    "message": "Overall"
+  },
+  "panelOverallNote": {
+    "message": "color and font size exist on every element, so the overall figure is pulled toward those two"
+  },
+  "panelNearest": {
+    "message": "nearest token: {token}"
+  },
+  "panelUsedBy": {
+    "message": "used by {n} elements"
+  },
+  "panelNothingJudged": {
+    "message": "Nothing could be judged, so there is nothing to rank yet."
+  },
+  "panelNoOffenders": {
+    "message": "No value missed your tokens. Nothing to rank."
+  },
+  "panelNoSpacing": {
+    "message": "No spacing value was measured on this page."
+  },
+  "panelAllOnGrid": {
+    "message": "No spacing value is both off your tokens and off the {grid}px grid."
+  },
+  "panelAffectMatch": {
+    "message": "MATCH"
+  },
+  "panelAffectDurability": {
+    "message": "ORIGIN"
+  },
+  "panelAffectGrid": {
+    "message": "GRID"
+  },
+  "panelFamilyColor": {
+    "message": "Color"
+  },
+  "panelFamilySpacing": {
+    "message": "Spacing"
+  },
+  "panelFamilyRadius": {
+    "message": "Radius"
+  },
+  "panelFamilyFont": {
+    "message": "Font size"
+  },
+  "panelNoteThemeInflates": {
+    "message": "The token dictionary came from the page's own theme, which generates a dense ladder of sizes. Matching is easier than with a hand-written token set, and the grid check below is not independent evidence."
+  },
+  "panelNoteCssInJs": {
+    "message": "This page uses CSS-in-JS, whose output is always a literal value. Whether a value came from a token cannot be told apart from a hardcoded one, so origin is not reported."
+  },
+  "panelNoteOriginBudget": {
+    "message": "Collecting origins hit its time budget, so origin is not reported for this measurement."
+  },
+  "panelNoteOriginUnavailable": {
+    "message": "No origin could be read (for example the stylesheets are cross-origin), so origin is not reported."
   }
 }

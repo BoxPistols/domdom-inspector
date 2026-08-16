@@ -56,6 +56,10 @@ export default tseslint.config(
       'src/aiPrompt.ts',
       'src/aiProviders.ts',
       'src/aiCost.ts',
+      // カバレッジ画面のビューモデル (issue #10)。scanClient は browser.* を使う
+      // 拡張ページ専用の配線なので、この契約には入れない
+      'src/coverageView.ts',
+      'src/panelState.ts',
     ],
     rules: {
       'no-restricted-imports': [

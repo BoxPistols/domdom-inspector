@@ -116,10 +116,67 @@
       }
       button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-      .fact { margin: 10px 0 0; font-size: 12px; }
-      .fact dt { color: var(--muted); font-size: 11px; }
-      .fact dd { margin: 0 0 8px; font-variant-numeric: tabular-nums; }
-      .note { margin-top: 10px; font-size: 11px; color: var(--muted); }
+      .block { margin-top: 14px; }
+      .block h2 {
+        margin: 0 0 6px; font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+      }
+
+      /* ③ 但し書き。数字より上に置き、影響先を印で示す */
+      .notes { margin: 0; padding: 0; list-style: none; font-size: 11.5px; }
+      .notes li {
+        display: flex; gap: 6px; align-items: baseline;
+        padding: 5px 8px; margin-bottom: 4px;
+        border-radius: 6px; background: var(--surface); border: 1px solid var(--border);
+      }
+      .notes .tags { flex: none; display: inline-flex; gap: 3px; }
+      .tag {
+        font-size: 9.5px; font-weight: 700; letter-spacing: 0.03em;
+        padding: 0 4px; border-radius: 3px;
+        background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
+      }
+
+      /* ④ 率の表。**率は必ず実数と同じ行に出る** */
+      .rates { width: 100%; border-collapse: collapse; font-size: 12px; }
+      .rates th {
+        text-align: right; font-size: 10px; font-weight: 700; color: var(--muted);
+        text-transform: uppercase; letter-spacing: 0.03em; padding: 0 0 4px;
+      }
+      .rates th:first-child { text-align: left; }
+      .rates td { padding: 4px 0; border-top: 1px solid var(--border); vertical-align: baseline; }
+      .rates td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .rates .pct { font-weight: 700; }
+      .rates .counts { color: var(--muted); font-size: 11px; margin-left: 4px; }
+      .rates .none { color: var(--muted); }
+      /* 低サンプルは率の隣で言う (脚注にしない) */
+      .rates .low { color: var(--warn-text); font-size: 10px; margin-left: 4px; }
+      .legend { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+
+      /* ⑤ 総合は小さく */
+      .overall { margin: 12px 0 0; font-size: 11.5px; color: var(--muted); }
+      .overall b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+      /* ⑥ 直すと効く値 */
+      .offenders { margin: 0; padding: 0; list-style: none; font-size: 12px; }
+      .offenders li {
+        display: flex; gap: 8px; align-items: baseline; justify-content: space-between;
+        padding: 5px 0; border-top: 1px solid var(--border);
+      }
+      .offenders .what { overflow-wrap: anywhere; }
+      .offenders .what code {
+        background: var(--surface-2); padding: 0 4px; border-radius: 3px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .offenders .count { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+      .offenders .near { display: block; color: var(--muted); font-size: 11px; }
+      .empty { padding: 6px 0; font-size: 11.5px; color: var(--muted); }
+
+      /* ⑦ 天井の表明 */
+      .ceiling {
+        margin: 14px 0 0; padding: 8px 10px;
+        border-radius: 6px; border: 1px dashed var(--border);
+        font-size: 11px; color: var(--muted);
+      }
     </style>
   </head>
   <body>
@@ -141,13 +198,41 @@
       <button id="measure" data-i18n="panelMeasure">Measure this page</button>
 
       <section class="result" id="result" hidden>
-        <dl class="fact">
-          <dt data-i18n="panelFactElements">Elements measured</dt>
-          <dd id="factElements">—</dd>
-          <dt data-i18n="panelFactTokens">Tokens in the dictionary</dt>
-          <dd id="factTokens">—</dd>
-        </dl>
-        <p class="note" id="factNotes"></p>
+        <!-- ③ この計測が何をカバーしているか。**数字より上に置く** (設計 §4-1 ③) -->
+        <section class="block" id="basisBlock" hidden>
+          <h2 data-i18n="panelBasisTitle">What this measurement covers</h2>
+          <ul class="notes" id="basisNotes"></ul>
+        </section>
+
+        <!-- ④ 一致 — ファミリ 4 行を 2 つの分母で。本設計の中核 -->
+        <section class="block">
+          <h2 data-i18n="panelMatchTitle">Matched against your tokens</h2>
+          <table class="rates">
+            <thead>
+              <tr>
+                <th></th>
+                <th data-i18n="panelPerElement" title="">per element</th>
+                <th data-i18n="panelPerValue" title="">per distinct value</th>
+              </tr>
+            </thead>
+            <tbody id="familyRows"></tbody>
+          </table>
+          <p class="legend" id="matchLegend"></p>
+        </section>
+
+        <!-- ⑤ 総合率は意図的に小さく。ヒーロー数字にしない -->
+        <p class="overall" id="overall"></p>
+
+        <!-- ⑥ どこで崩れているか。率より主役にする -->
+        <section class="block">
+          <h2 data-i18n="panelOffendersTitle">Fix these first</h2>
+          <ul class="offenders" id="offenders"></ul>
+        </section>
+
+        <!-- ⑦ 天井の表明。常時可視・折りたたまない -->
+        <p class="ceiling" id="ceiling" data-i18n="panelCeiling">
+          A match means the value equals one of your tokens. It does not mean the design is right.
+        </p>
       </section>
     </div>
     <script type="module" src="./main.ts"></script>

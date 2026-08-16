@@ -24,6 +24,11 @@ const DESIGN_PATH = [
   'aiPrompt',
   'aiProviders',
   'aiCost',
+  // カバレッジ画面のビューモデル (issue #10)。純ロジックなので同じ契約に入れる。
+  // **`scanClient` は入れない** — browser.* を使う拡張ページ専用の配線で、
+  // design 計測の純ロジックではない (その旨は当該ファイルのヘッダに明記してある)
+  'coverageView',
+  'panelState',
 ];
 
 /** design 経路から import 禁止の Fiber 結合モジュール (source は純パス処理なので除外) */

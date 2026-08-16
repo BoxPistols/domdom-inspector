@@ -420,5 +420,95 @@
   },
   "panelOpenFailed": {
     "message": "カバレッジのパネルを開けませんでした。お使いの Chrome が side panel に対応していないか、対象タブを特定できませんでした。このポップアップを開き直して、もう一度お試しください。"
+  },
+  "panelBasisTitle": {
+    "message": "この計測がカバーしている範囲"
+  },
+  "panelMatchTitle": {
+    "message": "あなたのトークンとの一致"
+  },
+  "panelPerElement": {
+    "message": "要素あたり"
+  },
+  "panelPerValue": {
+    "message": "値の種類あたり"
+  },
+  "panelOffendersTitle": {
+    "message": "直すと効く値"
+  },
+  "panelCeiling": {
+    "message": "一致は「値があなたのトークンと等しい」という意味だけです。デザインが正しいことを意味しません。iframe / shadow DOM / 非表示の要素は対象外です。"
+  },
+  "panelRateNone": {
+    "message": "判定なし"
+  },
+  "panelRateClamped": {
+    "message": "外れが実在するため 100% / 0% に丸めていません。すべての率は四捨五入です。"
+  },
+  "panelLowSample": {
+    "message": "少"
+  },
+  "panelLowSampleHint": {
+    "message": "判定できた件数が 10 未満です。1 件で率が大きく動きます。"
+  },
+  "panelMatchLegend": {
+    "message": "値があなたのトークンと等しいとき一致とみなします。余白は {grid}px グリッドとも照合します。"
+  },
+  "panelOverall": {
+    "message": "全体"
+  },
+  "panelOverallNote": {
+    "message": "色と文字サイズは全要素にあるため、総合はその 2 つに引っ張られます"
+  },
+  "panelNearest": {
+    "message": "最近傍トークン: {token}"
+  },
+  "panelUsedBy": {
+    "message": "{n} 要素で使用"
+  },
+  "panelNothingJudged": {
+    "message": "判定できた値がないため、順位を出せる材料がありません。"
+  },
+  "panelNoOffenders": {
+    "message": "トークンから外れた値はありませんでした。"
+  },
+  "panelNoSpacing": {
+    "message": "このページでは余白の値を計測していません。"
+  },
+  "panelAllOnGrid": {
+    "message": "トークンにもグリッドにも外れた余白の値はありません ({grid}px)。"
+  },
+  "panelAffectMatch": {
+    "message": "一致"
+  },
+  "panelAffectDurability": {
+    "message": "来歴"
+  },
+  "panelAffectGrid": {
+    "message": "グリッド"
+  },
+  "panelFamilyColor": {
+    "message": "色"
+  },
+  "panelFamilySpacing": {
+    "message": "余白"
+  },
+  "panelFamilyRadius": {
+    "message": "角丸"
+  },
+  "panelFamilyFont": {
+    "message": "文字サイズ"
+  },
+  "panelNoteThemeInflates": {
+    "message": "トークン辞書はページ自身のテーマ由来です。テーマは密なサイズのラダーを生成するため、手書きのトークン集合より一致しやすくなります。下のグリッド検査も独立した証拠にはなりません。"
+  },
+  "panelNoteCssInJs": {
+    "message": "このページは CSS-in-JS を使っています。出力が常にリテラル値になるため、トークン由来かベタ書きかを区別できません。来歴は報告しません。"
+  },
+  "panelNoteOriginBudget": {
+    "message": "来歴の収集が時間予算に達しました。この計測では来歴を報告しません。"
+  },
+  "panelNoteOriginUnavailable": {
+    "message": "来歴を 1 件も読めませんでした (スタイルシートがクロスオリジン等)。来歴は報告しません。"
   }
 }

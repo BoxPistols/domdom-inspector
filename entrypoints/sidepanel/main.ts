@@ -6,6 +6,16 @@ import {
   type PanelMeasurement,
   type PanelTarget,
 } from '../../src/panelState';
+import {
+  buildBasisNotes,
+  elementRate,
+  gridEmptyState,
+  offenderEmptyState,
+  vocabularyRate,
+  type BasisAffects,
+  type BasisNote,
+  type RateDisplay,
+} from '../../src/coverageView';
 import { requestScan } from '../../src/scanClient';
 
 /**
@@ -146,19 +156,156 @@ function bannerFor(
   return null;
 }
 
-/** Phase A の暫定表示。率と内訳 (§4-1 ③〜⑦) は Phase C で入れる */
-function renderFacts(scan: DesignScan) {
-  $('factElements').textContent = scan.elementCount.toLocaleString();
-  const { colors, sizes } = scan.tokenCounts;
-  $('factTokens').textContent = msg('panelTokenCounts')
-    .replace('{colors}', String(colors))
-    .replace('{sizes}', String(sizes));
+/** 空の要素を作って中身を差し替える (textContent 経由。innerHTML は使わない) */
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className?: string,
+  text?: string,
+): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
 
-  // **計測が何をカバーしていないかを、数字より先に読ませる** (§4-1 ③)
-  const notes: string[] = [];
-  if (scan.truncated) notes.push(msg('panelNoteTruncated'));
-  if (colors === 0 && sizes === 0) notes.push(msg('panelNoteNoDict'));
-  $('factNotes').textContent = notes.join(' ');
+const NOTE_LABEL: Record<BasisNote['id'], Parameters<typeof msg>[0]> = {
+  truncated: 'panelNoteTruncated',
+  noDict: 'panelNoteNoDict',
+  themeInflates: 'panelNoteThemeInflates',
+  cssInJs: 'panelNoteCssInJs',
+  originBudget: 'panelNoteOriginBudget',
+  originUnavailable: 'panelNoteOriginUnavailable',
+};
+
+const AFFECT_LABEL: Record<BasisAffects, Parameters<typeof msg>[0]> = {
+  match: 'panelAffectMatch',
+  durability: 'panelAffectDurability',
+  grid: 'panelAffectGrid',
+};
+
+const FAMILY_LABEL: Record<string, Parameters<typeof msg>[0]> = {
+  color: 'panelFamilyColor',
+  spacing: 'panelFamilySpacing',
+  radius: 'panelFamilyRadius',
+  font: 'panelFamilyFont',
+};
+
+/**
+ * 率を 1 つのセルとして描く。**率だけを描く経路をコードから消す** (§4-2):
+ * 呼び出し側に数字の文字列を渡させず、`RateDisplay` を丸ごと受け取って
+ * 「率 + 実数 (+ 低サンプルの印)」を必ず同じセルに出す。
+ */
+function rateCell(display: RateDisplay): HTMLTableCellElement {
+  const cell = el('td', 'num');
+  if (display.text === null) {
+    // 判定できた件数が 0。**「0%」と書かない** — 測れていないことと悪いことは違う
+    cell.append(el('span', 'none', msg('panelRateNone')));
+    return cell;
+  }
+  const pct = el('span', 'pct', display.text);
+  if (display.clamped) {
+    // 丸めのクランプを開示する: 「本当に 99%」と「10000 件中 1 件外れ」を潰さない
+    pct.title = msg('panelRateClamped');
+  }
+  cell.append(pct, el('span', 'counts', `(${display.hit}/${display.judged})`));
+  if (display.lowSample) {
+    const low = el('span', 'low', msg('panelLowSample'));
+    low.title = msg('panelLowSampleHint');
+    cell.append(low);
+  }
+  return cell;
+}
+
+/** ③〜⑦ を描く。率の材料はすべて `src/coverageView.ts` の純関数から取る */
+function renderFacts(scan: DesignScan) {
+  const report = scan.coverage;
+
+  // ---- ③ この計測が何をカバーしているか (数字より上) ----
+  const notes = buildBasisNotes(scan);
+  const list = $('basisNotes');
+  list.replaceChildren();
+  $('basisBlock').hidden = notes.length === 0;
+  for (const note of notes) {
+    const item = el('li');
+    const tags = el('span', 'tags');
+    // **影響先を印で出す。** 但し書きは、それが制限する数字と一緒に旅する
+    const affectNames = note.affects.map((a) => msg(AFFECT_LABEL[a]));
+    for (const name of affectNames) tags.append(el('span', 'tag', name));
+    const text = msg(NOTE_LABEL[note.id]);
+    // 視覚的には gap で分かれるが、textContent は連結されるので読み上げでは
+    // 「一致グリッドこのページは…」になる。AT には区切った 1 文として渡す
+    tags.setAttribute('aria-hidden', 'true');
+    item.setAttribute('aria-label', `${affectNames.join(' / ')}: ${text}`);
+    item.append(tags, el('span', undefined, text));
+    list.append(item);
+  }
+
+  // ---- ④ 一致 (2 つの分母) ----
+  const rows = $('familyRows');
+  rows.replaceChildren();
+  for (const family of report.families) {
+    const row = el('tr');
+    const label = msg(FAMILY_LABEL[family.family] ?? 'panelFamilyColor');
+    row.append(el('td', undefined, label), rateCell(elementRate(family)), rateCell(vocabularyRate(family)));
+    rows.append(row);
+  }
+  $('matchLegend').textContent = msg('panelMatchLegend').replace('{grid}', String(scan.grid));
+
+  // ---- ⑤ 総合 (小さく) ----
+  const overall = $('overall');
+  overall.replaceChildren();
+  const overallRate = elementRate({
+    ...report.families[0],
+    hit: report.overall.hit,
+    judged: report.overall.judged,
+  });
+  overall.append(
+    el('span', undefined, `${msg('panelOverall')} `),
+    el('b', undefined, overallRate.text ?? msg('panelRateNone')),
+    el('span', undefined, ` (${report.overall.hit}/${report.overall.judged}) — ${msg('panelOverallNote')}`),
+  );
+
+  // ---- ⑥ 直すと効く値 ----
+  const offenders = $('offenders');
+  offenders.replaceChildren();
+  const emptyOffenders = offenderEmptyState(report);
+  if (emptyOffenders) {
+    offenders.append(
+      el(
+        'li',
+        'empty',
+        msg(emptyOffenders === 'nothingJudged' ? 'panelNothingJudged' : 'panelNoOffenders'),
+      ),
+    );
+  } else {
+    for (const offender of report.top) {
+      const item = el('li');
+      const what = el('span', 'what');
+      what.append(el('span', undefined, `${offender.label} `), el('code', undefined, offender.value));
+      if (offender.nearest) {
+        what.append(el('span', 'near', msg('panelNearest').replace('{token}', offender.nearest)));
+      }
+      // **count は「修正箇所数」ではない** (1 つの CSS 宣言が N 要素に効く) ので
+      // 「N 箇所直す」とは言わず、使われている要素数として出す
+      item.append(what, el('span', 'count', msg('panelUsedBy').replace('{n}', String(offender.count))));
+      offenders.append(item);
+    }
+  }
+
+  // グリッド検査の空状態も無言にしない (良い知らせと未計測を区別する)
+  const grid = gridEmptyState(report);
+  if (grid) {
+    offenders.append(
+      el(
+        'li',
+        'empty',
+        msg(grid === 'noSpacingMeasured' ? 'panelNoSpacing' : 'panelAllOnGrid').replace(
+          '{grid}',
+          String(scan.grid),
+        ),
+      ),
+    );
+  }
 }
 
 // ---- 配線 ------------------------------------------------------------------

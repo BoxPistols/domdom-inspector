@@ -2,6 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, expect, test, type BrowserContext } from '@playwright/test';
+import { muiThemeRootHtml } from './fixtures/muiThemeFiber';
 
 /**
  * side panel のスモーク (issue #10)。
@@ -17,6 +18,7 @@ import { chromium, expect, test, type BrowserContext } from '@playwright/test';
  */
 
 const EXT_PATH = join(import.meta.dirname, '..', '.output', 'chrome-mv3');
+const FIXTURE_ORIGIN = 'http://localhost:5173';
 
 /**
  * ページ内で解決したロケール文字列を取る。
@@ -95,4 +97,155 @@ test('バナーの文言は理由を断定しない (§6-2 — パネルは URL 
   );
 
   await page.close();
+});
+
+/**
+ * **この設計で一番危なかった前提を機械で固定する。**
+ *
+ * パネルはタブ切替のたびに invocation を受けないので `activeTab` が付かない。
+ * popup は「クリックした瞬間に activeTab が付く」から `tabs.sendMessage` が通るが、
+ * パネルにその付与は無い。もし content script へのメッセージに host permission が
+ * 要るなら、**主要シナリオである localhost でパネルが計測できない**ことになる
+ * (localhost は静的 content script で動いており、host permission は付与されていない)。
+ *
+ * 公式ドキュメントからは読み取れなかったので実測する。ここが赤くなったら、
+ * パネルの計測経路そのものを設計し直す必要がある = 黙って壊れてよい場所ではない。
+ */
+test('パネルと同じ権限状況の拡張ページから、localhost の content script へ計測要求が届く', async () => {
+  const target = await context.newPage();
+  // サーバを立てずに localhost を作る (静的 content script の matches に入る)
+  await target.route(`${FIXTURE_ORIGIN}/**`, (route) =>
+    route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: '<html><body><button style="padding:13px">x</button></body></html>',
+    }),
+  );
+  await target.goto(`${FIXTURE_ORIGIN}/`, { waitUntil: 'domcontentloaded' });
+  await target.waitForFunction(
+    () => !!(window as unknown as Record<string, unknown>)['__DOMDOM_INSPECTOR_LOADED__'],
+    { timeout: 5000 },
+  );
+
+  const panel = await context.newPage();
+  await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+
+  // **タブの並び順に依存しない**: 全タブへ送り、計測が返ったものがあるかを見る
+  // (content script の無いタブが reject するのは正常)
+  const replies = await panel.evaluate(async () => {
+    const api = (
+      globalThis as unknown as {
+        chrome: {
+          tabs: {
+            query(q: Record<string, never>): Promise<{ id?: number }[]>;
+            sendMessage(id: number, m: unknown, o: { frameId: number }): Promise<unknown>;
+          };
+        };
+      }
+    ).chrome;
+    const out: { ok: boolean; elements: number; hasDocumentKey: boolean }[] = [];
+    for (const tab of await api.tabs.query({})) {
+      if (tab.id == null) continue;
+      try {
+        const reply = (await api.tabs.sendMessage(tab.id, { type: 'design-scan' }, { frameId: 0 })) as {
+          ok?: boolean;
+          scan?: { elementCount?: number };
+          documentKey?: string | null;
+        };
+        out.push({
+          ok: reply?.ok === true,
+          elements: reply?.scan?.elementCount ?? 0,
+          hasDocumentKey: !!reply?.documentKey,
+        });
+      } catch {
+        // content script が居ないタブ (拡張ページ / about:blank)。正常
+      }
+    }
+    return out;
+  });
+
+  const measured = replies.filter((r) => r.ok && r.elements > 0);
+  expect(
+    measured.length,
+    'localhost の content script へ届かない = パネルの計測経路が成立しない',
+  ).toBeGreaterThan(0);
+  // 世代が返らないとナビゲーション検出 (stale-navigation) が常に発火する
+  expect(measured[0].hasDocumentKey, 'document 世代が返ること').toBe(true);
+
+  await panel.close();
+  await target.close();
+});
+
+/**
+ * **実データで描画まで通す。** ビルドが緑でも描画は別 (この repo が繰り返し踏んでいる)。
+ *
+ * パネルは「アクティブなタブ」を対象にするので、fixture タブを後から開いてアクティブにし、
+ * **背面に残ったパネル**の計測ボタンを押す。これは実際の使い方 (パネルを開いたまま
+ * ページを触る) と同じ並びでもある。
+ *
+ * fixture には**製品と同じ発見経路**でテーマを持たせる (注入しない)。辞書が空だと
+ * すべての率が「判定なし」になり、**率の表示規律を検証しているつもりの assert が
+ * 1 度も実行されない** — 実際に一度その状態でテストを緑にしてしまった。
+ */
+test('実ページを計測して率・但し書き・順位が描画される', async () => {
+  const panel = await context.newPage();
+  await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+
+  const target = await context.newPage();
+  await target.route(`${FIXTURE_ORIGIN}/**`, (route) =>
+    route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: `<html><body style="margin:0">
+        <div style="color:#c62828;background:#ffffff;padding:8px;border-radius:8px;font-size:16px">a</div>
+        <div style="color:#c62828;background:#ffffff;padding:8px;border-radius:8px;font-size:16px">b</div>
+        <div style="color:#123456;background:#ffffff;padding:13px;border-radius:7px;font-size:15px">c</div>
+        ${muiThemeRootHtml({
+          palette: { error: { main: '#c62828' }, background: { paper: '#ffffff' } },
+          spacing: 8,
+          shape: { borderRadius: 8 },
+          typography: { htmlFontSize: 16, body1: { fontSize: '1rem' } },
+        })}
+      </body></html>`,
+    }),
+  );
+  await target.goto(`${FIXTURE_ORIGIN}/`, { waitUntil: 'domcontentloaded' });
+  await target.waitForFunction(
+    () => !!(window as unknown as Record<string, unknown>)['__DOMDOM_INSPECTOR_LOADED__'],
+    { timeout: 5000 },
+  );
+  await target.bringToFront();
+
+  // テーマ発見は注入 1 秒後の 1 回 + commit ごと。静的ページなので前者を待つ。
+  // **inspect モードを ON にしない** — パネル単体で辞書が載ることを確認したい
+  await expect
+    .poll(
+      async () => {
+        await panel.evaluate(() => (document.getElementById('measure') as HTMLButtonElement).click());
+        await panel.waitForTimeout(250);
+        return (await panel.locator('#familyRows td.num').allTextContents()).join(' ');
+      },
+      { timeout: 10_000, message: 'テーマ由来の辞書で率が出ること' },
+    )
+    .toContain('%');
+
+  await expect(panel.locator('#result')).toBeVisible();
+
+  // ④ **率は必ず実数と同じセルにある** (率だけを描く経路をコードから消してある)
+  const cells = (await panel.locator('#familyRows td.num').allTextContents()).map((c) => c.trim());
+  const withPercent = cells.filter((c) => c.includes('%'));
+  expect(withPercent.length, '率が 1 つも出ていないと下の assert が空回りする').toBeGreaterThan(0);
+  for (const cell of withPercent) {
+    expect(cell, `率 "${cell}" に実数が併記されていない`).toMatch(/\(\d+\/\d+\)/);
+  }
+
+  // ③ 自動テーマ由来であることが但し書きに出る (率の意味が変わっているため / §6-5)
+  const notes = (await panel.locator('#basisNotes li').allTextContents()).join(' ');
+  expect(notes.length, '但し書きが 1 件も出ていない').toBeGreaterThan(0);
+
+  // ⑥ 順位は空でも無言にしない / ⑦ 天井は常時可視
+  await expect(panel.locator('#offenders')).not.toBeEmpty();
+  await expect(panel.locator('#ceiling')).toBeVisible();
+  await expect(panel.locator('#targetElements')).toBeVisible();
+
+  await target.close();
+  await panel.close();
 });
