@@ -8,6 +8,7 @@ import {
   getHostElementOfFiber,
   getParentComponentElement,
   inspectElement,
+  ownerStackCandidates,
   resolveJumpTarget,
   summarizeProps,
 } from './fiber';
@@ -401,5 +402,50 @@ describe('resolveJumpTarget — Owner Stacks では要素自身の fiber を優�
     const owner = { _debugStack: stackOf('http://x/app-chunk.js', 40) };
     const target = resolveJumpTarget([owner] as never[], true, host as never);
     expect(target?.fileName).toBe('http://x/app-chunk.js');
+  });
+});
+
+/**
+ * **候補は「要素自身 → owner チェーン」の順**。
+ *
+ * React は Owner Stack の実捕捉を先頭 1 万要素までに制限しており、超えると内部の
+ * 共有スタックが入る。そのとき要素自身からは何も得られないので、owner チェーン
+ * (そのコンポーネントが書かれた場所) へ落とす。1 段浅いが利用者のコードではある。
+ */
+describe('ownerStackCandidates — 要素自身が駄目なら owner チェーンへ落とす', () => {
+  const stackAt = (file: string, line: number) =>
+    ({ stack: `Error: x\n    at Foo (${file}:${line}:1)` }) as unknown;
+  const SHARED = {
+    stack: [
+      'Error: react-stack-top-frame',
+      '    at UnknownOwner (http://x/_0ro62as._.js:6210:20)',
+    ].join('\n'),
+  } as unknown;
+
+  it('要素自身の候補を先頭に置く', () => {
+    const host = { _debugStack: stackAt('http://x/app.js', 10) };
+    const owner = { _debugStack: stackAt('http://x/app.js', 40) };
+    expect(ownerStackCandidates(host as never, [owner] as never[]).map((c) => c.lineNumber)).toEqual([
+      10, 40,
+    ]);
+  });
+
+  it('**要素自身が共有スタックなら owner チェーンの候補が残る** (何も無しにしない)', () => {
+    const host = { _debugStack: SHARED };
+    const owner = { _debugStack: stackAt('http://x/app.js', 40) };
+    const candidates = ownerStackCandidates(host as never, [owner] as never[]);
+    expect(candidates.map((c) => c.lineNumber)).toEqual([40]);
+  });
+
+  it('同じ位置を重複させない', () => {
+    const same = stackAt('http://x/app.js', 10);
+    const candidates = ownerStackCandidates({ _debugStack: same } as never, [
+      { _debugStack: same },
+    ] as never[]);
+    expect(candidates).toHaveLength(1);
+  });
+
+  it('stack が無ければ空 (React 18 以前は従来の経路が使われる)', () => {
+    expect(ownerStackCandidates({} as never, [])).toEqual([]);
   });
 });

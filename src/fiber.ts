@@ -210,17 +210,31 @@ function classifyFiber(fiber: Fiber, element: Element | null): Classification {
  * 見つからなければソースを持つ最初の Fiber へフォールバック。
  */
 /**
- * 要素自身の Owner Stack から、ジャンプ先の**候補**をバンドル座標のまま並べる。
- * 解決 (source map) は非同期なので click 時に行う — ここでは材料を渡すだけ。
+ * ジャンプ先の**候補**をバンドル座標のまま並べる (解決は click 時に非同期で行う)。
+ *
+ * 順序が肝: **要素自身 → owner チェーン**。
+ * - 要素自身の Owner Stack が最も正確 (その JSX が書かれた行そのもの)
+ * - ただし React は実捕捉を先頭 1 万要素までに制限しており、超えると
+ *   **React 内部の共有スタック**が入る。そのときは要素自身から何も得られないので、
+ *   owner チェーン (そのコンポーネントが書かれた場所) へ落とす。
+ *   1 段浅いが**利用者のコードではある** — React の実装を開くよりはるかに良い
+ *   (2026-08-17 の実機報告: `react-jsx-dev-runtime.development.js` が開いた)
  */
-export function ownerStackCandidates(hostFiber: Fiber): SourceLocation[] {
-  const stack = stackStringOf(hostFiber?._debugStack);
-  if (!stack) return [];
-  return authoredFrames(stack).map((f) => ({
-    fileName: f.url,
-    lineNumber: f.line,
-    columnNumber: f.column,
-  }));
+export function ownerStackCandidates(hostFiber: Fiber, chain: Fiber[] = []): SourceLocation[] {
+  const out: SourceLocation[] = [];
+  const seen = new Set<string>();
+  const push = (stack: string | null) => {
+    if (!stack) return;
+    for (const f of authoredFrames(stack)) {
+      const key = `${f.url}:${f.line}:${f.column}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ fileName: f.url, lineNumber: f.line, columnNumber: f.column });
+    }
+  };
+  push(stackStringOf(hostFiber?._debugStack));
+  for (const fiber of chain) push(stackStringOf(fiber?._debugStack));
+  return out.slice(0, 12);
 }
 
 export function resolveJumpTarget(
@@ -362,7 +376,7 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     // detailed バッジ用に多めに収集し、表示側 (overlay) が detail に応じてスライスする
     props: summarizeProps(semanticFiber ?? componentFiber, 10),
     jumpTarget: resolveJumpTarget(chain, muiSkip, hostFiber),
-    jumpCandidates: ownerStackCandidates(hostFiber),
+    jumpCandidates: ownerStackCandidates(hostFiber, chain),
     ownerChain,
     devMode: true,
     isReact: true,
