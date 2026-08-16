@@ -82,6 +82,12 @@ passing the line and column as **extra file names**, so the file opens but the c
 not jump. Borrowing the name `code` fixes that. The shim is **not on your PATH**, so your
 real `code` / `cursor` are untouched.
 
+> **There is a second reason nothing opens.** The dev server resolves the path it receives
+> against **its own working directory** (`path.resolve(cwd, file)`). In a monorepo, if the
+> server was started from a different folder, the resolved path does not exist and
+> `launch-editor` **returns silently** — the endpoint still answers 200. The extension's
+> toast shows **the exact path it sent**, so if that path looks wrong, this is the cause.
+>
 > The value must not contain arguments — `LAUNCH_EDITOR="code --wait"` always fails.
 > If you have `EDITOR="code --wait"` set (common for git), that is exactly why nothing opens;
 > `LAUNCH_EDITOR` takes precedence, so the setup above resolves it.

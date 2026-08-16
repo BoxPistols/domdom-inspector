@@ -1,7 +1,7 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl, formatSourceRef, needsPathMapping, resolvedPath } from './editor';
 import { devServerSetup } from './devServerSetup';
-import { openViaDevServer } from './openInEditor';
+import { devServerPath, openViaDevServer } from './openInEditor';
 import { isBundledSource, looksLocalDev, suggestMapping } from './source';
 import { buildSearchHints } from './sourceAttr';
 import { el } from './overlayDom';
@@ -456,8 +456,14 @@ export class Overlay {
           //  ブラウザからは変えられない。拡張にできるのはここまで)
           this.watchLaunch(DEV_SERVER_LAUNCH_GRACE_MS, () => {
             const setup = devServerSetup(this.settings.editor);
+            // **原因を 1 つに断定しない。** 実測 (2026-08-16) で無反応の経路は 2 つある:
+            // (1) エディタを起動できない (LAUNCH_EDITOR 未設定 / 一覧に無い名前)
+            // (2) `path.resolve(devサーバのcwd, file)` が実在しない
+            //     → launch-editor は黙って return し、それでも 200 が返る
+            // どちらかは拡張から判別できないので、**送ったパスを見せて**利用者が
+            // その場で見分けられるようにする (設定の話だけすると (2) で嘘になる)
             this.toastAction(
-              this.strings.editorDevServerNoOpen,
+              this.strings.editorDevServerNoOpen.replace('{ref}', devServerPath(loc.fileName) + ':' + loc.lineNumber),
               this.strings.editorCopySetup,
               () => void this.copyToClipboard(setup.snippet, this.strings.editorSetupCopied),
               14000,

@@ -340,8 +340,18 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
     }
     // **黙って終わらせない。** dev サーバのエディタ選択はサーバ側でしか決められないので、
     // 拡張にできるのは「正しい 1 行を考えなくていい形で渡す」ところまで
-    expect(toastEl()?.textContent).toContain(DEFAULT_STRINGS.editorDevServerNoOpen);
+    const text = toastEl()?.textContent ?? '';
     expect(toastEl()?.querySelector('button')?.textContent).toBe(DEFAULT_STRINGS.editorCopySetup);
+    // **原因を 1 つに断定しない。** 無反応の経路は 2 つあり (エディタを起動できない /
+    // dev サーバの基準フォルダから見てパスが実在しない)、拡張からは判別できない。
+    // 送ったパスを見せて利用者が見分けられるようにする (実測 2026-08-16)
+    // **実際に送った形**を見せる (先頭スラッシュを落とした相対パス)。
+    // 画面の値と送信値が違うと、パスのズレを見分ける役に立たない
+    expect(text, '送ったパスが出ていない = 利用者が見分けられない').toContain('src/app/page.tsx:12');
+    expect(
+      DEFAULT_STRINGS.editorDevServerNoOpen,
+      '文言に置換アンカー {ref} が無いと、パスを出す経路が死ぬ',
+    ).toContain('{ref}');
   });
 
   it('dev サーバが開いたら、設定に関する案内を一切出さない', async () => {

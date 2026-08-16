@@ -298,7 +298,7 @@ export const DEFAULT_STRINGS: UiStrings = {
   editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}',
   editorRemoteSource: 'Source is at {path} in that site’s project — not on this computer, so it cannot be opened.',
   editorDevServerNoOpen:
-    "Your editor did not come to the front. The dev server needs to be told which editor to use — a one-time setup.",
+    "Your editor did not come to the front. Sent to the dev server: {ref}. If that path looks wrong, the dev server is resolving it from a different folder; otherwise it needs to be told which editor to use.",
   editorCopySetup: "Copy the setup command",
   editorSetupCopied: "Copied. Run it, then restart your dev server.",
   editorOpenedViaDevServer: "Asked the dev server to open it. If nothing opened, its terminal will say why.",
