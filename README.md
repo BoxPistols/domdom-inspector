@@ -58,6 +58,23 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 
 ページを読むだけで、ページ内容の保存もリモートコード実行もしない。**第三者への送信はゼロ**。発行するネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛て。(1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ずバンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、送るのはページ自身が配信している URL とソースパスだけ。 旧: エディタ起動要求だけで、`looksLocalDev` が真のとき (localhost / 127.0.0.1 / `*.local` / `*.test` 等) にしか出さず、送るのはページ自身が生成したソースパスだけ。詳細は [`SECURITY.md`](./SECURITY.md) (経路が 1 つであることは `pnpm check:submission` が毎回実測する)。
 
+### 対応環境 (すべて e2e で実測)
+
+`pnpm e2e` の `editor-jump-matrix` が、**拡張が実際に何を開こうとしたか**を実ブラウザで
+採取して固定しています。実装があることと動くことは別なので、断面ごとに測っています。
+
+| 環境 | ソース位置の出どころ | ジャンプ | 設定 |
+|---|---|---|---|
+| React 19 (Next + Turbopack / Vite) | Owner Stacks → source map | ✅ 行・桁まで | 不要 |
+| React 18 以前 | `_debugSource` | ✅ 行・桁まで | 不要 |
+| Vue / Nuxt | `data-v-inspector` | ✅ 行・桁まで | 開発サーバ側の設定が要る場合あり |
+| react-dev-inspector | `data-inspector-*` | ✅ 行・桁まで | 同上 |
+| Express / Rails など サーバ描画 | `data-source` / `data-loc` 等 | ✅ サーバが属性を出していれば | 同上 |
+| 素の HTML / CSS | 無し | — 間違ったものは開かず、手がかりをコピー | — |
+
+**デザイン計測 (色・余白・角丸・タイポグラフィ・野良値・トークン照合) はどの環境でも同じように
+動きます。** computed style を読むだけで、フレームワークに依存しません。
+
 ### エディタで開く — 1 回だけの設定 / One-time setup for "open in editor"
 
 **設定は原則不要です。** `⌘/Ctrl+Click` でエディタが開きます。popup の「高度な設定」で

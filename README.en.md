@@ -53,6 +53,24 @@ Permissions are minimized. Only `localhost` / `127.0.0.1` are enabled automatica
 
 The extension only reads the page — it never stores page content and never executes remote code. **Nothing is sent to any third party.** It issues **two kinds** of network request, both addressed to your own local dev server: asking it to open a file in your editor, and fetching a source map so a bundled position can be mapped back to the original file. That request is made only when `looksLocalDev` is true (localhost / 127.0.0.1 / `*.local` / `*.test` …), and it carries nothing but the source path the page itself produced. See [`SECURITY.md`](./SECURITY.md) — that there is exactly one such route is measured on every run by `pnpm check:submission`.
 
+### Supported environments (all measured in e2e)
+
+`pnpm e2e`'s `editor-jump-matrix` records **what the extension actually tried to open**, in a
+real browser, for each environment. Having the code is not the same as it working, so each
+case is measured.
+
+| Environment | Where the source location comes from | Jump | Setup |
+|---|---|---|---|
+| React 19 (Next + Turbopack / Vite) | Owner Stacks → source map | ✅ line and column | none |
+| React 18 and earlier | `_debugSource` | ✅ line and column | none |
+| Vue / Nuxt | `data-v-inspector` | ✅ line and column | dev server may need configuring |
+| react-dev-inspector | `data-inspector-*` | ✅ line and column | same |
+| Express / Rails and other server-rendered | `data-source` / `data-loc` … | ✅ if the server emits the attribute | same |
+| Plain HTML / CSS | none | — opens nothing wrong; copies search hints instead | — |
+
+**Design measurement (colors, spacing, radius, typography, rogue values, token matching) works
+the same everywhere** — it only reads computed styles and never depends on a framework.
+
 ### One-time setup for "open in editor"
 
 **Normally nothing to set up.** `⌘/Ctrl+Click` opens your editor. The only thing to do is

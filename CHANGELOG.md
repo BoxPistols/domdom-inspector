@@ -11,6 +11,30 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.41 (2026-08-17) — 対応環境を全部実測して固定する
+
+「React Vite / Turbopack Next / Vue / Nuxt / 素の HTML / Express に対応しているか」への回答を
+**主張ではなく実測**にした。新規 `e2e/editor-jump-matrix.spec.ts` が、断面ごとに
+**拡張が実際に何を開こうとしたか**を実ブラウザで採取する (エディタ起動の href と
+dev サーバへの要求を横取りして記録)。
+
+| 断面 | 出どころ | 実測 |
+|---|---|---|
+| Vue / Nuxt | `data-v-inspector` | dev サーバへ `src/components/Card.vue:42:7` を渡す |
+| react-dev-inspector | `data-inspector-*` | `src/App.tsx:9:4` |
+| Express / サーバ描画 | `data-source` | `views/home.ejs:8` |
+| React 18 以前 | `_debugSource` (絶対パス) | **スキームで直接開く / dev サーバへは出さない** |
+| 素の HTML / CSS | 無し | **エディタへ何も投げず**、手がかりを出す |
+
+React 19 + Turbopack は v0.4.35 で実アプリ通し検証済み (`app/page.tsx:12`)。
+
+属性名を無効にすると赤になることを確認済み (検査が空回りしていない)。
+README (ja/en) に対応表を追加し、**デザイン計測はどの環境でも同じように動く**ことを明記。
+
+e2e は 35 → 40 本。
+
+---
+
 ## 0.4.40 (2026-08-17) — 設定を要らなくする (絶対パスならスキームで直接開く)
 
 「`LAUNCH_EDITOR` と `REACT_EDITOR` の 2 つ + shim はデバッグ用か、もっと簡単にできないか」
