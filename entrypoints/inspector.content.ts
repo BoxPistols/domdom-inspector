@@ -4,6 +4,7 @@ import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
 import { Overlay } from '../src/overlay';
 import { DEV_MATCHES } from '../src/matches';
+import { findElementsForValue } from '../src/designHighlight';
 import { scanDesign } from '../src/designScan';
 import { extractRootCandidates } from '../src/sourceRoots';
 import { EMPTY_TOKEN_DICT, parseMuiTheme, type TokenDict } from '../src/tokenDict';
@@ -219,6 +220,14 @@ export default defineContentScript({
       'keydown',
       (event) => {
         if (event.key !== 'Escape') return;
+        // **ハイライトを先に消す。** モードより後に置くと、Esc 1 回でモードが切れて
+        // ハイライトだけがページに残る (自力で戻せない汚れ)
+        if (overlay.hasValueHighlight()) {
+          overlay.clearValueHighlight();
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
         if (inspector.onEscape()) {
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -308,6 +317,31 @@ export default defineContentScript({
         const target = freshContextTarget();
         if (target) inspector.openEditorAt(target);
       }
+      // side panel からのページ上ハイライト (issue #10 §5-4)。
+      // **押すたびに DOM を引き直す** — 要素参照は誰も保持しない
+      if (data.type === 'design-highlight' && typeof data.label === 'string' && typeof data.value === 'string') {
+        const match = findElementsForValue(
+          document,
+          { label: data.label, value: data.value },
+          { skip: (el) => overlay.containsTarget(el) },
+        );
+        overlay.showValueHighlight(
+          match.elements,
+          {
+            label: data.label,
+            value: data.value,
+            total: match.total,
+            measured: typeof data.measured === 'number' ? data.measured : null,
+          },
+          () => {
+            // ページ側の「消す」を押されたら、パネルにも状態を返す必要は無い
+            // (パネルは押し直せば描き直る。片道で完結させる)
+          },
+        );
+      }
+      if (data.type === 'design-highlight-clear') {
+        overlay.clearValueHighlight();
+      }
       // side panel からのページスキャン依頼 (bridge が往復中継する。issue #10)。
       // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
       //
@@ -350,6 +384,19 @@ export default defineContentScript({
     // 2 回に分けて呼ぶため、bridge の初回 push は inspector がまだ存在しない時点で飛ぶ。
     // 同期の i18n push は確実に失われ、そのタブの overlay 文言が英語で固定されていた。
     // 押し込みではなく「受け手が用意できたら引き取る」形にして取りこぼしを消す。
+    // ハイライトはページ絶対座標で保持しているので、スクロール後は置き直すだけでよい
+    // (再走査しない = 大きなページでもスクロールが重くならない)
+    let repositionRaf = 0;
+    const reposition = () => {
+      if (repositionRaf) return;
+      repositionRaf = requestAnimationFrame(() => {
+        repositionRaf = 0;
+        overlay.repositionValueHighlight();
+      });
+    };
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition, true);
+
     window.postMessage({ source: PAGE_SOURCE, type: 'ready' }, '*');
 
   },

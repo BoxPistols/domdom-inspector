@@ -66,6 +66,19 @@ export class Overlay {
    * これが無いと、モードは ON のままマウスでの終了導線だけが消える。
    */
   private pill: { label: string; closeLabel: string; onClose: () => void } | null = null;
+  /**
+   * 値ハイライトの矩形 (**ページ絶対座標**) と付随情報 (issue #10 §5-4)。
+   * **要素への強参照は持たない** — SPA は DOM を入れ替えるので、保持するとリークし、
+   * しかも古い要素を指し続ける。スクロールには絶対座標からの再配置だけで追従し、
+   * レイアウトが変わった場合はパネルから押し直してもらう。
+   */
+  private highlight: {
+    rects: { left: number; top: number; width: number; height: number }[];
+    chip: { label: string; value: string; total: number; shown: number; measured: number | null };
+  } | null = null;
+  private highlightLayer: HTMLDivElement | null = null;
+  private highlightChip: HTMLDivElement | null = null;
+  private onHighlightClear: (() => void) | null = null;
 
   constructor(
     private settings: Settings,
@@ -96,6 +109,9 @@ export class Overlay {
     // 再マウント時 (ページ側 JS が host を外した場合)、外部サーフェスが持つ DOM 参照は
     // 全部“外れた木”になる。世代を進めて相手が捨てられるようにする (surfaceHost 参照)
     this.mountGeneration += 1;
+    // 再マウントで自前の面も外れる。参照を捨てて次回作り直す
+    this.highlightLayer = null;
+    this.highlightChip = null;
 
     const style = document.createElement('style');
     style.textContent = OVERLAY_CSS;
@@ -531,6 +547,139 @@ export class Overlay {
       // 権限やフォーカスで失敗しうる。文字列は操作可能なトーストに残っているので選択できる
       this.toast(this.strings.statsCopyFail, 4000);
     }
+  }
+
+  /** ハイライト用の面を遅延生成する (使わないページに DOM を増やさない) */
+  private ensureHighlightSurfaces(): { layer: HTMLDivElement; chip: HTMLDivElement } {
+    this.ensureMounted();
+    if (!this.highlightLayer) {
+      this.highlightLayer = el('div', 'hl-layer');
+      this.root?.append(this.highlightLayer);
+    }
+    if (!this.highlightChip) {
+      this.highlightChip = el('div', 'hlchip');
+      this.root?.append(this.highlightChip);
+    }
+    return { layer: this.highlightLayer, chip: this.highlightChip };
+  }
+
+  /**
+   * 「この値を使っている要素」をページ上に描く (issue #10 §5-4)。
+   *
+   * `measured` は計測時の件数。**現在の件数と違ったら両方出す** — 黙って別の数を出すと、
+   * 率の検算という目的そのものが壊れる。0 件のときも黙らない (押して無反応を作らない)。
+   */
+  showValueHighlight(
+    elements: readonly Element[],
+    info: { label: string; value: string; total: number; measured: number | null },
+    onClear: () => void,
+  ) {
+    const { layer, chip } = this.ensureHighlightSurfaces();
+    this.onHighlightClear = onClear;
+    // 要素は**この場で矩形に変換して捨てる** (参照を残さない)
+    const rects = elements
+      .map((element) => element.getBoundingClientRect())
+      .filter((r) => r.width > 0 || r.height > 0)
+      .map((r) => ({
+        left: r.left + window.scrollX,
+        top: r.top + window.scrollY,
+        width: r.width,
+        height: r.height,
+      }));
+    this.highlight = {
+      rects,
+      chip: {
+        label: info.label,
+        value: info.value,
+        total: info.total,
+        shown: rects.length,
+        measured: info.measured,
+      },
+    };
+    this.paintHighlight(layer);
+    this.renderHighlightChip(chip);
+  }
+
+  /** 矩形を描く (スクロール時の再配置もここを通る) */
+  private paintHighlight(layer: HTMLDivElement) {
+    layer.replaceChildren();
+    if (!this.highlight) return;
+    for (const rect of this.highlight.rects) {
+      const box = el('div', 'hl');
+      Object.assign(box.style, {
+        left: `${rect.left - window.scrollX}px`,
+        top: `${rect.top - window.scrollY}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+      });
+      layer.append(box);
+    }
+  }
+
+  private renderHighlightChip(chip: HTMLDivElement) {
+    chip.replaceChildren();
+    const state = this.highlight;
+    if (!state) return;
+    const { label, value, total, shown, measured } = state.chip;
+    chip.append(
+      el('span', 'hlv', this.strings.hlValueLabel.replace('{label}', label).replace('{value}', value)),
+    );
+    if (total === 0) {
+      // **0 件でも黙らない。** 「押したのに何も起きない」が一番わかりにくい
+      chip.append(el('span', 'hlwarn', this.strings.hlNone));
+    } else {
+      chip.append(el('span', 'hln', this.strings.hlCount.replace('{n}', String(total))));
+      if (shown < total) {
+        chip.append(
+          el(
+            'span',
+            'hlwarn',
+            this.strings.hlCapped.replace('{shown}', String(shown)).replace('{total}', String(total)),
+          ),
+        );
+      }
+    }
+    // 計測時と食い違ったら両方出す (0 件のときだけ拾う形では足りない)
+    if (measured !== null && measured !== total) {
+      chip.append(
+        el(
+          'span',
+          'hlwarn',
+          this.strings.hlDrift.replace('{measured}', String(measured)).replace('{now}', String(total)),
+        ),
+      );
+    }
+    // **消すアフォーダンスをページ側に持たせる。** side panel の onClosed は Chrome 142+ で
+    // 使えないため、パネルを閉じてもハイライトを消せない。自力で戻せない汚れを残さない
+    const clear = el('button', undefined, this.strings.hlClear);
+    clear.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const onClear = this.onHighlightClear;
+      this.clearValueHighlight();
+      onClear?.();
+    });
+    chip.append(clear);
+    chip.classList.add('on');
+  }
+
+  /** ハイライトを消す。**スクロール等では消さない** (検算の途中で勝手に消えない) */
+  clearValueHighlight() {
+    this.highlight = null;
+    this.onHighlightClear = null;
+    this.highlightLayer?.replaceChildren();
+    this.highlightChip?.replaceChildren();
+    this.highlightChip?.classList.remove('on');
+  }
+
+  /** ハイライトが出ているか (Esc の消費判断に使う) */
+  hasValueHighlight(): boolean {
+    return this.highlight !== null;
+  }
+
+  /** スクロール / リサイズ後にビューポート座標へ置き直す (再走査はしない) */
+  repositionValueHighlight() {
+    if (!this.highlight || !this.highlightLayer) return;
+    this.paintHighlight(this.highlightLayer);
   }
 
   // ---- 温存サーフェス (render ヒートマップ / 統計 / 記録コントロール / ツリー) の描画は

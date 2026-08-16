@@ -510,5 +510,32 @@
   },
   "panelNoteOriginUnavailable": {
     "message": "No origin could be read (for example the stylesheets are cross-origin), so origin is not reported."
+  },
+  "hlValueLabel": {
+    "message": "{label} {value}"
+  },
+  "hlCount": {
+    "message": "{n} elements"
+  },
+  "hlCapped": {
+    "message": "showing {shown} of {total}"
+  },
+  "hlDrift": {
+    "message": "measured {measured}, now {now}"
+  },
+  "hlClear": {
+    "message": "Clear"
+  },
+  "hlNone": {
+    "message": "No visible element uses that value now."
+  },
+  "panelShowOnPage": {
+    "message": "Show on page"
+  },
+  "panelHideOnPage": {
+    "message": "Hide"
+  },
+  "panelHighlightStale": {
+    "message": "These numbers are not from the page you are looking at, so highlighting is off."
   }
 }

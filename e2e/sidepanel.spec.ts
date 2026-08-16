@@ -40,6 +40,17 @@ test.beforeAll(async () => {
     channel: 'chromium',
     args: [`--disable-extensions-except=${EXT_PATH}`, `--load-extension=${EXT_PATH}`],
   });
+  // overlay は closed shadow DOM (ページ隔離) なので、テストから中を読むために
+  // attachShadow を open に強制し `__openRoot` へ退避する。機能挙動は変えない
+  // (badge.spec.ts と同じ手。ハイライトの検証にだけ使う)
+  await context.addInitScript(() => {
+    const orig = Element.prototype.attachShadow;
+    Element.prototype.attachShadow = function (this: Element, init: ShadowRootInit): ShadowRoot {
+      const root = orig.call(this, { ...init, mode: 'open' });
+      (this as Element & { __openRoot?: ShadowRoot }).__openRoot = root;
+      return root;
+    };
+  });
   let [sw] = context.serviceWorkers();
   sw ??= await context.waitForEvent('serviceworker');
   extensionId = new URL(sw.url()).host;
@@ -245,6 +256,94 @@ test('実ページを計測して率・但し書き・順位が描画される',
   await expect(panel.locator('#offenders')).not.toBeEmpty();
   await expect(panel.locator('#ceiling')).toBeVisible();
   await expect(panel.locator('#targetElements')).toBeVisible();
+
+  await target.close();
+  await panel.close();
+});
+
+/**
+ * ページ上ハイライト (§5-4)。**この画面の存在理由そのもの** —
+ * 率を押すとその率が数えた要素がページに枠で出る、という検算ループ。
+ *
+ * 見るのは 3 点: (1) 実際に枠が描かれる (2) 件数が計測時と一致する
+ * (3) **ページ側だけで消せる** (side panel の onClosed は Chrome 142+ で使えないため、
+ * パネルを閉じるとハイライトを消す手段が無くなる = 自力で戻せない汚れになる)。
+ */
+test('率の根拠をページ上で示し、ページ側だけで消せる', async () => {
+  const panel = await context.newPage();
+  await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+
+  const target = await context.newPage();
+  await target.route(`${FIXTURE_ORIGIN}/**`, (route) =>
+    route.fulfill({
+      contentType: 'text/html; charset=utf-8',
+      body: `<html><body style="margin:0">
+        <div style="padding:13px;background:#fff">a</div>
+        <div style="padding:13px;background:#fff">b</div>
+        <div style="padding:8px;background:#fff">c</div>
+        ${muiThemeRootHtml({
+          palette: { error: { main: '#c62828' } },
+          spacing: 8,
+          shape: { borderRadius: 8 },
+          typography: { htmlFontSize: 16, body1: { fontSize: '1rem' } },
+        })}
+      </body></html>`,
+    }),
+  );
+  await target.goto(`${FIXTURE_ORIGIN}/`, { waitUntil: 'domcontentloaded' });
+  await target.waitForFunction(
+    () => !!(window as unknown as Record<string, unknown>)['__DOMDOM_INSPECTOR_LOADED__'],
+    { timeout: 5000 },
+  );
+  await target.bringToFront();
+
+  // 辞書が載るまで計測を繰り返す (テーマ発見は注入 1 秒後)
+  await expect
+    .poll(async () => {
+      await panel.evaluate(() => (document.getElementById('measure') as HTMLButtonElement).click());
+      await panel.waitForTimeout(250);
+      return panel.locator('#offenders .showBtn').count();
+    }, { timeout: 10_000 })
+    .toBeGreaterThan(0);
+
+  // 「ページ上で示す」を押す
+  await panel.evaluate(() =>
+    (document.querySelector('#offenders .showBtn') as HTMLButtonElement).click(),
+  );
+
+  // ページ側に枠と操作チップが出る (overlay は closed shadow root なので open 化して読む)
+  const drawn = await target.evaluate(() => {
+    const host = document.querySelector('domdom-inspector-overlay') as
+      | (Element & { __openRoot?: ShadowRoot })
+      | null;
+    const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+    return {
+      boxes: root?.querySelectorAll('.hl').length ?? 0,
+      chip: (root?.querySelector('.hlchip')?.textContent ?? '').trim(),
+      hasClear: !!root?.querySelector('.hlchip button'),
+    };
+  });
+  expect(drawn.boxes, 'ページ上に枠が描かれること').toBeGreaterThan(0);
+  expect(drawn.chip.length, 'チップが空文字ではないこと').toBeGreaterThan(0);
+  // **消す手段がページ側にあること** (パネルを閉じても戻せる)
+  expect(drawn.hasClear, 'ページ側に消すアフォーダンスが無い').toBe(true);
+
+  // ページ側の「消す」だけで消える
+  await target.evaluate(() => {
+    const host = document.querySelector('domdom-inspector-overlay') as
+      | (Element & { __openRoot?: ShadowRoot })
+      | null;
+    const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+    (root?.querySelector('.hlchip button') as HTMLButtonElement | null)?.click();
+  });
+  const after = await target.evaluate(() => {
+    const host = document.querySelector('domdom-inspector-overlay') as
+      | (Element & { __openRoot?: ShadowRoot })
+      | null;
+    const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+    return root?.querySelectorAll('.hl').length ?? 0;
+  });
+  expect(after, 'ページ側の操作だけで消えること').toBe(0);
 
   await target.close();
   await panel.close();

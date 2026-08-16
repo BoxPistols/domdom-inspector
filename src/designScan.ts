@@ -111,6 +111,55 @@ export function detectStyleSource(doc: Document): StyleSource {
 /** スキャン対象のラベル (shadow/weight/lh は監査ノイズが多いので除外) */
 const SCAN_LABELS = new Set(['color', 'bg', 'font', 'padding', 'margin', 'gap', 'radius']);
 
+/** 走査した要素と、走査が完結したかどうか */
+export interface VisibleScan {
+  elements: Element[];
+  /** DOM 全ノード数。**elementCount と比較しない** (母集団が違う) */
+  candidateCount: number;
+  /** 上限に当たって途中でやめたか */
+  truncated: boolean;
+}
+
+/**
+ * 走査対象の可視要素を集める。**計測 (`scanDesign`) とページ上ハイライトの両方がこれを呼ぶ。**
+ *
+ * なぜ 1 つに括るか (issue #10 §5-4): ハイライトは「その値を使っている要素」を DOM の
+ * 再走査で見つけ直すしかない (集計は要素参照を持たない)。このとき skip / `checkVisibility()` /
+ * 上限のどれか 1 つでも計測側とズレると、**「96 件中 96 件を表示」と計測時の ×96 が
+ * 食い違う**。数字の根拠を実画面で検算させることがこの画面の存在理由なので、
+ * ここが 1 件でもずれると製品の芯が壊れる。
+ *
+ * `truncated` の判定は「上限に達した後もまだ候補が残っていたか」。候補が全部走査済みなら
+ * 可視要素がちょうど上限でも打ち切りにしない (以前の偽陽性の修正を保存している)。
+ */
+export function visibleElements(
+  root: ParentNode,
+  opts: { skip?: (el: Element) => boolean; max?: number } = {},
+): VisibleScan {
+  const max = opts.max ?? MAX_ELEMENTS;
+  const all = root.querySelectorAll('*');
+  const elements: Element[] = [];
+  let truncated = false;
+  for (let i = 0; i < all.length; i += 1) {
+    if (elements.length >= max) {
+      truncated = true;
+      break;
+    }
+    const el = all[i];
+    if (opts.skip?.(el)) continue;
+    // 不可視要素 (display:none 配下等) はデザイン監査の対象外。
+    // checkVisibility が無い環境ではガードで素通りする (その事実は申告できない既知の限界)
+    if (
+      typeof (el as HTMLElement).checkVisibility === 'function' &&
+      !(el as HTMLElement).checkVisibility()
+    ) {
+      continue;
+    }
+    elements.push(el);
+  }
+  return { elements, candidateCount: all.length, truncated };
+}
+
 /**
  * root 以下の可視要素を走査し、デザイン値の使用頻度 + トークン照合 + グリッド検査を集計する。
  * skip でオーバーレイ等の自前 UI を除外できる。
@@ -141,25 +190,13 @@ export function scanDesign(
   /** 上限に当たって走査を打ち切ったか (最後まで回せたかで判定する) */
   let truncated = false;
 
-  const all = root.querySelectorAll('*');
-  const candidateCount = all.length;
+  // 走査述語はハイライトと共有する (§5-4 — ここがズレると件数が食い違う)
+  const scanned = visibleElements(root, { skip: opts.skip, max });
+  const candidateCount = scanned.candidateCount;
+  truncated = scanned.truncated;
   const started = now();
 
-  for (let i = 0; i < all.length; i += 1) {
-    if (elementCount >= max) {
-      // 未走査の要素を残して抜けた = 打ち切り。ここでしか true にしない
-      truncated = true;
-      break;
-    }
-    const el = all[i];
-    if (opts.skip?.(el)) continue;
-    // 不可視要素 (display:none 配下等) はデザイン監査の対象外
-    if (
-      typeof (el as HTMLElement).checkVisibility === 'function' &&
-      !(el as HTMLElement).checkVisibility()
-    ) {
-      continue;
-    }
+  for (const el of scanned.elements) {
     elementCount += 1;
     // 来歴収集は CSSOM 全走査で高価。予算を超えたら来歴だけ諦め、一致率は計測を続ける
     // (来歴パネルを間違った値で出すより「出せない」と言う方が誠実)

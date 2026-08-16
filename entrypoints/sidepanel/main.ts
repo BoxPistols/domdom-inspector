@@ -60,6 +60,8 @@ let lastScan: DesignScan | null = null;
 /** 直近の計測失敗。**成功と同じ扉から出さない** — 理由ごとに説明が違う */
 let lastFailure: 'timeout' | 'unreachable' | 'empty' | null = null;
 let measuring = false;
+/** ページ上でハイライト中の値 (押し直しでトグルする) */
+let highlighted: { label: string; value: string } | null = null;
 
 /**
  * 今の辞書署名。**v1 の辞書供給元はページのテーマ自動検出だけ**なので、
@@ -124,7 +126,7 @@ function render() {
   const result = $('result');
   result.hidden = !hasResult;
   result.classList.toggle('stale', !state.trustNumbers);
-  if (hasResult && lastScan) renderFacts(lastScan);
+  if (hasResult && lastScan) renderFacts(lastScan, state.canHighlight);
 
   const button = $<HTMLButtonElement>('measure');
   button.disabled = measuring || target.tabId === null;
@@ -217,7 +219,7 @@ function rateCell(display: RateDisplay): HTMLTableCellElement {
 }
 
 /** ③〜⑦ を描く。率の材料はすべて `src/coverageView.ts` の純関数から取る */
-function renderFacts(scan: DesignScan) {
+function renderFacts(scan: DesignScan, canHighlight: boolean) {
   const report = scan.coverage;
 
   // ---- ③ この計測が何をカバーしているか (数字より上) ----
@@ -288,6 +290,19 @@ function renderFacts(scan: DesignScan) {
       // **count は「修正箇所数」ではない** (1 つの CSS 宣言が N 要素に効く) ので
       // 「N 箇所直す」とは言わず、使われている要素数として出す
       item.append(what, el('span', 'count', msg('panelUsedBy').replace('{n}', String(offender.count))));
+
+      // **率の隣に「自分で確かめる手段」を置く** — この画面の存在理由 (§4-1 ⑥)。
+      // 数字が古いとき (stale) は別ページを塗るので押させない
+      const show = el('button', 'showBtn');
+      const active = highlighted?.label === offender.label && highlighted.value === offender.value;
+      show.textContent = msg(active ? 'panelHideOnPage' : 'panelShowOnPage');
+      show.disabled = !canHighlight;
+      if (!canHighlight) show.title = msg('panelHighlightStale');
+      show.addEventListener('click', () => {
+        if (active) void clearHighlight();
+        else void highlight(offender.label, offender.value, offender.count);
+      });
+      item.append(show);
       offenders.append(item);
     }
   }
@@ -329,6 +344,7 @@ async function resolveTarget() {
     }
     // 引き継ぎ条件の判断は純関数へ (UI 層に埋めると検査できない)
     const documentKey = carryDocumentKey({ tabId, measurement, navigatedTabs });
+    if (tabId !== target.tabId) highlighted = null;
     target = { tabId, origin, documentKey };
   } catch {
     target = { tabId: null, origin: null, documentKey: null };
@@ -362,6 +378,38 @@ async function measure() {
     tokenSignature: signatureOfScan(outcome.scan),
     at: Date.now(),
   };
+  render();
+}
+
+/**
+ * ページ上にその値を使っている要素を描かせる (issue #10 §5-4)。
+ * 計測時の件数を一緒に送り、**現在の件数と食い違ったらページ側が両方出す**。
+ */
+async function highlight(label: string, value: string, measured: number) {
+  if (target.tabId === null) return;
+  try {
+    await browser.tabs.sendMessage(
+      target.tabId,
+      { type: 'design-highlight', label, value, measured },
+      { frameId: 0 },
+    );
+    highlighted = { label, value };
+  } catch {
+    // content script が居ない = このページでは描けない。黙らずバナーで言う
+    lastFailure = 'unreachable';
+  }
+  render();
+}
+
+async function clearHighlight() {
+  highlighted = null;
+  if (target.tabId !== null) {
+    try {
+      await browser.tabs.sendMessage(target.tabId, { type: 'design-highlight-clear' }, { frameId: 0 });
+    } catch {
+      // 既に消えている / ページが居ない。消す操作の失敗は黙ってよい
+    }
+  }
   render();
 }
 

@@ -148,6 +148,32 @@ export const OVERLAY_CSS = `
         line-height: 1;
       }
       .inspect-pill button:hover { opacity: 1; }
+      /* 値ハイライト (issue #10 §5-4)。率の根拠を実画面で検算させるための面 */
+      .hl {
+        position: fixed; z-index: 2147483646; pointer-events: none;
+        border: 2px solid #ffd43b; background: rgba(255,212,59,0.14);
+        border-radius: 2px;
+      }
+      .hlchip {
+        position: fixed; z-index: 2147483647; display: none;
+        pointer-events: auto; left: 50%; transform: translateX(-50%); top: 12px;
+        align-items: center; gap: 10px; padding: 7px 12px;
+        border-radius: 999px; background: rgba(20,20,24,0.94); color: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.18);
+        max-width: min(560px, 90vw);
+      }
+      .hlchip.on { display: inline-flex; }
+      .hlchip .hlv { font-weight: 700; }
+      .hlchip .hln { opacity: 0.8; }
+      /* 計測時と件数が食い違ったら黄色で言う (黙って別の数を出さない) */
+      .hlchip .hlwarn { color: #ffd43b; }
+      .hlchip button {
+        all: unset; cursor: pointer; flex: none;
+        padding: 2px 10px; border-radius: 999px;
+        background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.45);
+      }
+      .hlchip button:hover { background: rgba(255,255,255,0.24); }
       /* a11y: キーボード操作時のフォーカスリング (全ボタン共通) */
       button:focus-visible {
         outline: 2px solid #60a5fa;

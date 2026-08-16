@@ -191,6 +191,20 @@ export default defineContentScript({
             '*',
           );
         }
+        // side panel のページ上ハイライト (issue #10 §5-4)。**新規経路はこの 2 つだけ。**
+        // 応答を返さない片道なので往復中継は要らない
+        if (message?.type === 'design-highlight' || message?.type === 'design-highlight-clear') {
+          window.postMessage(
+            {
+              source: BRIDGE_SOURCE,
+              type: message.type,
+              label: message.label,
+              value: message.value,
+              measured: message.measured,
+            },
+            '*',
+          );
+        }
         // side panel のページスキャン依頼を MAIN world へ**往復**中継する (issue #10)。
         // 非同期応答は `sendResponse` + `return true`。**Promise を返しても応答にならない**
         // (Chrome ネイティブ API の仕様。ここの順序を崩すと無言で null が返る)。

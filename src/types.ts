@@ -223,6 +223,13 @@ export interface UiStrings {
   statsCopied: string;
   statsCopyFail: string;
   /** Web Vitals ブロック */
+  /** ページ上の値ハイライト (issue #10) */
+  hlValueLabel: string;
+  hlCount: string;
+  hlCapped: string;
+  hlDrift: string;
+  hlClear: string;
+  hlNone: string;
   vitalsTitle: string;
   vitalsLongTasks: string;
   /** 再レンダー原因ラベル (行ツールチップ用) */
@@ -322,6 +329,12 @@ export const DEFAULT_STRINGS: UiStrings = {
   statsCopy: 'Copy AI report',
   statsCopied: 'Report copied — paste it into your AI assistant to start the analysis',
   statsCopyFail: 'Copy failed — clipboard is unavailable on this page',
+  hlValueLabel: "{label} {value}",
+  hlCount: "{n} elements",
+  hlCapped: "showing {shown} of {total}",
+  hlDrift: "measured {measured}, now {now}",
+  hlClear: "Clear",
+  hlNone: "No visible element uses that value now.",
   vitalsTitle: 'Page vitals',
   vitalsLongTasks: 'long tasks',
   causeState: 'own state (useState/useReducer)',

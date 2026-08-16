@@ -510,5 +510,32 @@
   },
   "panelNoteOriginUnavailable": {
     "message": "来歴を 1 件も読めませんでした (スタイルシートがクロスオリジン等)。来歴は報告しません。"
+  },
+  "hlValueLabel": {
+    "message": "{label} {value}"
+  },
+  "hlCount": {
+    "message": "{n} 要素"
+  },
+  "hlCapped": {
+    "message": "{total} 件中 {shown} 件を表示"
+  },
+  "hlDrift": {
+    "message": "計測時 {measured} 件 / 現在 {now} 件"
+  },
+  "hlClear": {
+    "message": "消す"
+  },
+  "hlNone": {
+    "message": "いまその値を使っている可視要素はありません。"
+  },
+  "panelShowOnPage": {
+    "message": "ページ上で示す"
+  },
+  "panelHideOnPage": {
+    "message": "消す"
+  },
+  "panelHighlightStale": {
+    "message": "この数字はいま見ているページのものではないため、ハイライトは止めています。"
   }
 }
