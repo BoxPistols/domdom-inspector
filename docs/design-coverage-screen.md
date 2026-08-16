@@ -634,7 +634,7 @@ false に倒れた場合の症状は「エラーではなく欠測」なので�
 
 | ブロッカー | 状態 (実測) |
 |---|---|
-| `PRIVACY.md` の「Render report you copy yourself」節が v1 に無い機能を宣言 | ✅ 解消。当該節は既に無い (`grep -n "Render report" PRIVACY.md` が 0 件)。ただし**別の嘘が残っていた** — en 側の "makes no network requests of any kind" が v0.4.23 の変更に追従しておらず、196227d で修正 + `src/docsConsistency.test.ts` が再発を走査する |
+| `PRIVACY.md` の「Render report you copy yourself」節が v1 に無い機能を宣言 | ✅ 解消。当該節は既に無い (`grep -n "Render report" PRIVACY.md` が 0 件)。ただし**別の嘘が残っていた** — en 側の要約と結論が「ネットワーク要求を一切出さない」という主旨のまま v0.4.23 の変更に追従しておらず (ja 側だけ更新されていた)、196227d で修正 + `src/docsConsistency.test.ts` が再発を走査する。**偽の主張は文書中に引用の形でも書けない** (検査は引用と主張を区別しないので、直したことを説明する文にも原文をそのまま貼らない) |
 | `STORE_LISTING.md:16-18` が自己申告する `PUBLISHING.md §4-2` の未同期 | ✅ 解消。`PUBLISHING.md` §4-2 は Single purpose を**複製せず STORE_LISTING を指す**書き方になっている (単一ソース化済み) |
 | AI 既定 ON と掲載文 "Off until you configure a key" の食い違い | ✅ 解消。AI は v1 の配線から外れ (#11)、掲載文にも当該文言は無い。記述が残るのは当時の記録 (`docs/assessment-20260802-store-readiness.md`) のみ |
 
