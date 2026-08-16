@@ -15,8 +15,11 @@ one purpose, and no data is collected for any purpose at all.
 ## Summary
 
 - **No telemetry, no analytics, no tracking.** The extension does not collect usage data.
-- **Nothing is transmitted, ever.** The extension has no backend and makes **no network
-  requests of any kind**. Nothing you inspect leaves your machine.
+- **Nothing is sent to us or to any third party.** The extension has no backend. It issues
+  exactly **one kind** of network request: asking **your own local dev server** (localhost and
+  similar) to open a file in your editor. It is never sent while you are on someone else's
+  site, and it carries only a source file path and line number — no page content, no input,
+  no usage data. **Nothing you inspect leaves your machine.**
 - **All data stays local.** Your settings are stored only in your browser via
   `chrome.storage.local`. Nothing else is persisted.
 - **Localhost works out of the box; other sites are opt-in.** The extension activates
@@ -62,7 +65,8 @@ extension offers a **Copy path** button. It writes only the source file path and
 
 The extension does not fetch or execute any remote code, and reads the page only to render
 the on-screen overlay — page content is never stored, and never transmitted, on any origin.
-**It makes no network requests at all**, so there is no outbound path for your data to take.
+The only request it ever issues goes to **your own machine** (a local dev server, to open a
+file in your editor), so there is no outbound path for your data to leave your device.
 
 ## Contact
 
@@ -135,8 +139,9 @@ React を使用している場合は、コンポーネント名の補足表示�
   「現在のサイトで有効化」(または「全サイトで許可」)を押した時のみ要求します。
 
 リモートコードの取得・実行は行いません。ページの読み取りは画面オーバーレイの描画のためだけに行い、
-ページ内容はどのオリジンでも保存・送信しません。**ネットワークリクエストを 1 つも発行しない**ため、
-データが外部へ出る経路そのものが存在しません。
+ページ内容はどのオリジンでも保存・送信しません。発行する要求は**あなた自身の端末** (ローカルの
+開発サーバにファイルを開いてもらう要求) 宛ての 1 種類だけなので、データが端末外へ出る経路そのものが
+存在しません。
 
 ## お問い合わせ
 

@@ -73,8 +73,8 @@ WORKS ANYWHERE
 PRIVACY
 - No telemetry, no servers of our own, no tracking. Settings stay in local
   storage.
-- Nothing is sent anywhere. The extension has no backend and makes no network
-  requests at all.
+- Nothing is sent to us or to any third party. The extension has no backend. The one
+  request it makes goes to your own local dev server, to open a file in your editor.
 - Localhost dev servers work out of the box. Any other site is inspected only
   after you explicitly enable it ("Enable on current site"), and even then the
   extension only reads the page — it never stores page content or runs remote code.
@@ -90,7 +90,10 @@ PRIVACY
 - `optional_host_permissions` (`*://*/*`): not granted by default; requested only when
   you click "Enable on current site" / "Enable on all sites" so deployed apps can be
   inspected. localhost is covered by a static content script.
-- No remote code, and no network requests of any kind. Nothing leaves the device.
+- No remote code. Exactly one network request exists: "open this file in my editor",
+  sent to the user's own local dev server and only when the page is a local dev origin
+  (`looksLocalDev`). It carries a source path and line number, nothing else.
+  Nothing is sent to the developer or to any third party.
 
 **Single purpose:** Measure the design values of a web page's UI and check them against the
 design system that page is built on — read the values of the element the user points at

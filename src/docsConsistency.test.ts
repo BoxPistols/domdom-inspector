@@ -75,20 +75,63 @@ describe('送信経路の申告が実装とズレていない', () => {
 
   const docs = collectDocs().filter((f) => !HISTORICAL.includes(f.replace(/^\.\//, '')));
 
-  // 「fetch 等の出現が 0 件」という数の主張。今は 1 件あるので、どの文書にも書けない
+  /**
+   * 「1 つも要求を出さない」系の主張。実際には 1 経路あるので、どの文書にも書けない。
+   *
+   * **「第三者へは送らない」は真なので弾かない。** 限定句つきの正しい書き方
+   * (`第三者へのネットワークリクエストを 1 つも発行しません` / `sent to us or to any
+   * third party`) まで巻き込むと、正しい文書を直させる検査になって無効化される。
+   */
+  const QUALIFIERS = /第三者|third part(y|ies)|to us or/i;
   const FALSE_ZERO_CLAIMS = [
     /`?fetch`?[^\n]{0,80}(0 件|ゼロ件)/,
     /(0 件|ゼロ件)[^\n]{0,80}`?fetch`?/,
-    /(zero|no)\s+(occurrences?|network requests?)[^\n]{0,80}(fetch|network request)/i,
+    /(zero|no)\s+occurrences?[^\n]{0,80}fetch/i,
+    /no network requests?\s*(of any kind|at all)/i,
+    /makes?\s+no\s+network\s+requests?/i,
     /never (makes|issues) any network request/i,
+    /ネットワーク(リクエスト|要求)を\s*1\s*つも発行し/,
   ];
+
+  /** 限定句が付いていれば真の主張なので通す */
+  const isFalseClaim = (line: string) =>
+    FALSE_ZERO_CLAIMS.some((re) => re.test(line)) && !QUALIFIERS.test(line);
+
+  /**
+   * **検査そのものの反証。** 文書を直した後は本番 assert が常に緑になるので、
+   * 「regex がまだ噛むか」をリポジトリの状態と無関係に固定する。標本は v0.4.23 の
+   * 取り残しとして実際に見つけた言い回しそのもの。
+   */
+  it('実際に取り残されていた言い回しを検出できる (regex の反証)', () => {
+    const CAUGHT = [
+      'The extension has no backend and makes **no network requests of any kind**.',
+      '- No remote code, and no network requests of any kind. Nothing leaves the device.',
+      'Nothing is sent anywhere. The extension has no backend and makes no network requests at all.',
+      '**ネットワークリクエストを 1 つも発行しない**ため、データが外部へ出る経路が無い。',
+      'v1 は外部送信を持たない (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件。',
+    ];
+    for (const line of CAUGHT) {
+      expect({ line, caught: isFalseClaim(line) }).toEqual({ line, caught: true });
+    }
+  });
+
+  it('限定句つきの正しい主張は誤検出しない', () => {
+    const PASSES = [
+      '外部送信は一切ありません。第三者へのネットワークリクエストを 1 つも発行しません。',
+      'Nothing is sent to us or to any third party. The extension has no backend.',
+      'Nothing is sent to the developer or to any third party.',
+    ];
+    for (const line of PASSES) {
+      expect({ line, caught: isFalseClaim(line) }).toEqual({ line, caught: false });
+    }
+  });
 
   it('「送信 API の出現が 0 件」と書いている文書が無い (実際は 1 経路ある)', () => {
     const offenders: string[] = [];
     for (const file of docs) {
       const body = readFileSync(file, 'utf8');
       for (const line of body.split('\n')) {
-        if (FALSE_ZERO_CLAIMS.some((re) => re.test(line))) {
+        if (isFalseClaim(line)) {
           offenders.push(`${file}: ${line.trim().slice(0, 90)}`);
         }
       }
