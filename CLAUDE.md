@@ -29,7 +29,7 @@ background が全フレームへ冪等な `inspect-on`/`inspect-off` を配る�
 (`frameId: 0`) だけに送り、ピルとトーストもトップだけが出す
 ([#14](https://github.com/BoxPistols/domdom-inspector/issues/14))。
 
-**第三者への送信はゼロ**。発行するネットワーク要求は**ただ 1 種類** — 利用者自身のローカル
+**第三者への送信はゼロ**。発行するネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛て。(1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ずバンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、送るのはページ自身が配信している URL とソースパスだけ。 旧記述: 利用者自身のローカル
 dev サーバへの「このファイルをエディタで開いて」(`src/openInEditor.ts`、v0.4.23〜。
 `looksLocalDev` が真のときだけ)。この事実に `SECURITY.md` / `PRIVACY.md` /
 `STORE_LISTING.md` / `PUBLISHING.md` の申告と **README (ja/en)** が依存しているので、
@@ -117,7 +117,7 @@ popup/ ── 設定 UI (browser.* 可)
 
 ## セキュリティ / リリース
 
-- セキュリティ: `SECURITY.md`(要点: 読むが**第三者へは送らない**。要求は 1 経路のみで、
+- セキュリティ: `SECURITY.md`(要点: 読むが**第三者へは送らない**。要求は 2 種類 (エディタ起動 / source map 取得) でどちらもローカル dev サーバ宛て、
   それが `src/openInEditor.ts` だけであること・localhost ガードの内側にあることを
   grep で再現証明できる (`pnpm check:submission` が毎回実測)。
   リモートコード/ページ内容保存なし。**AI を再導入するなら API キーは aiConfig/aiKeys 専用

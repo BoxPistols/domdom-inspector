@@ -2,7 +2,8 @@ import { winningRuleRef } from './cssVars';
 import { detectReactOnPage, getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
-import { isBundledSource } from './source';
+import { resolveViaSourceMap } from './openInEditor';
+import { isBundledSource, looksLocalDev } from './source';
 import { resolveSourceAttr } from './sourceAttr';
 import {
   DEFAULT_SETTINGS,
@@ -422,6 +423,27 @@ export class Inspector {
       this.overlay.openEditor(jt);
       return;
     }
+    // **バンドル出力なら source map で元ソースへ戻す** (issue: React 19 対応)。
+    // React 19 は `_debugSource` を削除したので、位置は Owner Stacks から来る =
+    // 必ずバンドル後の座標になる。ここで諦めると **React 19 のアプリでは
+    // ソースジャンプが原理的に一度も成功しない** (実機で確認した状態)。
+    // 送信はローカル開発オリジンのときだけ (他人のサイトへは何も出さない)
+    if (jt && looksLocalDev(location.host)) {
+      void resolveViaSourceMap(jt).then((resolved) => {
+        if (resolved) this.overlay.openEditor(resolved);
+        else this.reportUnjumpable(element, info);
+      });
+      return;
+    }
+    this.reportUnjumpable(element, info);
+  }
+
+  /**
+   * ソースジャンプの最終段。**黙って終わらせない** —
+   * 注釈属性 → 自オリジンの CSS → 手がかりのコピー、の順で必ず何かを返す。
+   * source map の解決に失敗した経路もここへ合流する。
+   */
+  private reportUnjumpable(element: Element | null, info: InspectInfo | null) {
     if (element) {
       const attr = resolveSourceAttr(element, this.settings.sourceAttr);
       if (attr) {

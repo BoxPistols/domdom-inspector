@@ -1,3 +1,4 @@
+import { resolveOriginalPosition, sourceMapUrlFrom, toLocalPath, type RawSourceMap } from './sourceMap';
 import type { SourceLocation } from './types';
 
 /**
@@ -129,4 +130,80 @@ export async function openViaDevServer(
     }
   }
   return false;
+}
+
+/**
+ * **2 つ目のネットワーク要求**: バンドル出力の位置を元ソースへ戻すため、
+ * ページ自身の dev サーバから source map を取る。
+ *
+ * なぜ要るか (2026-08-16 実測): React 19 は `_debugSource` を削除した。位置は
+ * Owner Stacks から取れるが**バンドル後の座標**なので、そのままではエディタで開けない
+ * (`isBundledSource` が正しく弾く)。source map を通すと元ファイルの**絶対パス**が
+ * 得られ、パスの対応表も要らなくなる。
+ *
+ * 宛先はエディタ起動と同じ「利用者自身のローカル開発サーバ」だけ (呼び出し側が
+ * `looksLocalDev` で判定する)。送るのはページが自分で配信している URL のみで、
+ * ページ内容も利用者データも含まない。**送信 API をこのファイルに集約する方針**は
+ * 変えない (監査の grep が 1 ファイルに当たる状態を保つ)。
+ */
+function requestText(url: string): Promise<Response> {
+  return fetch(url, { method: 'GET', credentials: 'omit', cache: 'no-store' });
+}
+
+/** 同じ map を何度も取らない (実測で 288 KB あった)。origin ごとに保持 */
+const sourceMapCache = new Map<string, RawSourceMap | null>();
+
+/** テスト用に破棄できるようにする (キャッシュが検証を汚さないため) */
+export function clearSourceMapCache(): void {
+  sourceMapCache.clear();
+}
+
+async function loadSourceMap(
+  scriptUrl: string,
+  request: (url: string) => Promise<Response>,
+): Promise<RawSourceMap | null> {
+  const cached = sourceMapCache.get(scriptUrl);
+  if (cached !== undefined) return cached;
+
+  const attempt = async (): Promise<RawSourceMap | null> => {
+    // 慣例の `<script>.map` を先に試す (実測の Next.js/Turbopack はこの形)。
+    // 外れたときだけスクリプト本体を取って `sourceMappingURL` を読む
+    for (const candidate of [`${scriptUrl}.map`, null]) {
+      let mapUrl = candidate;
+      if (mapUrl === null) {
+        const res = await request(scriptUrl).catch(() => null);
+        if (!res?.ok) return null;
+        const body = await res.text().catch(() => '');
+        // 末尾だけ見る (巨大なチャンク全文を正規表現に掛けない)
+        mapUrl = sourceMapUrlFrom(scriptUrl, body.slice(-2000));
+        if (!mapUrl || mapUrl.startsWith('data:')) return null;
+      }
+      const res = await request(mapUrl).catch(() => null);
+      if (!res?.ok) continue;
+      const json = (await res.json().catch(() => null)) as RawSourceMap | null;
+      if (json && (json.mappings || json.sections)) return json;
+    }
+    return null;
+  };
+
+  const map = await attempt();
+  sourceMapCache.set(scriptUrl, map);
+  return map;
+}
+
+/**
+ * バンドル出力の位置を元ソースの位置へ戻す。戻せなければ null
+ * (**開けないものを開けると言わない**)。
+ */
+export async function resolveViaSourceMap(
+  loc: SourceLocation,
+  request: (url: string) => Promise<Response> = requestText,
+): Promise<SourceLocation | null> {
+  const map = await loadSourceMap(loc.fileName, request);
+  if (!map) return null;
+  const original = resolveOriginalPosition(map, loc.lineNumber, loc.columnNumber || 1);
+  if (!original) return null;
+  const path = toLocalPath(original.source);
+  if (!path) return null;
+  return { fileName: path, lineNumber: original.line, columnNumber: original.column };
 }

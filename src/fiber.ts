@@ -1,5 +1,6 @@
 import { classify } from './classify';
 import { extractDesignStyle } from './designStyle';
+import { pickAuthoredFrame, stackStringOf } from './ownerStack';
 import { isNodeModulesPath, normalizeSourcePath, parseStackLocation } from './source';
 import type { Classification, InspectInfo, OwnerEntry, SourceLocation } from './types';
 
@@ -116,10 +117,19 @@ export function getFiberSource(fiber: Fiber): SourceLocation | null {
       columnNumber: src.columnNumber ?? 1,
     };
   }
-  const stack: unknown = fiber?._debugStack;
-  const stackString =
-    typeof stack === 'string' ? stack : (stack as Error | undefined)?.stack;
-  if (stackString) return parseStackLocation(stackString);
+  // **React 内部のフレームを名前で落とす。** URL だけで判定すると取りこぼす —
+  // Turbopack はチャンク名にライブラリ名を残さない (実測: React 本体が
+  // `_0ro62as._.js` という名前で出るため `react-dom` の除外に当たらず、
+  // **jsxDEV のフレーム = React の内部**をジャンプ先にしてしまっていた)
+  const stackString = stackStringOf(fiber?._debugStack);
+  if (stackString) {
+    const frame = pickAuthoredFrame(stackString);
+    if (frame) {
+      return { fileName: frame.url, lineNumber: frame.line, columnNumber: frame.column };
+    }
+    // 名前で判別できない形の stack は従来の経路へ (取りこぼすより弱い判定でも拾う)
+    return parseStackLocation(stackString);
+  }
   return null;
 }
 

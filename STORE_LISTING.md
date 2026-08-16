@@ -116,7 +116,7 @@ All inspection is local and read-only, and the extension sends nothing anywhere.
   拡張はページの DOM と computed style を**メモリ内で読むだけ**で、保存も送信もしない。
   保存するのは利用者自身の設定のみ (`chrome.storage.local`、端末内)。
 - **第三者への送信を一切行わない。** 発行するネットワーク要求は「利用者自身の
-  ローカル開発サーバへ、ソースをエディタで開くよう頼む」1 種類のみで、宛先は
+  ローカル開発サーバへ、ソースをエディタで開くよう頼む / source map を取得する」2 種類のみで、宛先は
   localhost 等に限定される (`SECURITY.md` の監査手順で再現証明できる)。
   ページの内容・入力値・利用状況は送らない。
 - Sold to third parties? No. Used for unrelated purposes? No. Used for creditworthiness? No.

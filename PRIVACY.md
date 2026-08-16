@@ -16,8 +16,7 @@ one purpose, and no data is collected for any purpose at all.
 
 - **No telemetry, no analytics, no tracking.** The extension does not collect usage data.
 - **Nothing is sent to us or to any third party.** The extension has no backend. It issues
-  exactly **one kind** of network request: asking **your own local dev server** (localhost and
-  similar) to open a file in your editor. It is never sent while you are on someone else's
+  exactly **two kinds**, both addressed to **your own local dev server**: (1) asking it to open a file in your editor, and (2) fetching a source map so a bundled position can be mapped back to the original file (React 19 removed `_debugSource`, so positions always arrive as bundled coordinates). Both are issued only when `looksLocalDev` is true, and carry nothing but URLs the page itself serves. It is never sent while you are on someone else's
   site, and it carries only a source file path and line number — no page content, no input,
   no usage data. **Nothing you inspect leaves your machine.**
 - **All data stays local.** Your settings are stored only in your browser via
@@ -95,7 +94,7 @@ DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を
 
 - **テレメトリ・分析・トラッキングは一切なし。** 利用状況データを収集しません。
 - **外部送信は一切ありません。** バックエンドを持ちません。拡張が発行する
-  ネットワーク要求は**ただ 1 種類**で、それは「エディタでこのファイルを開いて」と
+  ネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛て。(1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ずバンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、送るのはページ自身が配信している URL とソースパスだけ。 旧: 「エディタでこのファイルを開いて」と
   **利用者自身のローカル開発サーバ (localhost 等) に頼む**要求だけです。
   他のサイトを見ているときは 1 バイトも送りません。送る内容はソースファイルの
   パスと行番号だけで、ページの内容・入力値・利用状況は含みません。

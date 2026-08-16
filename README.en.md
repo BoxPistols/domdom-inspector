@@ -51,7 +51,7 @@ Permissions are minimized. Only `localhost` / `127.0.0.1` are enabled automatica
 2. Inspecting starts right away (the permission is permanent for that origin from then on; it can also be revoked from the popup)
 3. A toggle to allow all sites at once is also available in the popup (optional)
 
-The extension only reads the page — it never stores page content and never executes remote code. **Nothing is sent to any third party.** It issues exactly **one kind** of network request: asking your own local dev server to open a file in your editor. That request is made only when `looksLocalDev` is true (localhost / 127.0.0.1 / `*.local` / `*.test` …), and it carries nothing but the source path the page itself produced. See [`SECURITY.md`](./SECURITY.md) — that there is exactly one such route is measured on every run by `pnpm check:submission`.
+The extension only reads the page — it never stores page content and never executes remote code. **Nothing is sent to any third party.** It issues **two kinds** of network request, both addressed to your own local dev server: asking it to open a file in your editor, and fetching a source map so a bundled position can be mapped back to the original file. That request is made only when `looksLocalDev` is true (localhost / 127.0.0.1 / `*.local` / `*.test` …), and it carries nothing but the source path the page itself produced. See [`SECURITY.md`](./SECURITY.md) — that there is exactly one such route is measured on every run by `pnpm check:submission`.
 
 ### One-time setup for "open in editor"
 

@@ -335,7 +335,13 @@ describe('エディタ起動 — 開けないときは必ず理由を言う (無
     expect(calls.toasts).toEqual([DEFAULT_STRINGS.jumpProd]);
   });
 
-  it('dev だがバンドル出力を指しているときは「バンドル出力」と言う', () => {
+  it('dev だがバンドル出力を指しているときは、source map を試してから理由を言う', async () => {
+    // **React 19 ではジャンプ先が必ずバンドル後の座標になる** (_debugSource が削除され、
+    // 位置は Owner Stacks から来るため)。ここで即諦めると React 19 のアプリでは
+    // ソースジャンプが原理的に一度も成功しない。source map で戻せなかったときだけ
+    // 従来の理由を出す
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (() => Promise.reject(new Error('offline'))) as typeof fetch;
     const { inspector, calls } = make();
     const el = document.createElement('div');
     document.body.appendChild(el);
@@ -346,9 +352,16 @@ describe('エディタ起動 — 開けないときは必ず理由を言う (無
       _debugSource: { fileName: '/assets/index-4f2a.js', lineNumber: 1, columnNumber: 1 },
     });
 
-    inspector.openEditorAt(el);
+    try {
+      inspector.openEditorAt(el);
+      // source map の取得は非同期。解決に失敗するまで待つ
+      for (let i = 0; i < 40; i += 1) await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
 
-    expect(calls.editorOpened).toEqual([]);
+    expect(calls.editorOpened, 'バンドル出力をそのまま開かない').toEqual([]);
     expect(calls.toasts).toEqual([DEFAULT_STRINGS.sourceMinified]);
   });
 

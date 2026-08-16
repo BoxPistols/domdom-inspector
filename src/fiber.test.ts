@@ -4,6 +4,7 @@ import {
   detectReactOnPage,
   getFiberFromElement,
   getFiberName,
+  getFiberSource,
   getHostElementOfFiber,
   getParentComponentElement,
   inspectElement,
@@ -318,5 +319,43 @@ describe('getFiberFromElement と shadow 境界', () => {
     const inner = document.createElement('span');
     root.appendChild(inner);
     expect(getFiberFromElement(inner)).toBeNull();
+  });
+});
+
+/**
+ * React 19 の Owner Stacks からジャンプ先を選ぶとき、**React 内部のフレームを選ばない**。
+ *
+ * 実測 (2026-08-16, Next.js 16 + Turbopack): Turbopack はチャンク名にライブラリ名を
+ * 残さないため、React 本体が `_0ro62as._.js` という名前で配信される。URL だけを見る
+ * 除外 (`react-dom` 等) はこれに当たらず、**jsxDEV のフレームがジャンプ先になっていた**。
+ */
+describe('getFiberSource — Owner Stacks から利用者のコードを選ぶ', () => {
+  const REAL_STACK = [
+    'Error: react-stack-top-frame',
+    '    at exports.jsxDEV (http://localhost:3001/_next/static/chunks/_0ro62as._.js:641:33)',
+    '    at http://localhost:3001/_next/static/chunks/_1dffrib._.js:1921:245',
+    '    at Array.map (<anonymous>)',
+    '    at SampleBrowser (http://localhost:3001/_next/static/chunks/_1dffrib._.js:1908:32)',
+  ].join('\n');
+
+  it('**jsxDEV のフレームを選ばない** (チャンク名にライブラリ名が出ない構成でも)', () => {
+    const source = getFiberSource({ _debugStack: { stack: REAL_STACK } } as never);
+    expect(source?.fileName).not.toContain('_0ro62as');
+  });
+
+  it('その要素の JSX 呼び出し (内部を除いた先頭) を選ぶ', () => {
+    const source = getFiberSource({ _debugStack: { stack: REAL_STACK } } as never);
+    expect({ line: source?.lineNumber, column: source?.columnNumber }).toEqual({
+      line: 1921,
+      column: 245,
+    });
+  });
+
+  it('_debugSource があるときは従来どおりそちらを優先する (React 18 以前)', () => {
+    const source = getFiberSource({
+      _debugSource: { fileName: '/src/App.tsx', lineNumber: 5, columnNumber: 2 },
+      _debugStack: { stack: REAL_STACK },
+    } as never);
+    expect(source).toEqual({ fileName: '/src/App.tsx', lineNumber: 5, columnNumber: 2 });
   });
 });

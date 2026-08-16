@@ -11,6 +11,48 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.33 (2026-08-16) — React 19 / Next.js でソースジャンプが成立する
+
+「Next.js のアプリでは何をやってもエディタが開かない」の原因。**拡張が探していたものが
+React から消えていた。**
+
+**実測** (Next.js 16 + Turbopack + React 19、実ページの Fiber を直接読んだ):
+
+```
+_debugSource : 0 件 (祖先 25 世代すべて)   ← 現行実装が唯一頼っていたもの
+_debugStack  : 23 件                      ← React 19 の Owner Stacks
+  at …/_next/static/chunks/_1dffrib._.js:1921:245
+```
+
+React 19 は `_debugSource` を削除した。位置は Owner Stacks から取れるが**バンドル後の
+座標**なので、`isBundledSource` が (正しく) 弾き、「手がかりをコピー」に落ちていた。
+
+- **新規 `src/ownerStack.ts`** (+14 tests) — Owner Stack から利用者のコードのフレームを選ぶ。
+  **既存の判定は React 内部を選んでいた**: Turbopack はチャンク名にライブラリ名を残さない
+  ため (React 本体が `_0ro62as._.js` として配信される)、URL による除外 (`react-dom` 等) に
+  当たらず **jsxDEV のフレームがジャンプ先になっていた**。関数名で落とすようにした
+- **新規 `src/sourceMap.ts`** (+16 tests) — VLQ 復号 + indexed source map の解決。
+  壊れた入力では途中までを返さず**解決しない側に倒す**
+- `src/openInEditor.ts` に source map 取得を追加 (**送信 API はこのファイルに集約**したまま。
+  監査の grep が 1 ファイルに当たる状態を保つ)。同じ map を取り直さないようキャッシュする
+- ジャンプ先がバンドル出力で、かつローカル開発オリジンのときだけ解決を試みる。
+  戻せなければ従来の理由を出す (**開けないものを開けると言わない**)
+
+**実測での確認** (実データの source map 288 KB に対して製品コードを実行):
+
+```
+_1dffrib._.js:1921:245 → /Users/…/components/input/SampleBrowser.tsx:68
+```
+
+68 行目は対象の `<img src={s.src} … className="size-full object-cover" />` そのもの。
+**元ファイルの絶対パスが得られるので、パスの対応表は要らなくなる。**
+
+**申告の更新** (4 文書 + README ja/en + CLAUDE.md): 「発行する要求は 1 種類」→
+**「2 種類、どちらも利用者自身のローカル開発サーバ宛て」** (エディタ起動 / source map 取得)。
+第三者への送信がゼロであることは変わらない。
+
+---
+
 ## 0.4.32 (2026-08-16) — 目視をやめる (`pnpm verify:editor`) + 焦点による成否判定を撤去
 
 「毎回目で見に行って毎回失敗している」への対応。**確認を人間の目から機械へ移した。**

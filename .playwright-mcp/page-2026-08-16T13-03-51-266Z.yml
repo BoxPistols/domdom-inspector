@@ -1,0 +1,159 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img "ADLUMETRA" [ref=e5]
+        - generic [ref=e9]:
+          - generic [ref=e10]: ADLUMETRA
+          - generic [ref=e11]: アドルメトラ
+        - navigation "主要な画面" [ref=e12]:
+          - link "診断" [ref=e13] [cursor=pointer]:
+            - /url: /
+          - link "効果検証" [ref=e14] [cursor=pointer]:
+            - /url: /causal
+        - generic [ref=e15]:
+          - generic [ref=e16]: MARKETING INTELLIGENCE
+          - generic [ref=e17]: マーケティング・インテリジェンス
+        - generic [ref=e18]:
+          - button "これまでの診断" [ref=e20]
+          - button "表示を切り替え" [ref=e25]
+    - main [ref=e28]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - paragraph [ref=e32]: MARKETING INTELLIGENCEマーケティング・インテリジェンス
+          - heading "市場のデータを、マーケティングの意思決定へ。" [level=1] [ref=e33]
+          - paragraph [ref=e34]: 顧客・メディア・クリエイティブをAIでつなぎ、施策の仮説と次のアクションを可視化します
+          - generic [ref=e35]:
+            - generic [ref=e36]: 9つのセクション
+            - generic [ref=e37]: 8項目で採点
+            - generic [ref=e38]: 6つの実測値
+            - generic [ref=e39]: 直した後の予測
+            - generic [ref=e40]: 表現の確認
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e43]:
+              - button "広告の画像を選ぶ" [ref=e45] [cursor=pointer]:
+                - paragraph [ref=e51]: ここに画像をドラッグ
+                - paragraph [ref=e52]: クリックして選ぶか、⌘V で貼り付けることもできます
+                - generic [ref=e53]:
+                  - generic [ref=e54]: ファイル
+                  - generic [ref=e55]: ⌘V で貼り付け
+                  - generic [ref=e56]: 画像のURL
+                  - generic [ref=e57]: 他のページからドラッグ
+                - paragraph [ref=e58]: PNG・JPG・WebP／10MBまで
+              - generic [ref=e59]:
+                - textbox "画像のURL" [ref=e61]:
+                  - /placeholder: 画像のURLを貼り付ける
+                - button "読み込む" [disabled]
+            - generic [ref=e62]:
+              - paragraph [ref=e63]: 手持ちの画像がなければ、サンプルでどうぞ
+              - generic [ref=e64]:
+                - button "おすすめ 6" [ref=e65]
+                - button "すべて 12" [ref=e66]
+                - button "美容・化粧品 1" [ref=e67]
+                - button "飲料・食品 4" [ref=e68]
+                - button "不動産・住宅 2" [ref=e69]
+                - button "法人向け 2" [ref=e70]
+                - button "金融 2" [ref=e71]
+                - button "人材・教育 1" [ref=e72]
+              - generic [ref=e73]:
+                - 'button "サンプル: コスメEC" [ref=e74]':
+                  - img "コスメEC" [ref=e76]
+                  - generic [ref=e77]: コスメEC
+                  - generic [ref=e78]: ソーシャルフィード / 1080×1080
+                - 'button "サンプル: デリバリー" [ref=e79]':
+                  - img "デリバリー" [ref=e81]
+                  - generic [ref=e82]: デリバリー
+                  - generic [ref=e83]: ソーシャルフィード / 1080×1080
+                - 'button "サンプル: 戸建て住宅" [ref=e84]':
+                  - img "戸建て住宅" [ref=e86]
+                  - generic [ref=e87]: 戸建て住宅
+                  - generic [ref=e88]: コミュニティフィード / 1080×1080
+                - 'button "サンプル: 請求SaaS" [ref=e89]':
+                  - img "請求SaaS" [ref=e91]
+                  - generic [ref=e92]: 請求SaaS
+                  - generic [ref=e93]: コミュニティフィード / 1200×628
+                - 'button "サンプル: 投資アプリ" [ref=e94]':
+                  - img "投資アプリ" [ref=e96]
+                  - generic [ref=e97]: 投資アプリ
+                  - generic [ref=e98]: ディスプレイネットワーク / 1200×628
+                - 'button "サンプル: オンライン英会話" [ref=e99]':
+                  - img "オンライン英会話" [ref=e101]
+                  - generic [ref=e102]: オンライン英会話
+                  - generic [ref=e103]: コミュニティフィード / 1200×628
+          - generic [ref=e105]:
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - paragraph [ref=e108]: STEP 1 — 広告の情報
+                - heading "この広告について教えてください" [level=2] [ref=e109]
+              - generic [ref=e110]:
+                - generic [ref=e111]:
+                  - generic [ref=e112]:
+                    - text: 業種
+                    - combobox "業種" [ref=e114]:
+                      - option "選んでください" [selected]
+                      - option "美容・化粧品"
+                      - option "飲料・食品"
+                      - option "不動産・住宅"
+                      - option "法人向けサービス"
+                      - option "金融・投資"
+                      - option "人材・教育"
+                      - option "小売・EC"
+                      - option "医療・ヘルスケア"
+                      - option "その他"
+                  - generic [ref=e115]:
+                    - text: 今回いちばん叶えたいこと
+                    - combobox "今回いちばん叶えたいこと" [ref=e117]:
+                      - option "選んでください" [selected]
+                      - option "クリックを増やしたい"
+                      - option "獲得単価を下げたい"
+                      - option "まず知ってもらいたい"
+                      - option "媒体の審査を通したい"
+                      - option "他社との違いを出したい"
+                - generic [ref=e118]:
+                  - text: 誰に届けたい広告ですか
+                  - textbox "誰に届けたい広告ですか" [ref=e119]:
+                    - /placeholder: 例：20代女性・美容への関心が高い層
+                  - paragraph [ref=e120]: 具体的に書くほど、診断は正確になります
+                - generic [ref=e121]:
+                  - text: 配信先
+                  - combobox "配信先" [ref=e123]:
+                    - option "選んでください" [selected]
+                    - option "ソーシャルフィード"
+                    - option "短文フィード"
+                    - option "コミュニティフィード"
+                    - option "ディスプレイネットワーク"
+                    - option "メッセージ配信"
+                    - option "その他"
+                - generic [ref=e124]:
+                  - text: 広告に添える文章（任意）
+                  - textbox "広告に添える文章（任意）" [ref=e125]:
+                    - /placeholder: 見出しや説明文があれば、貼り付けてください
+                  - generic [ref=e126]: 0 / 300
+            - generic [ref=e128]:
+              - generic [ref=e129]:
+                - paragraph [ref=e130]: STEP 2 — 診断の深さ
+                - heading "どこまで詳しく見ますか" [level=2] [ref=e131]
+              - generic [ref=e132]:
+                - generic [ref=e133]:
+                  - button "Quick 所見 3件" [ref=e134]:
+                    - generic [ref=e135]: Quick
+                    - generic [ref=e136]: 所見 3件
+                  - button "Standard 所見 5件" [ref=e137]:
+                    - generic [ref=e138]: Standard
+                    - generic [ref=e139]: 所見 5件
+                  - button "Deep 所見 6〜7件" [ref=e140]:
+                    - generic [ref=e141]: Deep
+                    - generic [ref=e142]: 所見 6〜7件
+                  - button "Expert 所見 7件" [ref=e143]:
+                    - generic [ref=e144]: Expert
+                    - generic [ref=e145]: 所見 7件
+                - paragraph [ref=e146]: しっかり見たいときに。視線の動きやターゲット別の反応も調べます
+                - button "この広告を診断する" [disabled]
+                - paragraph [ref=e147]: はじめに画像を選んでください
+    - contentinfo [ref=e148]:
+      - generic [ref=e149]:
+        - generic [ref=e150]: © 2026 ADLUMETRA
+        - generic [ref=e151]: AIによる推定です。配信の結果を約束するものではありません
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e157] [cursor=pointer]
