@@ -11,6 +11,35 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.35 (2026-08-17) — エディタジャンプが初めて通しで成功した (React 19 + Turbopack)
+
+**拡張を実際に読み込んだブラウザで、React 19 + Next.js 16 + Turbopack の実アプリを
+⌘Click し、正しいファイルと行が開くところまで到達した。** これまで「部品は動く」までしか
+確認できておらず、通しの成功は一度も無かった。
+
+実行したこと: Next.js 16 + React 19 の最小アプリを立て、`--load-extension` で拡張を積んだ
+Chromium から実際に ⌘Click し、エディタへ渡った URL を採取した。
+
+**そこで誤答が見つかり、直した**:
+
+```
+修正前: cursor://file/…/node_modules/…/next/src/client/components/client-page.tsx:56
+修正後: cursor://file/…/app/page.tsx:12:13   ← その <img> の行
+```
+
+原因は `_debugSource` と Owner Stacks の**意味の違い**:
+- `_debugSource` (React 18 以前) = 「そのコンポーネントの JSX callsite」→ owner チェーンを辿るのが正しい
+- `_debugStack` (React 19) = 「**その要素の JSX が作られた場所**」→ `<Page>` の fiber を見ると
+  「フレームワークが `<Page/>` を作った場所」になる
+
+`resolveJumpTarget` が owner チェーンだけを見ていたため、**利用者のコードではなく
+Next.js の内部**を開いていた。要素自身の fiber を優先するようにした
+(`_debugSource` がある React 18 以前と muiSkip の意図は壊さない)。
+
+回帰テスト 4 本を追加。修正を戻すと赤になることを確認済み。
+
+---
+
 ## 0.4.34 (2026-08-16) — どの層で失敗したかを言う + 検証を新経路まで広げる
 
 「バンドル出力 · dev ビルドで開けます」+「手がかりをコピー」がまだ出る、という報告への対応。

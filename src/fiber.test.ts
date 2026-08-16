@@ -359,3 +359,47 @@ describe('getFiberSource — Owner Stacks から利用者のコードを選ぶ',
     expect(source).toEqual({ fileName: '/src/App.tsx', lineNumber: 5, columnNumber: 2 });
   });
 });
+
+/**
+ * **React 19 では要素自身の fiber を優先する** (2026-08-16 の実機で見つけた誤答)。
+ *
+ * `_debugSource` (React 18 以前) は「そのコンポーネントの JSX callsite」だったので
+ * owner チェーンを辿るのが正しかった。Owner Stacks の `_debugStack` は意味が違い
+ * 「**その要素の JSX が作られた場所**」を指すため、`<Page>` の fiber を見ると
+ * 「フレームワークが `<Page/>` を作った場所」になる。
+ *
+ * 実機 (Next.js 16 + React 19 + Turbopack、拡張を積んだ実ブラウザ) では、`<img>` を
+ * ⌘Click したのに `next/src/client/components/client-page.tsx:56` が開いていた。
+ */
+describe('resolveJumpTarget — Owner Stacks では要素自身の fiber を優先する', () => {
+  const stackOf = (file: string, line: number) =>
+    ({ stack: `Error: x\n    at Foo (${file}:${line}:3)` }) as unknown;
+
+  it('要素自身の stack を採る (owner チェーンのフレームワーク内部を採らない)', () => {
+    const host = { _debugStack: stackOf('http://x/app-chunk.js', 12) };
+    const owner = { _debugStack: stackOf('http://x/next-internal.js', 56) };
+    const target = resolveJumpTarget([owner] as never[], false, host as never);
+    expect(target?.fileName).toBe('http://x/app-chunk.js');
+    expect(target?.lineNumber).toBe(12);
+  });
+
+  it('要素自身に stack が無ければ従来どおり owner チェーンを辿る', () => {
+    const owner = { _debugStack: stackOf('http://x/next-internal.js', 56) };
+    const target = resolveJumpTarget([owner] as never[], false, {} as never);
+    expect(target?.lineNumber).toBe(56);
+  });
+
+  it('**_debugSource がある (React 18 以前) なら従来の経路を壊さない**', () => {
+    const host = { _debugSource: { fileName: '/src/Host.tsx', lineNumber: 1, columnNumber: 1 } };
+    const owner = { _debugSource: { fileName: '/src/Owner.tsx', lineNumber: 9, columnNumber: 1 } };
+    const target = resolveJumpTarget([owner] as never[], false, host as never);
+    expect(target?.fileName, 'React 18 以前は owner チェーンが正しい').toBe('/src/Owner.tsx');
+  });
+
+  it('muiSkip のときは要素自身が node_modules 内なら採らない (利用者の callsite へ飛ばす意図)', () => {
+    const host = { _debugStack: stackOf('http://x/node_modules/@mui/Button.js', 3) };
+    const owner = { _debugStack: stackOf('http://x/app-chunk.js', 40) };
+    const target = resolveJumpTarget([owner] as never[], true, host as never);
+    expect(target?.fileName).toBe('http://x/app-chunk.js');
+  });
+});

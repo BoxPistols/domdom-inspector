@@ -209,7 +209,30 @@ function classifyFiber(fiber: Fiber, element: Element | null): Classification {
  * muiSkip 有効時は「callsite が node_modules 外」の最初の Fiber を owner チェーンから選ぶ。
  * 見つからなければソースを持つ最初の Fiber へフォールバック。
  */
-export function resolveJumpTarget(chain: Fiber[], muiSkip: boolean): SourceLocation | null {
+export function resolveJumpTarget(
+  chain: Fiber[],
+  muiSkip: boolean,
+  hostFiber?: Fiber,
+): SourceLocation | null {
+  // **React 19 では要素自身の fiber を優先する。**
+  //
+  // `_debugSource` (React 18 以前) は「そのコンポーネントの JSX callsite」だったので、
+  // owner チェーンを辿るのが正しかった。Owner Stacks (React 19) の `_debugStack` は
+  // 意味が違い「**その要素の JSX が作られた場所**」を指す。したがって
+  // `<Page>` の fiber を見ると「フレームワークが `<Page/>` を作った場所」になる。
+  //
+  // 実測 (2026-08-16, Next.js 16 + React 19 + Turbopack、拡張を積んだ実ブラウザ):
+  // `<img>` を ⌘Click したのに `next/src/client/components/client-page.tsx:56` が開いた。
+  // 正解は利用者の `app/page.tsx:12` で、それは**要素自身の fiber** の stack にあった。
+  //
+  // muiSkip が真のときは従来どおりチェーンを優先する (ライブラリ内部の JSX ではなく、
+  // 利用者が書いた callsite へ飛ばすための機能なので、意図が逆になる)
+  if (hostFiber && !hostFiber._debugSource) {
+    const own = getFiberSource(hostFiber);
+    if (own && !(muiSkip && isNodeModulesPath(normalizeSourcePath(own.fileName)))) {
+      return own;
+    }
+  }
   if (muiSkip) {
     for (const fiber of chain) {
       const source = getFiberSource(fiber);
@@ -324,7 +347,7 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     classification: classifyFiber(componentFiber, element),
     // detailed バッジ用に多めに収集し、表示側 (overlay) が detail に応じてスライスする
     props: summarizeProps(semanticFiber ?? componentFiber, 10),
-    jumpTarget: resolveJumpTarget(chain, muiSkip),
+    jumpTarget: resolveJumpTarget(chain, muiSkip, hostFiber),
     ownerChain,
     devMode: true,
     isReact: true,
