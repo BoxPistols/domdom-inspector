@@ -25,9 +25,12 @@ function stubOverlay() {
     shown: [] as Element[],
     pills: [] as string[],
     hidden: 0,
+    /** containsTarget が true を返す相手 (オーバーレイ自身の上での操作を作る) */
+    overlayOwns: null as EventTarget | null,
   };
   const overlay = {
-    containsTarget: () => false,
+    containsTarget: (target: EventTarget | null) =>
+      calls.overlayOwns !== null && target === calls.overlayOwns,
     toast: (text: string) => calls.toasts.push(text),
     // 開けないときは理由 + 手がかりコピーのアクション付きトーストになる。
     // メッセージは同じ配列へ積む (既存の期待値をそのまま検証できる)
@@ -835,5 +838,47 @@ describe('選択中の要素の live 追従 (issue #19)', () => {
     target.remove();
 
     expect(await waitFor(() => calls.hidden > hiddenBefore)).toBe(true);
+  });
+});
+
+/**
+ * オーバーレイ自身の上での ↑↓ を奪わない。
+ * owner チェーンパネルの行はフォーカス可能なので、インスペクタが capture で食うと
+ * パネル内のキーボード移動が死ぬ。`onIntercept` には同型のガードがあるのに keydown
+ * だけ無かった (`docs/design-coverage-screen.md` §5-4 が指摘した潜在バグ)。
+ */
+describe('オーバーレイ上のキー操作を奪わない', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('パネル上の ↑↓ はインスペクタが消費しない (選択があっても)', () => {
+    const { inspector, calls } = make();
+    const el = document.createElement('div');
+    const overlayHost = document.createElement('domdom-inspector-overlay');
+    document.body.append(el, overlayHost);
+
+    inspector.inspectAt(el); // 選択あり = 奪う条件は揃っている
+    const shownBefore = calls.shown.length;
+
+    // closed shadow root のイベントは host に再ターゲットされる。その形を作る
+    calls.overlayOwns = overlayHost;
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
+    Object.defineProperty(ev, 'target', { value: overlayHost });
+    window.dispatchEvent(ev);
+
+    expect(ev.defaultPrevented, 'パネル内のキーボード移動を奪わない').toBe(false);
+    expect(calls.shown.length, '選択も動かさない').toBe(shownBefore);
+  });
+
+  it('パネルの外なら従来どおり消費する (ガードが効きすぎていないこと)', () => {
+    const { inspector } = make();
+    const el = document.createElement('div');
+    document.body.append(el);
+
+    inspector.inspectAt(el);
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true, bubbles: true });
+    window.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
   });
 });

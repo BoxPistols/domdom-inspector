@@ -487,6 +487,12 @@ export class Inspector {
 
   private onKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    // **オーバーレイ自身の上での ↑↓ は奪わない。** owner チェーンパネルの行は
+    // フォーカス可能 (`.row.jumpable:focus-visible`) なので、ここで食うとパネル内の
+    // キーボード移動が死ぬ。onIntercept には同型のガードがあるのに keydown だけ
+    // 無かった (`docs/design-coverage-screen.md` §5-4 が指摘した潜在バグ)。
+    // closed shadow root のイベントは host に再ターゲットされるので target で判定できる
+    if (this.overlay.containsTarget(event.target)) return;
     // **入力中・修飾キー付きの ↑↓ は奪わない。** テキスト入力のカーソル移動や
     // ⌘↑ (ページ先頭へ) はページの操作であって、インスペクタのナビゲーションではない。
     // composedPath()[0] を使う: event.target は shadow 境界でホストに再ターゲットされる
