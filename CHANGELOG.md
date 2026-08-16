@@ -11,6 +11,38 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.38 (2026-08-17) — React の内部ファイルが開いてしまう穴を塞ぐ
+
+実機の報告: `react-jsx-dev-runtime.development.js` が開いた。
+
+**原因は React の仕様にあった。** `jsxDEV` の実装:
+
+```js
+var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
+if (trackActualOwner) { … Error("react-stack-top-frame") }
+else debugStackDEV = unknownOwnerDebugStack;   // ← React 内部で作った共有スタック
+```
+
+**Owner Stack を実際に捕まえるのは先頭 1 万要素まで。** 超えると React 内部で作られた
+共有スタックが入り、その中身は React ランタイムのフレームになる。こちらは
+**バンドル名で内部を弾いていた**ので、名前に react が現れないチャンク
+(Turbopack の `_0ro62as._.js` 等) を素通しし、source map で戻したら React の実装だった。
+
+直したのは 3 点:
+
+- **戻した後にも検査する** (`isLibraryPath`)。バンドル名は正体を隠すので、
+  マッピング前の除外だけでは足りない。`node_modules` / `.pnpm` / `.yarn` を弾く
+- **候補を順に試す**。1 つ目がライブラリなら次のフレームへ進む (`resolveFirstAuthored`)。
+  要素自身の Owner Stack から最大 6 件を候補として持つ
+- **`UnknownOwner` のフレームを落とす** (共有スタックの目印そのもの)
+
+全部外れたときは理由を `library` として出す (「この要素の所有者スタックを React が
+保持していません」)。**黙って React の中を開かない。**
+
+後段の検査を外すとテストが赤になることを確認済み。
+
+---
+
 ## 0.4.37 (2026-08-17) — 押させたいトーストを時間で消さない
 
 実機の報告: **コピーしに行く間にトーストが消えて押せなかった。**

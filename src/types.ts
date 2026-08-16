@@ -44,6 +44,13 @@ export interface InspectInfo {
   props: Record<string, string>;
   /** クリックジャンプ先 (MUI スキップ適用後) */
   jumpTarget: SourceLocation | null;
+  /**
+   * ジャンプ先の候補 (バンドル座標)。**先頭が最有力だが当たりとは限らない** —
+   * React は Owner Stack の実捕捉を先頭 1 万要素までに制限しており、超えると
+   * React 内部の共有スタックが入る。source map で戻した結果が利用者のコードで
+   * なければ次を試すため、複数持つ (issue: React 19 対応)。
+   */
+  jumpCandidates?: SourceLocation[];
   /** owner チェーン (自身を先頭に、レンダリング元を遡る) */
   ownerChain: OwnerEntry[];
   /** dev ビルドの Fiber から解決できたか (false = セーフモード) */
@@ -195,6 +202,7 @@ export interface UiStrings {
   srcMapNoMap: string;
   srcMapNoMapping: string;
   srcMapNotLocal: string;
+  srcMapLibrary: string;
   editorCopySetup: string;
   editorSetupCopied: string;
   editorOpenedViaDevServer: string;
@@ -311,6 +319,8 @@ export const DEFAULT_STRINGS: UiStrings = {
   srcMapNoMap: "Could not fetch the source map for that bundle \u2014 the dev server may not be running.",
   srcMapNoMapping: "The source map has no entry for that position, so the original line is unknown.",
   srcMapNotLocal: "The original file is a virtual path, so its location on disk is unknown.",
+  srcMapLibrary:
+    "The position maps into library code, not your own source \u2014 React kept no owner stack for this element.",
   editorCopySetup: "Copy the setup command",
   editorSetupCopied: "Copied. Run it, then restart your dev server.",
   editorOpenedViaDevServer: "Asked the dev server to open it. If nothing opened, its terminal will say why.",

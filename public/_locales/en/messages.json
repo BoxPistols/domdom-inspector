@@ -561,5 +561,8 @@
   },
   "srcMapNotLocal": {
     "message": "The original file is a virtual path, so its location on disk is unknown."
+  },
+  "srcMapLibrary": {
+    "message": "The position maps into library code, not your own source — React kept no owner stack for this element."
   }
 }

@@ -26,7 +26,7 @@ export interface StackFrame {
  * React の内部を開いてしまう**。実測で出た形をそのまま拾う。
  */
 const INTERNAL_FRAME =
-  /(?:^|[/\\])(?:react|react-dom|react-server-dom|scheduler)[-.@/\\]|react_stack_bottom_frame|react-stack-top-frame|\bjsxDEV\b|\bjsxs?\b\s*\(/;
+  /(?:^|[/\\])(?:react|react-dom|react-server-dom|scheduler)[-.@/\\]|react_stack_bottom_frame|react-stack-top-frame|\bjsxDEV\b|\bjsxs?\b\s*\(|\bUnknownOwner\b/;
 
 /** `at name (url:line:col)` / `at url:line:col` の両形に対応 */
 const FRAME_RE = /^\s*at\s+(?:(.*?)\s+\()?((?:[a-z][a-z0-9+.-]*:)?\/\/[^\s)]+?|\/[^\s)]+?):(\d+):(\d+)\)?\s*$/i;
@@ -70,6 +70,21 @@ export function parseStackFrames(stack: string): StackFrame[] {
 export function pickAuthoredFrame(stack: string): StackFrame | null {
   const frames = parseStackFrames(stack);
   return frames[0] ?? null;
+}
+
+/**
+ * 候補フレームを**順に**返す (先頭が最有力)。
+ *
+ * **1 つ目が当たりとは限らない。** React は Owner Stack を実際に捕まえるのを
+ * 先頭 1 万要素までに制限しており (`1e4 > recentlyCreatedOwnerStacks++`)、それを超えると
+ * **React 内部で作られた共有スタック**が入る。その中身は React ランタイムのフレームなので、
+ * バンドル名だけを見る除外では素通りし、source map で戻すと React の実装ファイルが開く
+ * (2026-08-17 の実機報告: `react-jsx-dev-runtime.development.js` が開いた)。
+ *
+ * よって呼び出し側は「戻した結果が利用者のコードか」を見て、駄目なら次の候補へ進む。
+ */
+export function authoredFrames(stack: string, max = 6): StackFrame[] {
+  return parseStackFrames(stack).slice(0, max);
 }
 
 /**

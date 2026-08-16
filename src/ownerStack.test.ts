@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseStackFrames, pickAuthoredFrame, stackStringOf } from './ownerStack';
+import { authoredFrames, parseStackFrames, pickAuthoredFrame, stackStringOf } from './ownerStack';
 
 /**
  * 標本は**実測そのもの** (2026-08-16, Next.js 16 + Turbopack + React 19)。
@@ -96,5 +96,42 @@ describe('stackStringOf — Error でも文字列でも受ける', () => {
     expect(stackStringOf(undefined)).toBeNull();
     expect(stackStringOf({})).toBeNull();
     expect(stackStringOf(42)).toBeNull();
+  });
+});
+
+/**
+ * **Owner Stack が「不明な所有者」の共有スタックになる場合がある** (2026-08-17 の実機報告)。
+ *
+ * React は実際の捕捉を先頭 1 万要素までに制限し、超えると React 内部で作った共有の
+ * スタックを使う (`react-jsx-dev-runtime` の `UnknownOwner`)。これを利用者のコードだと
+ * 誤認すると、source map で戻したときに **React の実装ファイルが開く**。
+ */
+const UNKNOWN_OWNER_STACK = [
+  'Error: react-stack-top-frame',
+  '    at UnknownOwner (http://localhost:3001/_next/static/chunks/_0ro62as._.js:6210:20)',
+  '    at Object.react_stack_bottom_frame (http://localhost:3001/_next/static/chunks/_0ro62as._.js:6199:9)',
+].join('\n');
+
+describe('不明な所有者の共有スタックを利用者のコードとして扱わない', () => {
+  it('UnknownOwner のフレームを落とす', () => {
+    expect(parseStackFrames(UNKNOWN_OWNER_STACK).some((f) => f.name === 'UnknownOwner')).toBe(false);
+  });
+
+  it('残るフレームが無ければ null (React の内部を開かない)', () => {
+    expect(pickAuthoredFrame(UNKNOWN_OWNER_STACK)).toBeNull();
+  });
+});
+
+describe('authoredFrames — 候補を順に返す', () => {
+  it('先頭が最有力、以降が控え (1 つ目が外れたら次を試せる)', () => {
+    const frames = authoredFrames(REAL_STACK);
+    expect(frames.map((f) => f.line)).toEqual([1921, 1908]);
+  });
+
+  it('上限で切る (病的に長い stack で走査が伸びない)', () => {
+    const long = ['Error: x']
+      .concat(Array.from({ length: 30 }, (_, i) => `    at f${i} (http://x/a.js:${i + 1}:1)`))
+      .join('\n');
+    expect(authoredFrames(long, 4)).toHaveLength(4);
   });
 });

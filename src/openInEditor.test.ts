@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ENDPOINTS, devServerPath, handledByEditor, openViaDevServer } from './openInEditor';
+import {
+  ENDPOINTS,
+  devServerPath,
+  handledByEditor,
+  isLibraryPath,
+  openViaDevServer,
+  resolveFirstAuthored,
+} from './openInEditor';
 
 const LOC = { fileName: '/src/pages/DesignSystem.tsx?t=1786', lineNumber: 28, columnNumber: 21 };
 
@@ -152,5 +159,80 @@ describe('Next.js エンドポイントは line1 / column1 を送る', () => {
 
   it('絶対パスをそのまま渡す (Next は相対でも絶対でも解決する — 実測で同結果)', () => {
     expect(url).toContain(encodeURIComponent('/Users/me/app/components/Dropzone.tsx'));
+  });
+});
+
+/**
+ * **戻した後にライブラリを弾く** (2026-08-17 の実機報告: `react-jsx-dev-runtime` が開いた)。
+ *
+ * React は Owner Stack の実捕捉を先頭 1 万要素までに制限しており
+ * (`1e4 > recentlyCreatedOwnerStacks++`)、超えると **React 内部で作った共有スタック**が
+ * 入る。バンドル名は正体を隠すので、マッピング前の除外だけでは素通りする。
+ */
+describe('isLibraryPath — 編集対象でないパスを弾く', () => {
+  it('node_modules / .pnpm / .yarn を弾く', () => {
+    for (const p of [
+      '/app/node_modules/react/cjs/react-jsx-dev-runtime.development.js',
+      '/app/node_modules/.pnpm/next@16/node_modules/next/dist/x.js',
+      '/app/.yarn/cache/react/x.js',
+    ]) {
+      expect({ p, lib: isLibraryPath(p) }).toEqual({ p, lib: true });
+    }
+  });
+
+  it('利用者のコードは弾かない', () => {
+    for (const p of ['/app/components/input/Dropzone.tsx', '/app/src/App.tsx']) {
+      expect({ p, lib: isLibraryPath(p) }).toEqual({ p, lib: false });
+    }
+  });
+
+  it('**ディレクトリ名の一部に含むだけでは弾かない**', () => {
+    expect(isLibraryPath('/app/my-node_modules-helper/x.ts')).toBe(false);
+  });
+});
+
+describe('resolveFirstAuthored — 候補を順に試す', () => {
+  const mapFor = (source: string) =>
+    JSON.stringify({
+      version: 3,
+      sources: [`file://${source}`],
+      mappings: 'AAAA',
+    });
+
+  const request = (urls: Record<string, string>) => async (url: string) =>
+    ({
+      ok: url in urls,
+      status: url in urls ? 200 : 404,
+      json: async () => JSON.parse(urls[url]),
+      text: async () => '',
+      headers: new Headers(),
+    }) as unknown as Response;
+
+  it('1 つ目がライブラリなら 2 つ目を採る', async () => {
+    const req = request({
+      'http://x/a.js.map': mapFor('/app/node_modules/react/jsx-dev-runtime.js'),
+      'http://x/b.js.map': mapFor('/app/components/Dropzone.tsx'),
+    });
+    const out = await resolveFirstAuthored(
+      [
+        { fileName: 'http://x/a.js', lineNumber: 1, columnNumber: 1 },
+        { fileName: 'http://x/b.js', lineNumber: 1, columnNumber: 1 },
+      ],
+      req,
+    );
+    expect(out.ok && out.loc.fileName).toBe('/app/components/Dropzone.tsx');
+  });
+
+  it('全部ライブラリなら理由を library として返す (黙って開かない)', async () => {
+    const req = request({ 'http://x/a.js.map': mapFor('/app/node_modules/react/x.js') });
+    const out = await resolveFirstAuthored(
+      [{ fileName: 'http://x/a.js', lineNumber: 1, columnNumber: 1 }],
+      req,
+    );
+    expect(out).toEqual({ ok: false, reason: 'library' });
+  });
+
+  it('候補が空なら no-mapping', async () => {
+    expect(await resolveFirstAuthored([], request({}))).toEqual({ ok: false, reason: 'no-mapping' });
   });
 });

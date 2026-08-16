@@ -1,6 +1,6 @@
 import { classify } from './classify';
 import { extractDesignStyle } from './designStyle';
-import { pickAuthoredFrame, stackStringOf } from './ownerStack';
+import { authoredFrames, pickAuthoredFrame, stackStringOf } from './ownerStack';
 import { isNodeModulesPath, normalizeSourcePath, parseStackLocation } from './source';
 import type { Classification, InspectInfo, OwnerEntry, SourceLocation } from './types';
 
@@ -209,6 +209,20 @@ function classifyFiber(fiber: Fiber, element: Element | null): Classification {
  * muiSkip 有効時は「callsite が node_modules 外」の最初の Fiber を owner チェーンから選ぶ。
  * 見つからなければソースを持つ最初の Fiber へフォールバック。
  */
+/**
+ * 要素自身の Owner Stack から、ジャンプ先の**候補**をバンドル座標のまま並べる。
+ * 解決 (source map) は非同期なので click 時に行う — ここでは材料を渡すだけ。
+ */
+export function ownerStackCandidates(hostFiber: Fiber): SourceLocation[] {
+  const stack = stackStringOf(hostFiber?._debugStack);
+  if (!stack) return [];
+  return authoredFrames(stack).map((f) => ({
+    fileName: f.url,
+    lineNumber: f.line,
+    columnNumber: f.column,
+  }));
+}
+
 export function resolveJumpTarget(
   chain: Fiber[],
   muiSkip: boolean,
@@ -348,6 +362,7 @@ export function inspectElement(element: Element, muiSkip: boolean): InspectInfo 
     // detailed バッジ用に多めに収集し、表示側 (overlay) が detail に応じてスライスする
     props: summarizeProps(semanticFiber ?? componentFiber, 10),
     jumpTarget: resolveJumpTarget(chain, muiSkip, hostFiber),
+    jumpCandidates: ownerStackCandidates(hostFiber),
     ownerChain,
     devMode: true,
     isReact: true,

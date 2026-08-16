@@ -208,7 +208,7 @@ async function loadSourceMap(
  */
 export type SourceMapOutcome =
   | { ok: true; loc: SourceLocation }
-  | { ok: false; reason: 'no-map' | 'no-mapping' | 'not-local' };
+  | { ok: false; reason: 'no-map' | 'no-mapping' | 'not-local' | 'library' };
 
 /** バンドル出力の位置を元ソースの位置へ戻す (**開けないものを開けると言わない**) */
 export async function resolveViaSourceMap(
@@ -221,8 +221,36 @@ export async function resolveViaSourceMap(
   if (!original) return { ok: false, reason: 'no-mapping' };
   const path = toLocalPath(original.source);
   if (!path) return { ok: false, reason: 'not-local' };
+  // **戻した後にも検査する。** バンドル名は正体を隠すので、マッピング前の除外だけでは
+  // ライブラリの内部を素通りさせる。React は Owner Stack の実捕捉を先頭 1 万要素までに
+  // 制限しており、超えると **React 内部で作った共有スタック**が入るため、素直に戻すと
+  // `react-jsx-dev-runtime.development.js` が開く (2026-08-17 の実機報告)
+  if (isLibraryPath(path)) return { ok: false, reason: 'library' };
   return {
     ok: true,
     loc: { fileName: path, lineNumber: original.line, columnNumber: original.column },
   };
+}
+
+/** 利用者が編集する対象ではないパス (依存パッケージ / フレームワークの実装) */
+export function isLibraryPath(path: string): boolean {
+  return /(?:^|[/\\])(?:node_modules|\.pnpm|\.yarn)[/\\]/.test(path);
+}
+
+/**
+ * 候補を順に試し、**利用者のコードに当たった最初のもの**を返す。
+ *
+ * 1 つ目が当たりとは限らない (上記の共有スタック)。全部外れたら、最後に見た理由を返す。
+ */
+export async function resolveFirstAuthored(
+  candidates: readonly SourceLocation[],
+  request: (url: string) => Promise<Response> = requestText,
+): Promise<SourceMapOutcome> {
+  let last: SourceMapOutcome = { ok: false, reason: 'no-mapping' };
+  for (const candidate of candidates) {
+    const outcome = await resolveViaSourceMap(candidate, request);
+    if (outcome.ok) return outcome;
+    last = outcome;
+  }
+  return last;
 }

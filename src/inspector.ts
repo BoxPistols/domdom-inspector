@@ -2,7 +2,7 @@ import { winningRuleRef } from './cssVars';
 import { detectReactOnPage, getParentComponentElement, inspectElement } from './fiber';
 import type { HookState } from './hook';
 import { Overlay } from './overlay';
-import { resolveViaSourceMap } from './openInEditor';
+import { resolveFirstAuthored } from './openInEditor';
 import { isBundledSource, looksLocalDev } from './source';
 import { resolveSourceAttr } from './sourceAttr';
 import {
@@ -429,7 +429,9 @@ export class Inspector {
     // ソースジャンプが原理的に一度も成功しない** (実機で確認した状態)。
     // 送信はローカル開発オリジンのときだけ (他人のサイトへは何も出さない)
     if (jt && looksLocalDev(location.host)) {
-      void resolveViaSourceMap(jt).then((outcome) => {
+      // **候補を順に試す。** 先頭が当たりとは限らない (React の共有スタック)
+      const candidates = info?.jumpCandidates?.length ? info.jumpCandidates : [jt];
+      void resolveFirstAuthored(candidates).then((outcome) => {
         if (outcome.ok) {
           this.overlay.openEditor(outcome.loc);
           return;
@@ -441,7 +443,9 @@ export class Inspector {
             ? this.strings.srcMapNoMap
             : outcome.reason === 'no-mapping'
               ? this.strings.srcMapNoMapping
-              : this.strings.srcMapNotLocal,
+              : outcome.reason === 'library'
+                ? this.strings.srcMapLibrary
+                : this.strings.srcMapNotLocal,
           8000,
         );
         this.reportUnjumpable(element, info);
