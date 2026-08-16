@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Overlay } from './overlay';
+import { isAbsoluteLocalPath, Overlay } from './overlay';
 import { DEFAULT_SETTINGS, DEFAULT_STRINGS } from './types';
 
 /**
@@ -427,5 +427,79 @@ describe('操作可能トーストは自動で消えない', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+/**
+ * **絶対パスが手元にあるなら dev サーバを経由しない** (2026-08-17)。
+ *
+ * dev サーバ経由は「ブラウザは絶対パスを知り得ない」ことへの対策だった。source map から
+ * 絶対パスが得られるようになった今、その前提は成り立たない。そして dev サーバ経由には
+ * 利用者側の設定 (`LAUNCH_EDITOR` + `REACT_EDITOR` + 名前が一覧に無ければ shim) が要る。
+ * **絶対パスならスキームで直接開ける = 設定ゼロ。**
+ */
+describe('絶対パスならスキームで直接開く (設定ゼロ)', () => {
+  // ヘルパはこの describe 内に持つ (上の describe のスコープ外にあるため)
+  const stubFetch = (impl: () => Promise<unknown>) => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = impl as unknown as typeof fetch;
+    return () => {
+      globalThis.fetch = orig;
+    };
+  };
+  const flush = async () => {
+    for (let i = 0; i < 30; i += 1) await Promise.resolve();
+  };
+
+  it('絶対パスでは dev サーバに要求を出さない', async () => {
+    let requested = 0;
+    const restore = stubFetch(() => {
+      requested += 1;
+      return Promise.resolve({ status: 200, headers: new Headers() });
+    });
+    const clicks: string[] = [];
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      clicks.push(this.href);
+    };
+    try {
+      withHost('localhost:3001', () =>
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor({
+          fileName: '/Users/me/app/components/Dropzone.tsx',
+          lineNumber: 178,
+          columnNumber: 5,
+        }),
+      );
+      await flush();
+    } finally {
+      HTMLAnchorElement.prototype.click = origClick;
+      restore();
+    }
+    expect(requested, 'dev サーバへは何も出さない').toBe(0);
+    expect(clicks[0], 'スキームで直接開く').toContain('/Users/me/app/components/Dropzone.tsx:178:5');
+  });
+
+  it('**相対パスのときだけ dev サーバへ** (source map が引けない構成)', async () => {
+    let requested = 0;
+    const restore = stubFetch(() => {
+      requested += 1;
+      return Promise.resolve({ status: 200, headers: new Headers() });
+    });
+    try {
+      withHost('localhost:3001', () =>
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC),
+      );
+      await flush();
+    } finally {
+      restore();
+    }
+    expect(requested).toBeGreaterThan(0);
+  });
+
+  it('配信パス (/src/App.tsx) はディスク上の絶対パスではない', () => {
+    expect(isAbsoluteLocalPath('/src/App.tsx')).toBe(false);
+    expect(isAbsoluteLocalPath('/Users/me/app/src/App.tsx')).toBe(true);
+    expect(isAbsoluteLocalPath('components/App.tsx')).toBe(false);
+    expect(isAbsoluteLocalPath('http://x/a.js')).toBe(false);
   });
 });

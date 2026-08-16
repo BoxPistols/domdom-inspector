@@ -55,9 +55,16 @@ The extension only reads the page — it never stores page content and never exe
 
 ### One-time setup for "open in editor"
 
-**Usually nothing to set up.** `⌘/Ctrl+Click` opens your editor through the dev server.
+**Normally nothing to set up.** `⌘/Ctrl+Click` opens your editor. The only thing to do is
+pick your editor in the popup's "Advanced" section (the default is Cursor).
 
-If it does not open, the popup's "Advanced" section has a permanent **"Copy the setup command"** button. Paste, run,
+The extension resolves the **absolute path of the original file** from source maps, so it can
+open it directly through the editor's URL scheme — no dev-server configuration, no path mapping.
+
+**Only when an absolute path cannot be resolved** (no source map, or React 18 and earlier
+where only a relative path is available) does it fall back to the dev server. That path needs
+the dev server to be told which editor to use, and the popup's "Advanced" section has a
+permanent **"Copy the setup command"** button. Paste, run,
 restart your dev server — done, once and for all.
 
 Why the extension cannot do this for you: which editor the dev server launches is decided

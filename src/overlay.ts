@@ -39,6 +39,18 @@ export interface OverlaySurfaceHost {
 }
 
 /**
+ * ディスク上の絶対パスか。**スキームで直接開ける条件**で、これが真なら dev サーバも
+ * パスの対応表も要らない。URL / プロジェクト相対 / `~` 始まりは偽。
+ */
+export function isAbsoluteLocalPath(fileName: string): boolean {
+  if (!fileName.startsWith('/')) return false;
+  if (fileName.startsWith('//')) return false;
+  // 配信パス (`/src/App.tsx` 等) は「サイト上の絶対」であってディスク上の絶対ではない。
+  // 実在しうる root 直下のディレクトリ名で判定する (source map が返すのはこの形)
+  return /^\/(?:Users|home|Volumes|opt|srv|data|workspace|private|tmp|var)\//.test(fileName);
+}
+
+/**
  * エディタ起動の成否を判定するまでの猶予。外部アプリが立ち上がればページは blur するので、
  * この時間内に blur も visibilitychange も来なければ「開かなかった」と見なす。
  * 短すぎると起動が遅いエディタで誤検知し、長すぎると気づくのが遅れる。
@@ -430,6 +442,21 @@ export class Overlay {
     // その間に変わった状態を見てしまう (テストでも実ページの遷移でも起きる)
     const host = typeof location !== 'undefined' ? location.host : '';
     const origin = typeof location !== 'undefined' ? location.origin : '';
+    // **絶対パスが手元にあるなら dev サーバを経由しない。**
+    //
+    // dev サーバ経由は「ブラウザは絶対パスを知り得ない」ことへの対策だった。しかし
+    // source map から**元ファイルの絶対パス**が得られるようになったので、その前提は
+    // もう成り立たない。そして dev サーバ経由には利用者側の設定が要る:
+    // `LAUNCH_EDITOR` (Vite) と `REACT_EDITOR` (Next) の両方 + エディタ名が
+    // `launch-editor` の一覧に無ければ shim。**絶対パスがあるならスキームで直接開ける** =
+    // 設定ゼロ。よってこちらを先に使う (2026-08-17)。
+    //
+    // 相対パスしか無いとき (source map が引けない構成) は従来どおり dev サーバへ。
+    // そのときだけ設定が要る、という形にする
+    if (isAbsoluteLocalPath(loc.fileName)) {
+      this.openEditorViaScheme(loc, host);
+      return;
+    }
     if (looksLocalDev(host)) {
       void openViaDevServer(origin, loc).then((opened) => {
         if (opened) {
