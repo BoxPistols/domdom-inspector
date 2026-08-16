@@ -6,6 +6,8 @@
 import { parseMappings, serializeMappings } from '../../src/mappings';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/types';
 
+import { devServerSetup } from '../../src/devServerSetup';
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const msg = (key: Parameters<typeof browser.i18n.getMessage>[0]) => browser.i18n.getMessage(key) || '';
 
@@ -168,6 +170,28 @@ async function sendToActiveTab(type: string) {
 }
 
 $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
+
+/**
+ * 「エディタが開かない」ときの 1 回だけの設定を、選択中のエディタに合わせて渡す。
+ *
+ * **なぜ popup に常設するのか**: 拡張は起動の成否を知りようがない (dev サーバは
+ * launch-editor の完了を待たず 200 を返し、フォーカス移動での検知も実測で
+ * 当てにならなかった)。推測して出すと成功時に嘘をつくので、**見つけられる場所に
+ * 常に置く**形にした。畳まれた「高度な設定」の中なので既定表示の高さは変わらない。
+ */
+$('copyEditorSetup').addEventListener('click', () => {
+  const setup = devServerSetup(editorEl.value as Settings['editor']);
+  void navigator.clipboard
+    .writeText(setup.snippet)
+    .then(() => {
+      const hint = $('siteStatus');
+      hint.textContent = msg('editorSetupCopied');
+    })
+    .catch(() => {
+      const hint = $('siteStatus');
+      hint.textContent = msg('editorSetupCopyFailed');
+    });
+});
 
 /**
  * カバレッジのパネルを開く (issue #10)。

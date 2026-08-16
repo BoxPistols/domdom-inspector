@@ -97,6 +97,10 @@ popup/ ── 設定 UI (browser.* 可)
 - **①機械(自動)**: 純ロジックは vitest+happy-dom。mock 手本は fiber/tree/renderTracker.test.ts。
   DOM 依存は `// @vitest-environment happy-dom`。数値は既知正解値で校正。
 - **③目視(人間)**: 見た目/60fps/操作感/双方向連動/実権限フロー。勝手に PASS にしない。
+- **②実測 probe (人間の目の代わり)**: GUI をまたぐ機能は「目で見て確認」を繰り返すと必ず抜ける。
+  実測できる区間まで機械に寄せる。前例: `pnpm verify:editor` (実 Vite + 偽エディタで
+  エディタに届く argv を突き合わせ、反証も内蔵)。**フォーカス移動での成否判定は実測で
+  使えなかった** (同操作で 2.61/8.61/検知できず) — 判定材料は測ってから採用する。
 - **実機確認を頼む前に patch を上げる** (`CHANGELOG.md` に追記)。版数が変わらないと、拡張カードを
   見ても ⟳ が効いたのか古いビルドを見ているのか区別できない。**Chrome が読むのは同期フォルダ側**
   (`scripts/sync-extension.mjs` の展開先) で、`pnpm build` が自動で展開する

@@ -57,7 +57,7 @@ The extension only reads the page — it never stores page content and never exe
 
 **Usually nothing to set up.** `⌘/Ctrl+Click` opens your editor through the dev server.
 
-If it does not open, the extension offers a **"Copy the setup command"** button. Paste, run,
+If it does not open, the popup's "Advanced" section has a permanent **"Copy the setup command"** button. Paste, run,
 restart your dev server — done, once and for all.
 
 Why the extension cannot do this for you: which editor the dev server launches is decided

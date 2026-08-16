@@ -127,7 +127,7 @@
     "message": "Sent to your editor: {file}"
   },
   "editorNotOpened": {
-    "message": "Nothing opened — your editor may not be installed, or its URL scheme is not registered."
+    "message": "If nothing opened, your editor may not be installed or its URL scheme is not registered."
   },
   "editorCopyPath": {
     "message": "Copy path"
@@ -538,13 +538,19 @@
   "panelHighlightStale": {
     "message": "These numbers are not from the page you are looking at, so highlighting is off."
   },
-  "editorDevServerNoOpen": {
-    "message": "Your editor did not come to the front. Sent to the dev server: {ref}. If that path looks wrong, the dev server is resolving it from a different folder; otherwise it needs to be told which editor to use."
-  },
   "editorCopySetup": {
     "message": "Copy the setup command"
   },
   "editorSetupCopied": {
     "message": "Copied. Run it, then restart your dev server."
+  },
+  "editorDevServerSent": {
+    "message": "Asked the dev server for {ref}"
+  },
+  "hintEditorSetup": {
+    "message": "Editor not opening? The dev server decides which editor to launch, and it needs to be told once. Copy the command, run it, then restart your dev server."
+  },
+  "editorSetupCopyFailed": {
+    "message": "Could not copy. Select the command in the README instead."
   }
 }

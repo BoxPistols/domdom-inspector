@@ -127,7 +127,7 @@
     "message": "エディタに送りました: {file}"
   },
   "editorNotOpened": {
-    "message": "何も開きませんでした — エディタが未インストールか、URL スキームが登録されていない可能性があります。"
+    "message": "何も開かない場合、エディタが未インストールか URL スキームが未登録の可能性があります。"
   },
   "editorCopyPath": {
     "message": "パスをコピー"
@@ -538,13 +538,19 @@
   "panelHighlightStale": {
     "message": "この数字はいま見ているページのものではないため、ハイライトは止めています。"
   },
-  "editorDevServerNoOpen": {
-    "message": "エディタが前面に出てきませんでした。dev サーバに渡したのは {ref} です。このパスが違っていれば dev サーバの基準フォルダとズレています。合っていれば、どのエディタを使うかの設定が要ります。"
-  },
   "editorCopySetup": {
     "message": "設定コマンドをコピー"
   },
   "editorSetupCopied": {
     "message": "コピーしました。実行してから dev サーバを起動し直してください。"
+  },
+  "editorDevServerSent": {
+    "message": "開発サーバに {ref} を渡しました"
+  },
+  "hintEditorSetup": {
+    "message": "エディタが開かないときは。どのエディタを起動するかは開発サーバ側にしか設定できず、1 回だけ設定が要ります。コマンドをコピーして実行し、開発サーバを起動し直してください。"
+  },
+  "editorSetupCopyFailed": {
+    "message": "コピーできませんでした。README のコマンドを直接ご利用ください。"
   }
 }

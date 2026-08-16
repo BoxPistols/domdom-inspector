@@ -195,6 +195,15 @@
         <option value="webstorm">WebStorm</option>
         <option value="custom" data-i18n="editorCustom">Custom URL…</option>
       </select>
+      <!-- エディタが開かないときの直し方。**常設**にする (畳まれた「高度な設定」の中なので
+           既定表示の高さには影響しない)。ホバー時のトーストで成否を推測して出すのは
+           実測で当てにならなかった (2.61/8.61/検知できず) ため、見つけられる場所に置く -->
+      <button id="copyEditorSetup" class="secondary compact" data-i18n="editorCopySetup">
+        Copy the setup command
+      </button>
+      <div class="hint" data-i18n="hintEditorSetup">
+        Editor not opening? The dev server decides which editor to launch.
+      </div>
       <div class="hint" data-i18n="hintEditorUsage">
         While inspecting, ⌘/Ctrl+Click an element to open its source, or use the right-click menu. Resolution order: React dev build source, then a source annotation attribute (works on any framework), then the same-origin CSS file that styles the element. If none applies, the extension explains why and offers copyable search hints. The editor you pick must be installed.
       </div>

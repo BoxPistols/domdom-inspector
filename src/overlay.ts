@@ -1,6 +1,5 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl, formatSourceRef, needsPathMapping, resolvedPath } from './editor';
-import { devServerSetup } from './devServerSetup';
 import { devServerPath, openViaDevServer } from './openInEditor';
 import { isBundledSource, looksLocalDev, suggestMapping } from './source';
 import { buildSearchHints } from './sourceAttr';
@@ -46,12 +45,6 @@ export interface OverlaySurfaceHost {
  */
 const EDITOR_LAUNCH_GRACE_MS = 1200;
 
-/**
- * dev サーバ経由のときの猶予。スキーム起動より長く取る — こちらは
- * 「ブラウザ → サーバ → エディタ起動」と 1 段多く、サーバがプロセスを spawn する
- * ぶんだけ遅い (実測でエディタのプロセスが立つまで約 1 秒)。
- */
-const DEV_SERVER_LAUNCH_GRACE_MS = 2500;
 
 export class Overlay {
   private host: HTMLElement | null = null;
@@ -449,26 +442,24 @@ export class Overlay {
           // よって (1) 成功と断定しない (2) **空振りしたときの逃げ道を同じトーストに置く**。
           // 以前はここで成功扱いにしていたため、実際には動くスキーム起動へ二度と
           // 到達しなかった (押しても何も起きないまま、原因も分からない状態になる)。
-          // **成功したら何も出さない。** エディタが前に出てくること自体が結果なので、
-          // 毎回トーストを出すのはノイズにしかならない。
-          // 開かなかったときだけ、**1 回だけの設定**をそのまま貼れる形で渡す
-          // (dev サーバのエディタ選択はサーバ側の環境変数でしか決められず、
-          //  ブラウザからは変えられない。拡張にできるのはここまで)
-          this.watchLaunch(DEV_SERVER_LAUNCH_GRACE_MS, () => {
-            const setup = devServerSetup(this.settings.editor);
-            // **原因を 1 つに断定しない。** 実測 (2026-08-16) で無反応の経路は 2 つある:
-            // (1) エディタを起動できない (LAUNCH_EDITOR 未設定 / 一覧に無い名前)
-            // (2) `path.resolve(devサーバのcwd, file)` が実在しない
-            //     → launch-editor は黙って return し、それでも 200 が返る
-            // どちらかは拡張から判別できないので、**送ったパスを見せて**利用者が
-            // その場で見分けられるようにする (設定の話だけすると (2) で嘘になる)
-            this.toastAction(
-              this.strings.editorDevServerNoOpen.replace('{ref}', devServerPath(loc.fileName) + ':' + loc.lineNumber),
-              this.strings.editorCopySetup,
-              () => void this.copyToClipboard(setup.snippet, this.strings.editorSetupCopied),
-              14000,
-            );
-          });
+          // **成否を推測しない。** 実測 (2026-08-16) で判定材料が両方とも使えない:
+          //  - サーバは launch-editor の完了を待たず `res.end()` するので 200 は常に返る
+          //  - フォーカス移動での検知も当てにならない。同じ操作を 3 回測って
+          //    2.61 秒 / 8.61 秒 / **10 秒以内に来ない**。ファイルが既に開いていると
+          //    `-r` (ウィンドウ再利用) はウィンドウを前面に出さないため
+          //    → 猶予を何秒に置いても「成功を失敗と誤判定する」側に倒れる
+          //
+          // よって**渡した内容だけを言う**。これは常に真で、しかも
+          // 「dev サーバの基準フォルダとパスがズレている」ケースを利用者が
+          // その場で見分けられる唯一の材料でもある。
+          // 直し方は popup の常設ブロック (畳まれた「高度な設定」内) に置く —
+          // 見つけられる場所にあり、嘘をつかない
+          this.toast(
+            this.strings.editorDevServerSent.replace(
+              '{ref}',
+              `${devServerPath(loc.fileName)}:${loc.lineNumber}`,
+            ),
+          );
         } else {
           this.openEditorViaScheme(loc, host);
         }

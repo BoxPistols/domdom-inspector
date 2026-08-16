@@ -184,7 +184,13 @@ export interface UiStrings {
    * dev サーバへ依頼したときの通知。**「開いた」と言わない** — dev サーバは
    * launch-editor の完了を待たずに 200 を返すので、拡張は結果を知りようがない。
    */
-  editorDevServerNoOpen: string;
+  /**
+   * dev サーバへ渡した内容。**成否は言わない** — サーバは launch-editor の完了を
+   * 待たず 200 を返し、フォーカス移動での検知も実測で当てにならなかった
+   * (同じ操作で 2.6 秒 / 8.6 秒 / 10 秒以内に来ない)。渡したパスを見せることが、
+   * 利用者が原因を切り分けられる唯一の材料になる。
+   */
+  editorDevServerSent: string;
   editorCopySetup: string;
   editorSetupCopied: string;
   editorOpenedViaDevServer: string;
@@ -292,13 +298,12 @@ export const DEFAULT_STRINGS: UiStrings = {
   editorHint: '⌘/Ctrl+Click to open in editor',
   editorOpening: 'Sent to your editor: {file}',
   editorNotOpened:
-    'Nothing opened — your editor may not be installed, or its URL scheme is not registered.',
+    'If nothing opened, your editor may not be installed or its URL scheme is not registered.',
   editorCopyPath: 'Copy path',
   editorPathCopied: 'Path copied',
   editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}',
   editorRemoteSource: 'Source is at {path} in that site’s project — not on this computer, so it cannot be opened.',
-  editorDevServerNoOpen:
-    "Your editor did not come to the front. Sent to the dev server: {ref}. If that path looks wrong, the dev server is resolving it from a different folder; otherwise it needs to be told which editor to use.",
+  editorDevServerSent: 'Asked the dev server for {ref}',
   editorCopySetup: "Copy the setup command",
   editorSetupCopied: "Copied. Run it, then restart your dev server.",
   editorOpenedViaDevServer: "Asked the dev server to open it. If nothing opened, its terminal will say why.",

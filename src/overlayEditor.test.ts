@@ -304,54 +304,32 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
     for (let i = 0; i < 30; i += 1) await Promise.resolve();
   };
 
-  it('**開いたら何も出さない** (エディタが前に出ること自体が結果。毎回のトーストはノイズ)', async () => {
-    vi.useFakeTimers();
+  it('成否を推測せず、**渡した内容**だけを言う', async () => {
+    // 実測 (2026-08-16): 成否の判定材料が両方とも使えない。
+    //  - サーバは launch-editor の完了を待たず 200 を返す
+    //  - フォーカス移動も当てにならない (同操作で 2.61 / 8.61 / 10 秒以内に来ない)。
+    //    ファイルが既に開いていると -r はウィンドウを前面に出さないため
+    // よって「開いた」とも「開かなかった」とも言わない。渡した内容は常に真で、
+    // かつ「dev サーバの基準フォルダとパスがズレている」を見分ける材料になる
     const restore = stubFetch(() => Promise.resolve({ status: 200, headers: new Headers() }));
     try {
       withHost('localhost:3000', () =>
         new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC),
       );
       await flush();
-      // エディタが起動した = ページがフォーカスを失う
-      window.dispatchEvent(new Event('blur'));
-      vi.advanceTimersByTime(5000);
-      await flush();
     } finally {
       restore();
-      vi.useRealTimers();
     }
-    expect(toastEl()?.style.display, '成功時にトーストを出さない').not.toBe('block');
+    const text = toastEl()?.textContent ?? '';
+    expect(text, '**実際に送った形**を見せる (先頭スラッシュを落とした相対パス)').toContain(
+      'src/app/page.tsx:12',
+    );
+    expect(text, '開いたと断定しない').not.toMatch(/opened|開きました/);
+    expect(text, '開かなかったとも断定しない').not.toMatch(/did not|開きませんでした/);
   });
 
-  it('開かなかったら、1 回だけの設定をコピーできる導線を出す', async () => {
-    vi.useFakeTimers();
-    const restore = stubFetch(() => Promise.resolve({ status: 200, headers: new Headers() }));
-    try {
-      withHost('localhost:3000', () =>
-        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC),
-      );
-      await flush();
-      // blur を起こさない = エディタは前に出てこなかった
-      vi.advanceTimersByTime(5000);
-      await flush();
-    } finally {
-      restore();
-      vi.useRealTimers();
-    }
-    // **黙って終わらせない。** dev サーバのエディタ選択はサーバ側でしか決められないので、
-    // 拡張にできるのは「正しい 1 行を考えなくていい形で渡す」ところまで
-    const text = toastEl()?.textContent ?? '';
-    expect(toastEl()?.querySelector('button')?.textContent).toBe(DEFAULT_STRINGS.editorCopySetup);
-    // **原因を 1 つに断定しない。** 無反応の経路は 2 つあり (エディタを起動できない /
-    // dev サーバの基準フォルダから見てパスが実在しない)、拡張からは判別できない。
-    // 送ったパスを見せて利用者が見分けられるようにする (実測 2026-08-16)
-    // **実際に送った形**を見せる (先頭スラッシュを落とした相対パス)。
-    // 画面の値と送信値が違うと、パスのズレを見分ける役に立たない
-    expect(text, '送ったパスが出ていない = 利用者が見分けられない').toContain('src/app/page.tsx:12');
-    expect(
-      DEFAULT_STRINGS.editorDevServerNoOpen,
-      '文言に置換アンカー {ref} が無いと、パスを出す経路が死ぬ',
-    ).toContain('{ref}');
+  it('文言に置換アンカーが残っていない (生の {ref} を利用者に見せない)', () => {
+    expect(DEFAULT_STRINGS.editorDevServerSent).toContain('{ref}');
   });
 
   it('dev サーバが開いたら、設定に関する案内を一切出さない', async () => {
