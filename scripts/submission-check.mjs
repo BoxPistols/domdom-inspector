@@ -176,6 +176,58 @@ check(
   endpointsOnly ? '外部ホストの直書き 0 件' : '外部ホストらしき URL がある',
 );
 
+// ---- ⑤-b 温存実装が出荷 JS に載っていないこと (issue #17) ------------------
+// v1 の配線から外した render/tree 一式は src/render-bundle/ にあり、**誰も import しない**
+// ので bundle に載らない。これを実測で固定する: クラスメソッドは tree-shake されないため、
+// 本体へ 1 メソッド戻すだけで一式が復活する (以前 inspector.js の約 3 割を占めていた)。
+//
+// 目印は **minify を生き延びるもの** (メソッド名 = プロパティ名 / 文字列リテラル) を選ぶ。
+// ローカル関数名は mangle されるので「見つからない」が根拠にならない。
+const DORMANT_MARKERS = [
+  ['showRenderStats', 'src/render-bundle/overlayDebug.ts'],
+  ['showTree', 'src/render-bundle/overlayDebug.ts'],
+  ['render-canvas', 'src/render-bundle/overlayDebugStyles.ts'],
+  ['96,165,250', 'src/render-bundle/heatColor.ts'], // heatColor の青
+];
+
+// **目印が実在することを先に要求する。** 名前が変わって「どこにも無い」状態になったら、
+// この検査は何も見ていないのに緑になる (送信経路の検査で一度その状態を作った反省)
+const missingMarkers = DORMANT_MARKERS.filter(([marker, source]) => {
+  try {
+    return !read(source).includes(marker);
+  } catch {
+    return true;
+  }
+});
+check(
+  '温存実装の目印が render-bundle に実在する (検査が空振りしていないこと)',
+  missingMarkers.length === 0,
+  missingMarkers.length === 0
+    ? `${DORMANT_MARKERS.length} 個すべて実在`
+    : `見つからない: ${missingMarkers.map(([m]) => m).join(', ')}`,
+);
+
+/** 出荷する JS を全部集める (content script / background / 遅延チャンク) */
+const shippedJs = [];
+for (const dir of [OUT, join(OUT, 'content-scripts'), join(OUT, 'chunks')]) {
+  if (!existsSync(dir)) continue;
+  for (const f of readdirSync(dir)) {
+    if (f.endsWith('.js')) shippedJs.push(join(dir, f));
+  }
+}
+const leaked = [];
+for (const file of shippedJs) {
+  const body = readFileSync(file, 'utf8');
+  for (const [marker] of DORMANT_MARKERS) {
+    if (body.includes(marker)) leaked.push(`${file.replace(ROOT + '/', '')}: ${marker}`);
+  }
+}
+check(
+  `温存実装 (render/tree) が出荷 JS に載っていない (${shippedJs.length} ファイルを走査)`,
+  shippedJs.length > 0 && leaked.length === 0,
+  leaked.length === 0 ? '0 件' : leaked.join(', '),
+);
+
 // ---- ⑥ スクリーンショット (実寸を PNG ヘッダから読む) ----------------------
 /** PNG の IHDR から幅と高さを読む (ライブラリ不要) */
 function pngSize(file) {

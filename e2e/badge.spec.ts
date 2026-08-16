@@ -204,6 +204,51 @@ test('ホバーでデザインバッジが描画される', async () => {
 });
 
 /**
+ * 【a11y / issue #18】**分類を色だけで伝えない (SC 1.4.1)。**
+ *
+ * バッジ先頭の分類ドットは色に加えて形 (円 / 四角 / ひし形) でも 3 分類を示す。
+ * ここで見るのは「形状クラスが実際に付いて、CSS 側に対応する定義がある」こと —
+ * 形状クラスを付け忘れても色は出るので、目視では気づきにくい壊れ方になる。
+ */
+test('分類ドットに色以外の手がかり (形状) が付く', async () => {
+  const page = await openFixture();
+
+  await activate(page);
+  await page.hover('#target');
+  await expect(page.locator('domdom-inspector-overlay')).toBeAttached({ timeout: 3000 });
+
+  const dot = await page.evaluate(() => {
+    const host = document.querySelector('domdom-inspector-overlay') as
+      | (Element & { __openRoot?: ShadowRoot })
+      | null;
+    const root = host?.__openRoot ?? host?.shadowRoot ?? null;
+    const cdot = root?.querySelector('.badge .name .cdot') as HTMLElement | null;
+    if (!cdot) return null;
+    const style = getComputedStyle(cdot);
+    return {
+      classes: [...cdot.classList],
+      // 形状は border-radius / transform で表現する。既定値のままなら
+      // クラスは付いているが CSS 定義が無い = 見た目は変わっていない
+      borderRadius: style.borderRadius,
+      transform: style.transform,
+      background: style.backgroundColor,
+    };
+  });
+
+  expect(dot).not.toBeNull();
+  const shape = dot!.classes.find((c) => ['circle', 'square', 'diamond'].includes(c));
+  expect(shape).toBeDefined();
+  // 色も従来どおり出ている (形は色の置き換えではなく追加)
+  expect(dot!.background).not.toBe('rgba(0, 0, 0, 0)');
+  // 形が実描画に効いていること: 円なら丸め、四角/ひし形なら丸め無し + 回転
+  if (shape === 'circle') expect(dot!.borderRadius).toBe('50%');
+  else if (shape === 'diamond') expect(dot!.transform).not.toBe('none');
+  else expect(dot!.borderRadius).toBe('0px');
+
+  await page.close();
+});
+
+/**
  * トークン照合パス (end-to-end)。**v1 の実供給元と同じ経路で辞書を得る**:
  * ページの React 内部から ThemeProvider のテーマを拡張が自力で発見し
  * (`src/muiTheme.ts` → `parseMuiTheme`)、fixture の background-color #c62828 /

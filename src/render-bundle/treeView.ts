@@ -1,6 +1,7 @@
-import { inspectElement } from './fiber';
-import type { HookState } from './hook';
-import type { Overlay } from './overlay';
+import { inspectElement } from '../fiber';
+import type { HookState } from '../hook';
+import type { Overlay } from '../overlay';
+import { OverlayDebugSurfaces } from './overlayDebug';
 import {
   buildNodeElementMap,
   buildTree,
@@ -9,7 +10,7 @@ import {
   type NodeElementMap,
   type TreeNode,
 } from './tree';
-import { DEFAULT_SETTINGS, DEFAULT_STRINGS, type Settings, type UiStrings } from './types';
+import { DEFAULT_SETTINGS, DEFAULT_STRINGS, type Settings, type UiStrings } from '../types';
 
 /**
  * ビジュアル・コンポーネントツリーのモード制御 (FR-05/06/07)。
@@ -30,11 +31,16 @@ export class TreeView {
   private refreshRaf = 0;
   private hoverRaf = 0;
 
+  /** ツリーパネルの描画は OverlayDebugSurfaces が持つ (issue #17 で本体から分離) */
+  private surfaces: OverlayDebugSurfaces;
+
   constructor(
     private hookState: HookState,
     private overlay: Overlay,
     private strings: UiStrings = DEFAULT_STRINGS,
-  ) {}
+  ) {
+    this.surfaces = new OverlayDebugSurfaces(overlay.surfaceHost());
+  }
 
   applySettings(settings: Settings) {
     this.settings = { ...DEFAULT_SETTINGS, ...settings };
@@ -72,7 +78,7 @@ export class TreeView {
     cancelAnimationFrame(this.hoverRaf);
     this.refreshRaf = 0;
     this.hoverRaf = 0;
-    this.overlay.hideTree();
+    this.surfaces.hideTree();
     this.overlay.hideHighlight();
     this.overlay.toast(this.strings.treeOff);
   }
@@ -93,7 +99,7 @@ export class TreeView {
     this.nodeMap = buildNodeElementMap(all);
     this.allById = new Map(all.map((n) => [n.id, n]));
     this.visibleIds = new Set(filtered.map((n) => n.id));
-    this.overlay.showTree(filtered, {
+    this.surfaces.showTree(filtered, {
       title: this.strings.treeTitle,
       onHoverNode: (node) => this.highlightNode(node),
       onClickNode: (node) => this.jumpToNode(node),
@@ -150,7 +156,7 @@ export class TreeView {
       const id = resolveNodeIdFromElement(el, this.nodeMap.elementToNode);
       // 解決先が host ノード等で非表示なら、表示されている最近傍の祖先まで繰り上げる
       const visible = this.nearestVisible(id);
-      if (visible !== null) this.overlay.scrollTreeTo(visible);
+      if (visible !== null) this.surfaces.scrollTreeTo(visible);
     });
   };
 }

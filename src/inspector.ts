@@ -70,6 +70,24 @@ export function drillToInnermost(element: Element, x: number, y: number, maxDept
 }
 
 /**
+ * 選択中の要素を測り直す最小間隔 (ms)。テーマ切替のトランジション中は style/class の
+ * 変化が毎フレーム飛んでくるため、素直に測り直すとホバー追従の 60fps を壊す (issue #19)。
+ */
+export const LIVE_RESYNC_MS = 150;
+
+/**
+ * live 追従の待ち時間を決める純ロジック。直前の測り直しから `interval` 未満なら
+ * 残り時間だけ待ち、以上経っていれば 0 (即座)。
+ *
+ * **戻り値は必ず 0〜interval に収める。** 素朴に `interval - (now - lastSync)` と書くと、
+ * システム時計が巻き戻ったとき (NTP 補正・スリープ復帰) に interval より長い待ちが出て、
+ * バッジが数分止まったように見える。
+ */
+export function liveResyncDelay(now: number, lastSync: number, interval: number): number {
+  return Math.max(0, Math.min(interval, lastSync + interval - now));
+}
+
+/**
  * Inspector の生成オプション。**フレーム構成のために要る** (issue #14)。
  * content script は全フレームに注入されるため、モードピルやトーストを各フレームが出すと
  * iframe の数だけ重複し、しかも「どのピルの ✕ を押せば全部消えるのか」が分からなくなる。
@@ -103,6 +121,11 @@ export class Inspector {
   /** キーボード選択中はマウスの微動でホバー追従に戻さないためのフラグ */
   private keyboardNav = false;
   private lastPointer = { x: 0, y: 0 };
+  // ---- 選択中の要素の live 追従 (issue #19) ----
+  private liveMutation: MutationObserver | null = null;
+  private liveResize: ResizeObserver | null = null;
+  private liveTimer: ReturnType<typeof setTimeout> | undefined;
+  private lastLiveSync = 0;
 
   constructor(
     private hookState: HookState,
@@ -182,6 +205,8 @@ export class Inspector {
     // rAF が select() → show() を実行し、モード OFF なのに枠とバッジがリロードまで
     // 残る (リスナは解除済みなので以後更新も消去もされない。実測で 1/1 再現)
     cancelAnimationFrame(this.rafId);
+    // 選択中要素の監視も必ず外す。残すと OFF 後にコールバックが枠を描き直す
+    this.stopObservingLive();
     window.removeEventListener('pointermove', this.onPointerMove, true);
     for (const type of ['click', 'pointerdown', 'pointerup', 'mousedown', 'mouseup'] as const) {
       window.removeEventListener(type, this.onIntercept, true);
@@ -203,11 +228,92 @@ export class Inspector {
   private select(element: Element) {
     this.currentElement = element;
     this.currentInfo = inspectElement(element, this.settings.muiSkip);
+    this.lastLiveSync = Date.now();
+    this.observeLive(element);
     if (this.currentInfo) {
       this.overlay.show(element, this.currentInfo);
     } else {
       this.overlay.hideHighlight();
     }
+  }
+
+  /**
+   * 選択中の要素の変化を監視する (issue #19)。マウスを動かさずに見ている間に
+   * ページ側がスタイルを書き換えても、バッジが古い値のまま残らないようにする。
+   *
+   * 見る対象を 3 つに絞っている (全 DOM の subtree 監視はホバーの 60fps を壊す):
+   * 1. 対象自身の style/class — JS による直接の書き換え
+   * 2. html / body の style/class — テーマ切替。**対象自身は何も変わらない**が、
+   *    継承値と CSS 変数が入れ替わるので測り直しが要る (実際に一番よく起きる形)
+   * 3. 対象のサイズ — 折返し・コンテンツ変化・@media 跨ぎ (枠が旧サイズのまま残る)
+   *
+   * 位置だけが動く変化 (兄弟のレイアウトシフト) は見ていない。監視コストに見合わないため、
+   * 次の pointermove / scroll / クリックでの引き直しに任せる。
+   */
+  private observeLive(element: Element) {
+    this.stopObservingLive();
+    if (typeof MutationObserver !== 'undefined') {
+      this.liveMutation = new MutationObserver(this.onLiveChange);
+      const attrs = { attributes: true, attributeFilter: ['style', 'class'] };
+      this.liveMutation.observe(element, attrs);
+      for (const host of [document.documentElement, document.body]) {
+        if (host && host !== element) this.liveMutation.observe(host, attrs);
+      }
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+      // ResizeObserver は observe した直後に必ず 1 回呼ばれる。それは「変化」ではないので
+      // 捨てる (捨てないと選択のたびに無駄な測り直しが 1 回走る)
+      let initial = true;
+      this.liveResize = new ResizeObserver(() => {
+        if (initial) {
+          initial = false;
+          return;
+        }
+        this.onLiveChange();
+      });
+      this.liveResize.observe(element);
+    }
+  }
+
+  private stopObservingLive() {
+    this.liveMutation?.disconnect();
+    this.liveMutation = null;
+    this.liveResize?.disconnect();
+    this.liveResize = null;
+    clearTimeout(this.liveTimer);
+    this.liveTimer = undefined;
+  }
+
+  /** 変化の通知。連続変化 (トランジション等) は 1 回にまとめる */
+  private onLiveChange = () => {
+    if (!this.enabled || !this.currentElement) return;
+    // 既に予約済みなら何もしない = 変化が続く間もタイマーは 1 本だけ
+    if (this.liveTimer !== undefined) return;
+    const delay = liveResyncDelay(Date.now(), this.lastLiveSync, LIVE_RESYNC_MS);
+    this.liveTimer = setTimeout(() => {
+      this.liveTimer = undefined;
+      this.resyncSelected();
+    }, delay);
+  };
+
+  /**
+   * 選択中の要素をその場で測り直す (**選択は動かさない**)。
+   * ページから外れていたら枠ごと畳む — 消えた要素の枠を残すのは誤答になる。
+   */
+  private resyncSelected() {
+    const element = this.currentElement;
+    if (!this.enabled || !element) return;
+    this.lastLiveSync = Date.now();
+    if (!element.isConnected) {
+      this.currentElement = null;
+      this.currentInfo = null;
+      this.stopObservingLive();
+      this.overlay.hideHighlight();
+      return;
+    }
+    this.currentInfo = inspectElement(element, this.settings.muiSkip);
+    if (this.currentInfo) this.overlay.show(element, this.currentInfo);
+    else this.overlay.hideHighlight();
   }
 
   private onPointerMove = (event: PointerEvent) => {
@@ -229,6 +335,8 @@ export class Inspector {
       if (!hit) return;
       // shadow root を貫通してカーソル直下の要素まで降りる (ホストの値を誤って出さない)
       const element = drillToInnermost(hit, event.clientX, event.clientY);
+      // 同一要素なら何もしない。**ここで測り直さない**のは 60fps を守るため —
+      // 選択中の style/class 変化は observeLive() の監視が拾う (issue #19)
       if (element === this.currentElement) return;
       this.select(element);
     });
@@ -427,6 +535,9 @@ export class Inspector {
    */
   private onViewportChange = () => {
     this.overlay.hideHighlight();
+    // 選択を捨てるので監視も畳む (対象を持たない監視が残ると、以後の変化で
+    // 誰も選んでいないのにコールバックが走る)
+    this.stopObservingLive();
     this.currentElement = null;
     this.currentInfo = null;
     this.navStack = [];

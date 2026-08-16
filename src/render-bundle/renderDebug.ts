@@ -1,9 +1,10 @@
-import type { HookState } from './hook';
-import type { Overlay } from './overlay';
-import { normalizeRecordKey } from './recordKey';
+import type { HookState } from '../hook';
+import type { Overlay } from '../overlay';
+import { OverlayDebugSurfaces } from './overlayDebug';
+import { normalizeRecordKey } from '../recordKey';
 import { RenderTracker } from './renderTracker';
 import { buildReport } from './report';
-import { DEFAULT_STRINGS, type UiStrings } from './types';
+import { DEFAULT_STRINGS, type UiStrings } from '../types';
 import type { VitalsCollector } from './vitals';
 
 /**
@@ -24,12 +25,20 @@ export class RenderDebugger {
   /** 記録トグルキー (設定で変更可、既定 'r') */
   private recordKey = 'r';
 
+  /**
+   * 描画は Overlay 本体ではなく OverlayDebugSurfaces が持つ (issue #17 で分離)。
+   * ここで生成した時点で初めて render サーフェスのコード・CSS が bundle に載る。
+   */
+  private surfaces: OverlayDebugSurfaces;
+
   constructor(
     private hookState: HookState,
     private overlay: Overlay,
     private strings: UiStrings = DEFAULT_STRINGS,
     private vitals: VitalsCollector | null = null,
-  ) {}
+  ) {
+    this.surfaces = new OverlayDebugSurfaces(overlay.surfaceHost());
+  }
 
   applySettings(recordKey: string) {
     // 単一キーのみ受け付ける (空・複数文字は既定 'r' へフォールバック)
@@ -60,7 +69,7 @@ export class RenderDebugger {
   private renderControl() {
     const recording = this.tracker.isRecording();
     const base = recording ? this.strings.ctrlStop : this.strings.ctrlRecord;
-    this.overlay.showRenderControl({
+    this.surfaces.showRenderControl({
       title: this.strings.ctrlTitle,
       recording,
       toggleLabel: `${base} (${this.recordKey.toUpperCase()})`,
@@ -77,9 +86,9 @@ export class RenderDebugger {
     this.flashRaf = 0;
     this.pendingFlashes = [];
     this.tracker.stopRecording();
-    this.overlay.clearRenderFlashes();
-    this.overlay.hideRenderStats();
-    this.overlay.hideRenderControl();
+    this.surfaces.clearRenderFlashes();
+    this.surfaces.hideRenderStats();
+    this.surfaces.hideRenderControl();
     this.overlay.toast(this.strings.renderOff);
   }
 
@@ -121,7 +130,7 @@ export class RenderDebugger {
     this.flashRaf = 0;
     const flashes = this.pendingFlashes;
     this.pendingFlashes = [];
-    if (flashes.length) this.overlay.flashRenders(flashes);
+    if (flashes.length) this.surfaces.flashRenders(flashes);
   };
 
   /** 記録モードのトグル (R キー)。停止時にランキングパネルを開く */
@@ -131,7 +140,7 @@ export class RenderDebugger {
       this.tracker.stopRecording();
       const snapshot = this.tracker.snapshot();
       const vitals = this.vitals?.snapshot() ?? { metrics: [], longTasks: 0, blockingMs: 0 };
-      this.overlay.showRenderStats(snapshot, vitals, {
+      this.surfaces.showRenderStats(snapshot, vitals, {
         onClose: () => this.tracker.reset(),
         buildReport: () =>
           buildReport({
@@ -143,7 +152,7 @@ export class RenderDebugger {
           }),
       });
     } else {
-      this.overlay.hideRenderStats();
+      this.surfaces.hideRenderStats();
       this.tracker.startRecording();
       this.overlay.toast(this.strings.recordStart);
     }

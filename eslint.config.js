@@ -31,7 +31,15 @@ export default tseslint.config(
   },
   {
     // Fiber 内部は React バージョン依存で any 許容 (CLAUDE.md 地雷4)
-    files: ['src/fiber.ts', 'src/tree.ts', 'src/renderTracker.ts', 'src/renderCause.ts', 'src/hook.ts', 'src/muiTheme.ts'],
+    files: [
+      'src/fiber.ts',
+      'src/hook.ts',
+      'src/muiTheme.ts',
+      // 温存実装は src/render-bundle/ (issue #17 で本体 bundle から分離)
+      'src/render-bundle/tree.ts',
+      'src/render-bundle/renderTracker.ts',
+      'src/render-bundle/renderCause.ts',
+    ],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },
   {
@@ -55,15 +63,17 @@ export default tseslint.config(
         {
           patterns: [
             {
+              // `**/` を前置し、'./render-bundle/tree' のようにディレクトリを跨いだ
+              // import も禁止する (issue #17 の移動でパターンが素通しになる穴を塞ぐ)
               group: [
-                './fiber',
-                './hook',
-                './tree',
-                './treeView',
-                './renderTracker',
-                './renderCause',
-                './renderDebug',
-                './muiTheme',
+                '**/fiber',
+                '**/hook',
+                '**/tree',
+                '**/treeView',
+                '**/renderTracker',
+                '**/renderCause',
+                '**/renderDebug',
+                '**/muiTheme',
               ],
               message: 'design 経路は Fiber 結合を import しない (境界契約 = 今回のバグ類型の構造的予防)',
             },

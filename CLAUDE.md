@@ -13,7 +13,7 @@ React/MUI コンポーネントのインスペクタ Chrome 拡張 (WXT + TypeSc
   (色/余白/角丸)+ 野良値検出が動く(M1/M2/M3)。
 - ターゲットはエンジニアだけでなく**デザイナー/ステークホルダー**。localhost 前提にしない。
 
-現状: **v0.4.3**。**v1 の配線は「ホバーした要素を計測し、利用者のトークンと照合する」一本**:
+現状: **v0.4.24**。**v1 の配線は「ホバーした要素を計測し、利用者のトークンと照合する」一本**:
 inspect (design バッジ + tokenDict 照合 + 野良値 + **CSS 変数名の優先表示** (`cssVars.ts` Tier1)
 + **⌘/Ctrl+Click / 右クリックメニュー からのエディタジャンプ** (dev の実ソースのみ /
 minified は `isBundledSource` で抑制 / 開かなければパスのコピー導線) + **Alt+Click の描画元リスト**
@@ -41,9 +41,11 @@ background が全フレームへ冪等な `inspect-on`/`inspect-off` を配る�
 [#12](https://github.com/BoxPistols/domdom-inspector/issues/12))。
 
 **コンポーネントツリー (旧 Alt+Shift+T) / レンダープロファイリング v2 (旧 Alt+Shift+R) /
-Page Vitals / Markdown レポートは v1 の配線から外した**(実装は `treeView.ts` / `tree.ts` /
-`renderDebug.ts` / `renderTracker.ts` / `renderCause.ts` / `vitals.ts` / `report.ts` に温存。
-**削除ではなく到達不能**)。理由: production では React がコンポーネント名を minify するため
+Page Vitals / Markdown レポートは v1 の配線から外した**(実装は **`src/render-bundle/`**
+に温存 — `treeView.ts` / `tree.ts` / `renderDebug.ts` / `renderTracker.ts` / `renderCause.ts` /
+`vitals.ts` / `report.ts` / 描画の `overlayDebug.ts` + `overlayDebugStyles.ts` + `heatColor.ts`。
+**削除ではなく到達不能**で、**出荷 JS には 1 バイトも載らない** — issue #17 で本体から分離した。
+`pnpm check:submission` が出荷 JS を走査して毎回実測する)。理由: production では React がコンポーネント名を minify するため
 原理的に判読不能(実機で "0e" "je" "Anonymous" が並ぶ)/ dev なら React DevTools が優れる /
 レンダー可視化は react-scan の Chrome 拡張が同じ土俵にいる / 掲載文で「React 開発者向け」を
 名乗ると単一目的の説明が広がり審査リスクが上がる。製品の芯は「本番画面 × 自分のトークンで
@@ -61,7 +63,7 @@ bridge.content.ts (ISOLATED) ── browser.* 可。storage/i18n を解決
   │ window.postMessage (同一 window 内のみ)
 inspector.content.ts (MAIN, document_start) ── ページ JS と同環境。browser.* 不可
   ├ hook.ts / fiber.ts / inspector.ts / overlay.ts
-  └ (v1 配線外し・温存) tree.ts / treeView.ts / renderDebug.ts / vitals.ts
+  └ (v1 配線外し・温存 = 出荷 JS に載らない) render-bundle/ 一式
 popup/ ── 設定 UI (browser.* 可)
 ```
 **鉄則: MAIN world は `browser.*` を使えない。** 設定・i18n は bridge が解決して postMessage で

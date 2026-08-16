@@ -7,7 +7,7 @@ Chrome Web Store の Public 公開直前に実施した監査の記録。**12 �
 CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 **この表が唯一の記録。** ワークフローの出力は一時ファイルにしか残らないため、ここへ写した。
-`✅` は修正済み (版数)。**全 70 件に状態がつき、⬜ 未対応は 0 件** — 未修正で残るものは issue (#17 #18 #19) か「判断済み (修正しない)」(理由つき)。
+`✅` は修正済み (版数)。**全 70 件に状態がつき、⬜ 未対応は 0 件**。issue 化した 3 件 (#17 #18 #19) は v0.4.24 で閉じたので、未修正で残るものは「判断済み (修正しない)」(理由つき) だけ。
 
 > 監査の設計上の要点: 各観点の finder に「**動かない**より**誤答する**を優先して探せ」と
 > 「読んだだけなら measured: false と書け」を課し、別エージェントが**反証**に回った。
@@ -25,6 +25,16 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 未修正で残るのは issue 化した 3 件 (#17 bundle 分離 / #18 分類の非色手がかり /
 #19 選択中の live 追従) と「判断済み (修正しない)」4 件のみ。
 
+**2026-08-16 追記**: 残っていた issue 3 件を v0.4.24 で閉じた。**未修正で残るのは
+「判断済み (修正しない)」4 件のみ**。いずれも修正を戻すと落ちることを実測で確認した検査つき:
+- #17 → 温存実装を `src/render-bundle/` へ分離 + 描画を `OverlayDebugSurfaces` へ切り出し。
+  inspector.js 60,908 B → 48,508 B (分離のみの差分)。`pnpm check:submission` が出荷 JS を
+  走査して毎回実測する (目印を本体へ 1 つ戻したら赤になることを確認)
+- #18 → 分類ドットを形 (円/四角/ひし形) でも区別。`e2e/badge.spec.ts` が実描画の
+  computed style で検証 (形状クラスを外すと赤)
+- #19 → 選択中の要素に MutationObserver + ResizeObserver。150ms でまとめる。
+  `src/inspector.test.ts` が追従・throttle・OFF 後の停止・DOM 離脱を固定 (配線を外すと 4 件赤)
+
 ---
 
 ## 未対応の一覧 (着手順の候補)
@@ -32,13 +42,13 @@ CWS ポリシー準拠 / 出荷物の中身 / i18n の質。
 
 v0.4.14 の一括対応で **medium 10 件はすべて修正済み**。low / missed の未対応は
 各項目の「状態」行に判断を書いた (修正しない判断をしたものは理由つき)。
-**残っていて issue になっているもの**:
+**issue 化していた 3 件は v0.4.24 で対応済み** (残りは「修正しない判断」のみ):
 
-| issue | 内容 |
-|---|---|
-| [#17](https://github.com/BoxPistols/domdom-inspector/issues/17) | 到達不能コードの bundle 排除 (温存実装の分離ビルド) — design-scan 撤去で 6.1 kB は削減済み、残りは overlay の render/tree サーフェス |
-| [#18](https://github.com/BoxPistols/domdom-inspector/issues/18) | 分類 (青=MUI 等) の非色手がかり (SC 1.4.1) — 枠色 3:1 と凡例文言は修正済み、色以外の視覚手がかりは UI 設計判断が要る |
-| [#19](https://github.com/BoxPistols/domdom-inspector/issues/19) | ホバー中の同一要素のスタイル変化にバッジが追従しない — クリック時の再計測は v0.4.14 で対応、ホバー静止中の live 追従は MutationObserver の設計が要る |
+| issue | 内容 | 対応 |
+|---|---|---|
+| [#17](https://github.com/BoxPistols/domdom-inspector/issues/17) | 到達不能コードの bundle 排除 (温存実装の分離ビルド) | ✅ v0.4.24 — `src/render-bundle/` へ分離 + `OverlayDebugSurfaces` 切り出し (-12,400 B) |
+| [#18](https://github.com/BoxPistols/domdom-inspector/issues/18) | 分類 (青=MUI 等) の非色手がかり (SC 1.4.1) | ✅ v0.4.24 — ドットを形 (● ■ ◆) でも区別。popup 凡例にも同じ形 |
+| [#19](https://github.com/BoxPistols/domdom-inspector/issues/19) | ホバー中の同一要素のスタイル変化にバッジが追従しない | ✅ v0.4.24 — MutationObserver + ResizeObserver、150ms throttle |
 
 ---
 

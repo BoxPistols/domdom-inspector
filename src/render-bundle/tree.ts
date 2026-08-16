@@ -1,7 +1,7 @@
-import { classify } from './classify';
-import { getFiberName, getFiberSource } from './fiber';
-import { normalizeSourcePath } from './source';
-import type { Classification } from './types';
+import { classify } from '../classify';
+import { getFiberName, getFiberSource } from '../fiber';
+import { normalizeSourcePath } from '../source';
+import type { Classification } from '../types';
 
 type Fiber = any;
 

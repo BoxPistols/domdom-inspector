@@ -8,28 +8,34 @@ import {
   clampBadgePosition,
   colorFor,
   designLabel,
-  heatColor,
+  shapeClassFor,
   visibleProps,
 } from './overlayFormat';
 import { OVERLAY_CSS } from './overlayStyles';
-import type { RenderSnapshot, RenderStat } from './renderTracker';
 import { annotateProp, EMPTY_TOKEN_DICT, type TokenDict } from './tokenDict';
 import { lintSpacing } from './tokenLint';
-import type { TreeNode } from './tree';
-import { formatVital, type VitalsSnapshot } from './vitals';
 import { DEFAULT_STRINGS, type InspectInfo, type Settings, type UiStrings } from './types';
 
 /** lintSpacing に渡すグリッド幅 (px)。警告文の {grid} 表示と必ず一致させる */
 const SPACING_GRID = 4;
 
 /**
- * 対象ページと干渉しない Shadow DOM 隔離オーバーレイ (v3.0 §7)。
- * ハイライト枠 + バッジは pointer-events: none、owner チェーンパネルのみ操作可能。
+ * 温存サーフェス (render/tree) が Overlay 本体から借りる最小の口 (issue #17)。
+ *
+ * 描画コードは `render-bundle/overlayDebug.ts` にあり、v1 では誰も import しない
+ * (クラスメソッドは tree-shake されないため、本体に持たせると出荷 JS に載り続ける)。
+ * 再配線は `new OverlayDebugSurfaces(overlay.surfaceHost())` の 1 行で足りる。
  */
-interface Flash {
-  rect: { left: number; top: number; width: number; height: number };
-  born: number;
-  heat: number;
+export interface OverlaySurfaceHost {
+  /** shadow root を用意する (ページ側に host を外されていれば作り直す) */
+  ensureMounted(): void;
+  /** 現在の shadow root。ensureMounted() の後は非 null */
+  root(): ShadowRoot | null;
+  /** 再マウント世代。変わっていたら前に描いた DOM は既に捨てられている */
+  generation(): number;
+  settings(): Settings;
+  strings(): UiStrings;
+  toast(message: string, ms?: number): void;
 }
 
 /**
@@ -45,18 +51,13 @@ export class Overlay {
   private box!: HTMLDivElement;
   private badge!: HTMLDivElement;
   private panel!: HTMLDivElement;
-  // ---- v1 で到達不能なサーフェス (render/tree — issue #4/#5 で温存) は**遅延生成**する。
-  // mount のたびに canvas + 2D context / stats / rctl / tree の実 DOM を作るのは、
-  // 使われない要素をページごとに増やすだけ (監査 2026-08-07 medium)。初回の show* で作る
-  private statsPanel: HTMLDivElement | null = null;
-  private renderControl: HTMLDivElement | null = null;
-  private treePanel: HTMLDivElement | null = null;
   private inspectPillEl!: HTMLDivElement;
-  /** ツリー行の nodeId → DOM 行 (scrollTreeTo 用) */
-  private treeRows = new Map<number, HTMLElement>();
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
   private toastEl!: HTMLDivElement;
+  /**
+   * shadow root を作り直した回数。温存サーフェス (render/tree) は自前で DOM を持つので、
+   * 「本体が作り直した = 前に描いたものは外れている」を知る必要がある (surfaceHost 参照)。
+   */
+  private mountGeneration = 0;
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
   /**
    * モードピルの現在値。ページ側 JS が overlay host ごと DOM から外すことがあり
@@ -65,9 +66,6 @@ export class Overlay {
    * これが無いと、モードは ON のままマウスでの終了導線だけが消える。
    */
   private pill: { label: string; closeLabel: string; onClose: () => void } | null = null;
-  private flashes: Flash[] = [];
-  private flashRaf = 0;
-  private readonly FLASH_MS = 500;
 
   constructor(
     private settings: Settings,
@@ -95,12 +93,9 @@ export class Overlay {
     this.host = document.createElement('domdom-inspector-overlay');
     const root = this.host.attachShadow({ mode: 'closed' });
     this.root = root;
-    // 再マウント時 (ページ側 JS が host を外した場合) は遅延サーフェスも作り直しになる
-    this.statsPanel = null;
-    this.renderControl = null;
-    this.treePanel = null;
-    this.canvas = null;
-    this.ctx = null;
+    // 再マウント時 (ページ側 JS が host を外した場合)、外部サーフェスが持つ DOM 参照は
+    // 全部“外れた木”になる。世代を進めて相手が捨てられるようにする (surfaceHost 参照)
+    this.mountGeneration += 1;
 
     const style = document.createElement('style');
     style.textContent = OVERLAY_CSS;
@@ -118,44 +113,25 @@ export class Overlay {
     root.append(this.box, this.badge, this.panel, this.inspectPillEl, this.toastEl);
     document.documentElement.appendChild(this.host);
     // ページ側に host を外されて作り直した場合、モード ON ならピルを復元する。
-    // **再配線時の申し送り (issue #4/#5)**: rctl / tree / stats にはこの復元機構が無い
-    // (v1 では到達不能なので放置している既存の非対称)。render/tree を再配線するなら、
-    // ピルと同様に「最後に表示した状態」を保持して再マウント時に復元すること
+    // **再配線時の申し送り (issue #4/#5)**: OverlayDebugSurfaces は mountGeneration を見て
+    // DOM を作り直すが、「最後に表示していた内容」までは復元しない (v1 では到達不能なので
+    // 放置している既存の非対称)。render/tree を再配線するならピルと同様に状態を持たせること
     if (this.pill) this.renderPill(this.pill);
   }
 
-  /** v1 で到達不能なサーフェスの遅延生成 (render/tree の再配線時に初めて DOM を作る) */
-  private ensureCanvas(): HTMLCanvasElement {
-    if (!this.canvas) {
-      this.canvas = el('canvas', 'render-canvas');
-      this.ctx = this.canvas.getContext('2d');
-      this.root?.append(this.canvas);
-    }
-    return this.canvas;
-  }
-
-  private ensureStatsPanel(): HTMLDivElement {
-    if (!this.statsPanel) {
-      this.statsPanel = el('div', 'stats');
-      this.root?.append(this.statsPanel);
-    }
-    return this.statsPanel;
-  }
-
-  private ensureRenderControl(): HTMLDivElement {
-    if (!this.renderControl) {
-      this.renderControl = el('div', 'rctl');
-      this.root?.append(this.renderControl);
-    }
-    return this.renderControl;
-  }
-
-  private ensureTreePanel(): HTMLDivElement {
-    if (!this.treePanel) {
-      this.treePanel = el('div', 'tree');
-      this.root?.append(this.treePanel);
-    }
-    return this.treePanel;
+  /**
+   * 温存サーフェス (render/tree) へ渡す口。**v1 では誰も呼ばない** — issue #4/#5 の
+   * 再配線時に `new OverlayDebugSurfaces(overlay.surfaceHost())` で使う (issue #17)。
+   */
+  surfaceHost(): OverlaySurfaceHost {
+    return {
+      ensureMounted: () => this.ensureMounted(),
+      root: () => this.root,
+      generation: () => this.mountGeneration,
+      settings: () => this.settings,
+      strings: () => this.strings,
+      toast: (message, ms) => this.toast(message, ms),
+    };
   }
 
   /** インスペクトモード中の常設ピル。マウスだけで終了できる導線 (ST-5) */
@@ -235,9 +211,11 @@ export class Overlay {
     // (overlayContrast.test.ts が両方を機械検証する)
     const name = el('span', 'name');
     const cdot = el('span', 'cdot');
+    cdot.classList.add(shapeClassFor(info.classification));
     cdot.style.background = color;
     name.append(cdot, `<${info.name}>`);
     this.badge.append(name);
+
     if (detail !== 'compact') {
       const metaBits = [info.internalName, propsText].filter(Boolean).join(' · ');
       if (metaBits) {
@@ -367,6 +345,7 @@ export class Overlay {
     for (const entry of info.ownerChain) {
       const row = el('div', 'row');
       const dot = el('span', 'dot');
+      dot.classList.add(shapeClassFor(entry.classification));
       dot.style.background = colorFor(entry.classification, this.settings.colors);
       const name = el('span', undefined, entry.name);
       const file = el('span', 'file');
@@ -554,330 +533,9 @@ export class Overlay {
     }
   }
 
-  /** レンダーデバッグ: 再描画した要素群をヒートマップ色で明滅させる */
-  flashRenders(entries: { element: Element; heat: number }[]) {
-    this.ensureMounted();
-    this.ensureCanvas();
-    const now = Date.now();
-    for (const { element, heat } of entries) {
-      const r = element.getBoundingClientRect();
-      if (r.width === 0 && r.height === 0) continue;
-      this.flashes.push({
-        rect: { left: r.left, top: r.top, width: r.width, height: r.height },
-        born: now,
-        heat,
-      });
-    }
-    // 過剰蓄積を防ぐ (古いものから捨てる)
-    if (this.flashes.length > 400) this.flashes.splice(0, this.flashes.length - 400);
-    if (!this.flashRaf) this.flashRaf = requestAnimationFrame(this.drawFlashes);
-  }
-
-  private drawFlashes = () => {
-    const canvas = this.canvas;
-    const ctx = this.ctx;
-    if (!canvas || !ctx) {
-      this.flashRaf = 0;
-      return;
-    }
-    const dpr = window.devicePixelRatio || 1;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-
-    const now = Date.now();
-    this.flashes = this.flashes.filter((f) => now - f.born < this.FLASH_MS);
-    for (const f of this.flashes) {
-      const alpha = 1 - (now - f.born) / this.FLASH_MS;
-      const rgb = heatColor(f.heat);
-      ctx.strokeStyle = `rgba(${rgb},${alpha})`;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(f.rect.left, f.rect.top, f.rect.width, f.rect.height);
-      ctx.fillStyle = `rgba(${rgb},${alpha * 0.12})`;
-      ctx.fillRect(f.rect.left, f.rect.top, f.rect.width, f.rect.height);
-    }
-
-    this.flashRaf = this.flashes.length ? requestAnimationFrame(this.drawFlashes) : 0;
-  };
-
-  clearRenderFlashes() {
-    this.flashes = [];
-    cancelAnimationFrame(this.flashRaf);
-    this.flashRaf = 0;
-    if (this.ctx && this.canvas) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-  }
-
-  // ---- 以下 render/tree サーフェスの show/hide は v1 で到達不能 (温存)。
-  //      遅延生成後はローカル変数に受けて null を消す ----
-
-  /**
-   * レンダー記録の統計パネル (再描画ランキング + why-did-render + Page vitals)。
-   * 行にホバーすると原因内訳 (state/props/parent/mount) と直近変化の props/hook が見える。
-   * 「AI レポートをコピー」で Markdown 分析レポートをクリップボードへ。
-   */
-  showRenderStats(
-    snapshot: RenderSnapshot,
-    vitals: VitalsSnapshot,
-    opts: { onClose: () => void; buildReport: () => string },
-  ) {
-    this.ensureMounted();
-    const statsPanel = this.ensureStatsPanel();
-    statsPanel.replaceChildren();
-    const titleText = this.strings.statsTitle.replace('{n}', String(snapshot.commits));
-    statsPanel.setAttribute('role', 'dialog');
-    statsPanel.setAttribute('aria-label', titleText);
-
-    const head = el('div', 'head');
-    const title = el('span', 'ttl', titleText);
-    const acts = el('span', 'acts');
-    const copyBtn = el('button', 'act', this.strings.statsCopy);
-    copyBtn.addEventListener('click', () => {
-      void this.copyText(opts.buildReport()).then((ok) => {
-        this.toast(ok ? this.strings.statsCopied : this.strings.statsCopyFail, 4000);
-      });
-    });
-    const close = el('button', 'x', '×');
-    close.title = this.strings.panelClose;
-    close.setAttribute('aria-label', this.strings.panelClose);
-    close.addEventListener('click', () => {
-      this.hideRenderStats();
-      opts.onClose();
-    });
-    acts.append(copyBtn, close);
-    head.append(title, acts);
-    statsPanel.appendChild(head);
-
-    // Page vitals (Closed 環境の Lighthouse 代替。観測できた指標だけをチップ表示)
-    if (vitals.metrics.length || vitals.longTasks > 0) {
-      const vit = el('div', 'vit');
-      vit.append(el('span', 'vlb', this.strings.vitalsTitle));
-      for (const m of vitals.metrics) {
-        const cls =
-          m.rating === 'good' ? 'ok' : m.rating === 'needs-improvement' ? 'ni' : 'bad';
-        const chip = el('span', `vchip ${cls}`);
-        chip.title = m.rating;
-        chip.append(el('span', 'vd'), el('span', undefined, `${m.id} ${formatVital(m.id, m.value)}`));
-        vit.append(chip);
-      }
-      if (vitals.longTasks > 0) {
-        const chip = el('span', 'vchip');
-        chip.append(
-          el('span', undefined, `${this.strings.vitalsLongTasks} ${vitals.longTasks}`),
-        );
-        vit.append(chip);
-      }
-      statsPanel.appendChild(vit);
-    }
-
-    const totalRenders = snapshot.stats.reduce((a, s) => a + s.count, 0);
-    const summary = el(
-      'div',
-      'sum',
-      this.strings.statsSummary
-        .replace('{renders}', String(totalRenders))
-        .replace('{wasted}', String(snapshot.totalWasted))
-        .replace('{ms}', snapshot.timingSupported ? snapshot.totalSelfMs.toFixed(1) : '—'),
-    );
-    statsPanel.appendChild(summary);
-
-    const sub = el(
-      'div',
-      'sub',
-      snapshot.timingSupported
-        ? this.strings.statsColsSupported
-        : this.strings.statsColsUnsupported,
-    );
-    statsPanel.appendChild(sub);
-
-    if (snapshot.stats.length === 0) {
-      statsPanel.appendChild(el('div', 'r', this.strings.statsEmpty));
-    } else {
-      const hd = el('div', 'r hd');
-      hd.append(
-        el('span', 'nm', this.strings.statsColComponent),
-        el('span', 'ct', this.strings.statsColRenders),
-        el('span', 'ws', this.strings.statsColWasted),
-        el('span', 'ms', this.strings.statsColMs),
-      );
-      statsPanel.appendChild(hd);
-    }
-    for (const s of snapshot.stats.slice(0, 100)) {
-      const row = el('div', 'r');
-      row.title = this.causeTooltip(s);
-      const nm = el('span', 'nm', s.name);
-      const ct = el('span', 'ct', String(s.count));
-      const wasted = s.causes.parent;
-      const ws = el('span', 'ws' + (wasted > 0 ? ' warn' : ''), wasted > 0 ? String(wasted) : '·');
-      const ms = el('span', 'ms', s.selfMs > 0 ? s.selfMs.toFixed(1) : '—');
-      row.append(nm, ct, ws, ms);
-      statsPanel.appendChild(row);
-    }
-
-    if (snapshot.totalWasted > 0) {
-      statsPanel.appendChild(el('div', 'foot', this.strings.statsWastedHint));
-    }
-    statsPanel.style.display = 'block';
-  }
-
-  /** 行ツールチップ: 原因内訳 + 直近で変化した props / hooks */
-  private causeTooltip(s: RenderStat): string {
-    const lines: string[] = [];
-    const labels: [keyof RenderStat['causes'], string][] = [
-      ['state', this.strings.causeState],
-      ['props', this.strings.causeProps],
-      ['parent', this.strings.causeParent],
-      ['mount', this.strings.causeMount],
-      ['other', this.strings.causeOther],
-    ];
-    for (const [key, label] of labels) {
-      if (s.causes[key] > 0) lines.push(`${label}: ×${s.causes[key]}`);
-    }
-    if (s.lastChangedProps.length) {
-      lines.push(this.strings.changedPropsHint.replace('{list}', s.lastChangedProps.join(', ')));
-    }
-    if (s.lastChangedHooks.length) {
-      lines.push(
-        this.strings.changedHooksHint.replace(
-          '{list}',
-          s.lastChangedHooks.map((i) => `#${i}`).join(', '),
-        ),
-      );
-    }
-    return lines.join('\n');
-  }
-
-  /**
-   * クリップボードへコピー (AI レポート用)。navigator.clipboard が使えない
-   * ページ (permissions policy / 非フォーカス) は textarea + execCommand へフォールバック。
-   */
-  private async copyText(text: string): Promise<boolean> {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // フォールバックへ
-    }
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand('copy');
-      ta.remove();
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-
-  hideRenderStats() {
-    if (this.statsPanel) this.statsPanel.style.display = 'none';
-  }
-
-  /**
-   * レンダーモードの常設コントロール (状態表示 + 記録トグルボタン)。
-   * キー操作を知らなくても記録を開始/停止できるようにする。
-   */
-  showRenderControl(opts: {
-    title: string;
-    recording: boolean;
-    toggleLabel: string;
-    onToggle: () => void;
-  }) {
-    this.ensureMounted();
-    const renderControl = this.ensureRenderControl();
-    renderControl.replaceChildren();
-    const status = el('span', 'st');
-    const dot = el('span', 'd');
-    const label = el('span', undefined, opts.recording ? this.strings.ctrlRecording : opts.title);
-    status.append(dot, label);
-    const btn = el('button', undefined, opts.toggleLabel);
-    btn.addEventListener('click', opts.onToggle);
-    renderControl.append(status, btn);
-    renderControl.classList.toggle('rec', opts.recording);
-    renderControl.classList.add('on');
-  }
-
-  hideRenderControl() {
-    if (this.renderControl) this.renderControl.classList.remove('on', 'rec');
-  }
-
-  /**
-   * ビジュアルツリーを描画 (FR-05)。nodes は buildTree/filterTree が返す depth 付き平坦配列。
-   * 行 hover → onHoverNode、クリック → onClickNode。owner 用 panel とは別サーフェス。
-   */
-  showTree(
-    nodes: TreeNode[],
-    opts: { title: string; onHoverNode: (node: TreeNode) => void; onClickNode: (node: TreeNode) => void; onClose: () => void },
-  ) {
-    this.ensureMounted();
-    const treePanel = this.ensureTreePanel();
-    treePanel.replaceChildren();
-    this.treeRows.clear();
-    treePanel.setAttribute('role', 'dialog');
-    treePanel.setAttribute('aria-label', opts.title);
-
-    const head = el('div', 'head');
-    const title = el('span', undefined, `${opts.title} (${nodes.length})`);
-    const close = el('button', 'x', '×');
-    close.title = this.strings.panelClose;
-    close.setAttribute('aria-label', this.strings.panelClose);
-    close.addEventListener('click', () => {
-      this.hideTree();
-      opts.onClose();
-    });
-    head.append(title, close);
-    treePanel.appendChild(head);
-
-    if (nodes.length === 0) {
-      const empty = el('div', 'empty', this.strings.statsEmpty);
-      treePanel.appendChild(empty);
-    }
-
-    for (const node of nodes) {
-      const row = el('div', 'trow');
-      row.style.paddingLeft = `${8 + node.depth * 13}px`;
-      const dot = el('span', 'dot');
-      dot.style.background = colorFor(node.classification, this.settings.colors);
-      const nm = el('span', 'nm', node.name);
-      row.append(dot, nm);
-      row.addEventListener('mouseenter', () => opts.onHoverNode(node));
-      row.addEventListener('click', () => opts.onClickNode(node));
-      treePanel.appendChild(row);
-      this.treeRows.set(node.id, row);
-    }
-    treePanel.style.display = 'block';
-  }
-
-  hideTree() {
-    if (this.treePanel) this.treePanel.style.display = 'none';
-  }
-
-  isTreeOpen(): boolean {
-    return !!this.treePanel && this.treePanel.style.display === 'block';
-  }
-
-  /** 実 DOM hover → 該当ツリー行へスクロール&一時強調 (FR-07 逆方向) */
-  scrollTreeTo(nodeId: number) {
-    const row = this.treeRows.get(nodeId);
-    if (!row) return;
-    row.scrollIntoView({ block: 'nearest' });
-    for (const r of this.treeRows.values()) r.classList.remove('hl');
-    row.classList.add('hl');
-  }
+  // ---- 温存サーフェス (render ヒートマップ / 統計 / 記録コントロール / ツリー) の描画は
+  //      `render-bundle/overlayDebug.ts` へ分離した (issue #17)。クラスメソッドは
+  //      tree-shake されないため、ここに置くと到達不能なまま出荷 JS に載り続ける。
 
   toast(message: string, ms = 2600) {
     this.ensureMounted();

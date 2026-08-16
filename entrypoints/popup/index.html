@@ -140,6 +140,15 @@
       .lg-mui { color: var(--lg-mui); }
       .lg-custom { color: var(--lg-custom); }
       .lg-third { color: var(--lg-third); }
+      /* 分類は色だけで伝えない (SC 1.4.1)。バッジの色ドットと同じ形をここにも出す。
+         語を足さずに形だけ足すので、凡例行の密度は変わらない */
+      .lgd {
+        display: inline-block; width: 8px; height: 8px; margin-right: 4px;
+        background: currentColor; border: 1px solid var(--border);
+      }
+      .lgd.circle { border-radius: 50%; }
+      .lgd.square { border-radius: 0; }
+      .lgd.diamond { border-radius: 1px; transform: rotate(45deg); }
     </style>
   </head>
   <body>
@@ -238,9 +247,9 @@
         box: turn inspect mode ON with the button above or its keyboard shortcut. You can also
         right-click any element and pick "Inspect this element".</p>
         <p><b>Hover</b>: an outline and badge appear. Outline color is
-        <span class="legend lg-mui">blue = MUI</span> /
-        <span class="legend lg-custom">green = your code</span> /
-        <span class="legend lg-third">gray = other libraries or plain DOM</span>.
+        <span class="legend lg-mui"><i class="lgd circle"></i>blue = MUI</span> /
+        <span class="legend lg-custom"><i class="lgd square"></i>green = your code</span> /
+        <span class="legend lg-third"><i class="lgd diamond"></i>gray = other libraries or plain DOM</span>.
         The badge shows the design values of the element — color, background, spacing,
         border-radius, typography. Where a value comes from a CSS custom property, the
         <b>declared variable name</b> is shown instead of the raw value.</p>
@@ -267,9 +276,9 @@
         全部使えます (上のボタンかショートカットで ON)。要素を右クリックして
         「この要素を検査」からも始められます。</p>
         <p><b>ホバー</b>: 要素に枠とバッジが出ます。枠の色は
-        <span class="legend lg-mui">青 = MUI</span> /
-        <span class="legend lg-custom">緑 = 自作</span> /
-        <span class="legend lg-third">グレー = その他ライブラリ / 素の DOM</span>。
+        <span class="legend lg-mui"><i class="lgd circle"></i>青 = MUI</span> /
+        <span class="legend lg-custom"><i class="lgd square"></i>緑 = 自作</span> /
+        <span class="legend lg-third"><i class="lgd diamond"></i>グレー = その他ライブラリ / 素の DOM</span>。
         バッジには要素のデザイン値 — 色・背景・余白・角丸・タイポグラフィ — が表示されます。
         値が CSS カスタムプロパティ由来なら、生値ではなく<b>宣言された変数名</b>が出ます。</p>
         <table>

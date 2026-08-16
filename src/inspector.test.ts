@@ -5,6 +5,8 @@ import {
   drillToInnermost,
   Inspector,
   type InspectorOptions,
+  LIVE_RESYNC_MS,
+  liveResyncDelay,
   resolveOuterElement,
 } from './inspector';
 import type { Overlay } from './overlay';
@@ -22,6 +24,7 @@ function stubOverlay() {
     chainPanels: [] as InspectInfo[],
     shown: [] as Element[],
     pills: [] as string[],
+    hidden: 0,
   };
   const overlay = {
     containsTarget: () => false,
@@ -38,7 +41,9 @@ function stubOverlay() {
       calls.editorOpened.push({ fileName: loc.fileName, lineNumber: loc.lineNumber }),
     showChainPanel: (info: InspectInfo) => calls.chainPanels.push(info),
     show: (element: Element) => calls.shown.push(element),
-    hideHighlight: () => {},
+    hideHighlight: () => {
+      calls.hidden += 1;
+    },
     hideAll: () => {},
     updateSettings: () => {},
     isChainPanelOpen: () => false,
@@ -712,5 +717,123 @@ describe('非 React ページのエディタジャンプ (3 段フォールバ�
     inspector.openEditorAt(el);
     expect(calls.editorOpened).toEqual([]);
     expect(calls.toasts).toEqual([DEFAULT_STRINGS.noSourceDom]);
+  });
+});
+
+/**
+ * 選択中の要素の live 追従 (issue #19)。
+ * 「マウスを止めて見ている間にページ側がスタイルを書き換えても、バッジが古い値のまま
+ * 残る」を閉じる。**古い値を出し続けるのは欠測ではなく誤答**なので、追従できない状況では
+ * 枠ごと畳む (対象が DOM から外れた場合) ことまで含めて固定する。
+ */
+describe('liveResyncDelay (測り直しの待ち時間)', () => {
+  it('直前に測ったばかりなら interval だけ待つ', () => {
+    expect(liveResyncDelay(1000, 1000, 150)).toBe(150);
+  });
+  it('interval 経過後は待たない', () => {
+    expect(liveResyncDelay(1150, 1000, 150)).toBe(0);
+    expect(liveResyncDelay(9999, 1000, 150)).toBe(0);
+  });
+  it('途中なら残り時間だけ待つ', () => {
+    expect(liveResyncDelay(1100, 1000, 150)).toBe(50);
+  });
+  it('時計が巻き戻っても interval を超えて待たない (バッジが数分止まらない)', () => {
+    // NTP 補正やスリープ復帰で now < lastSync になりうる。素朴な引き算だと
+    // interval を超える待ちになり、追従が止まったように見える
+    expect(liveResyncDelay(1000, 60_000, 150)).toBe(150);
+  });
+});
+
+describe('選択中の要素の live 追従 (issue #19)', () => {
+  /** 条件が満たされるまで待つ (MutationObserver はマイクロタスク + throttle のタイマー) */
+  const waitFor = async (predicate: () => boolean, timeout = LIVE_RESYNC_MS * 8) => {
+    const start = Date.now();
+    while (!predicate()) {
+      if (Date.now() - start > timeout) return false;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return true;
+  };
+
+  beforeEach(() => {
+    document.body.replaceChildren();
+    document.documentElement.className = '';
+  });
+
+  it('選択中の要素の style 書き換えで測り直す', async () => {
+    const { inspector, calls } = make();
+    const target = document.createElement('div');
+    document.body.append(target);
+
+    inspector.inspectAt(target);
+    const shownAtSelect = calls.shown.length;
+    expect(shownAtSelect).toBeGreaterThan(0);
+
+    target.style.color = 'rgb(255, 0, 0)';
+    expect(await waitFor(() => calls.shown.length > shownAtSelect)).toBe(true);
+    // 測り直しは選択を動かさない (同じ要素を出し直す)
+    expect(calls.shown.at(-1)).toBe(target);
+  });
+
+  it('テーマ切替 (html の class 差し替え) でも測り直す — 対象自身は変わらない', async () => {
+    const { inspector, calls } = make();
+    const target = document.createElement('div');
+    document.body.append(target);
+
+    inspector.inspectAt(target);
+    const before = calls.shown.length;
+
+    document.documentElement.classList.add('dark');
+    expect(await waitFor(() => calls.shown.length > before)).toBe(true);
+  });
+
+  it('連続変化は 1 回にまとめる (トランジション中に毎フレーム測らない)', async () => {
+    const { inspector, calls } = make();
+    const target = document.createElement('div');
+    document.body.append(target);
+
+    inspector.inspectAt(target);
+    const before = calls.shown.length;
+
+    // **1 tick にまとめて書かない。** 同期的に 10 回書くと MutationObserver 側が
+    // 1 コールバックに束ねてしまい、throttle を通らずに緑になる (検証にならない)。
+    // tick を挟んで通知を 10 回起こし、それでも測り直しが 1 回であることを見る
+    for (let i = 0; i < 10; i += 1) {
+      target.style.opacity = String(i / 10);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    expect(await waitFor(() => calls.shown.length > before)).toBe(true);
+    // 追従は 1 回だけ。10 回測り直していたら 60fps が壊れている
+    expect(calls.shown.length - before).toBe(1);
+  });
+
+  it('モードを OFF にした後の変化では測り直さない', async () => {
+    const { inspector, calls } = make();
+    const target = document.createElement('div');
+    document.body.append(target);
+
+    inspector.inspectAt(target);
+    inspector.onEscape();
+    const before = calls.shown.length;
+
+    target.style.color = 'rgb(0, 255, 0)';
+    // 追従しないことの確認なので、待ってから増えていないことを見る
+    await new Promise((resolve) => setTimeout(resolve, LIVE_RESYNC_MS * 2));
+    expect(calls.shown.length).toBe(before);
+  });
+
+  it('対象がページから外れたらハイライトを畳む (消えた要素の枠を残さない)', async () => {
+    const { inspector, calls } = make();
+    const target = document.createElement('div');
+    document.body.append(target);
+
+    inspector.inspectAt(target);
+    const hiddenBefore = calls.hidden;
+
+    // 外す前に変化を起こしておく (測り直しのタイミングで既に外れている状況を作る)
+    target.style.color = 'rgb(0, 0, 255)';
+    target.remove();
+
+    expect(await waitFor(() => calls.hidden > hiddenBefore)).toBe(true);
   });
 });

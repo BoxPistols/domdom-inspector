@@ -11,6 +11,50 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.24 (2026-08-16) — 温存実装を出荷 JS から外す / 分類を色以外でも示す / 選択中の追従
+
+監査 (2026-08-07) の残り 3 件 (issue #17 / #18 / #19) を閉じた。
+
+**温存実装の分離** (issue #17):
+- v1 の配線から外した render/tree 一式を `src/render-bundle/` へ移した。**削除ではなく
+  分離**なので、ユニットテスト (renderTracker / renderCause / report / tree / vitals) は
+  そのまま生きている
+- Overlay 本体が持っていた温存サーフェスの描画 (`showRenderStats` / `showTree` /
+  `flashRenders` 等) を `render-bundle/overlayDebug.ts` の `OverlayDebugSurfaces` へ切り出した。
+  **クラスメソッドは tree-shake されない**ため、本体に置いたままだと `heatColor` /
+  `formatVital` / 該当 CSS ごと出荷 JS に載り続けていた
+- 再配線は `new OverlayDebugSurfaces(overlay.surfaceHost())` の 1 行で済む。Overlay 側は
+  `surfaceHost()` (ensureMounted / root / 再マウント世代 / settings / strings / toast) だけを公開する
+- サイズ差分: **分離だけを入れた時点で inspector.js 60,908 B → 48,508 B (-12,400 B / -20.4%)**。
+  この版の最終形は下 2 件 (追従・形状) を足して **49,856 B**、総量 139.76 kB → 129.39 kB
+- `pnpm check:submission` に 2 項目追加 (計 23)。出荷 JS を走査して温存実装の目印が
+  1 件も無いことを実測する。**目印が render-bundle に実在することも同時に要求する** —
+  名前が変わって「どこにも無い」状態になったら、この検査は何も見ずに緑になるため
+- 境界契約 (`boundaries.test.ts` / ESLint `no-restricted-imports`) をディレクトリ跨ぎの
+  import (`./render-bundle/tree` 等) にも効く形へ。**移動でパターンが素通しになる穴**を塞いだ
+  (違反を注入して両方が赤になることを確認済み)
+
+**分類の非色手がかり** (issue #18, SC 1.4.1):
+- 分類 (MUI / 自作 / その他) のドットを色に加えて**形**でも区別する: ● 円 = MUI /
+  ■ 四角 = 自作 / ◆ ひし形 = その他ライブラリ・素の DOM。バッジ・owner パネル・ツリー行で共通
+- popup のヘルプ凡例にも同じ形の見本を置いた。**語を足さずに形だけ足す**ので凡例行の密度は不変
+- i18n キーの追加なし (文言でなく形状で伝えるため)
+
+**選択中の要素の live 追従** (issue #19):
+- ホバーで選択した要素の style/class が**選択中に**変わっても、バッジが古い値のまま
+  残っていた。古い値を出し続けるのは欠測ではなく**誤答**
+- 監視対象は 3 つに絞る: 対象自身の style/class / html・body の style/class (テーマ切替は
+  対象自身が変わらないのに継承値と CSS 変数が入れ替わる) / 対象のサイズ (ResizeObserver)。
+  全 DOM の subtree 監視はホバーの 60fps を壊すため採らない
+- 測り直しは最小 150ms 間隔にまとめる。トランジション中に毎フレーム測らない
+  (tick を跨いだ 10 回の変化が 1 回に収まることをテストで固定 — 同期的に 10 回書くと
+  MutationObserver 側が束ねてしまい、throttle を通らずに緑になるので検証にならない)
+- 対象が DOM から外れていたら枠ごと畳む。消えた要素の枠を残さない
+- 待ち時間の計算は 0〜interval にクランプする。素朴な引き算だと時計の巻き戻し
+  (NTP 補正・スリープ復帰) でバッジが数分止まったように見える
+
+---
+
 ## 0.4.23 (2026-08-16) — エディタは dev サーバ経由で開く (設定ゼロ)
 
 **期待値は「Vue DevTools の React 版」。それが一度も成らなかった原因は転送方式の選択**

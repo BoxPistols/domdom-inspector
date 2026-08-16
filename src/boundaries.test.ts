@@ -33,10 +33,32 @@ describe('境界契約: design 経路は Fiber 結合モジュールを import �
   for (const mod of DESIGN_PATH) {
     it(`${mod}.ts は Fiber 系 (${FORBIDDEN.join('/')}) を import しない`, () => {
       const source = readFileSync(`src/${mod}.ts`, 'utf8');
+      // ディレクトリを跨いだ形 ('./render-bundle/tree' 等) も必ず捕まえる。
+      // issue #17 で温存実装を src/render-bundle/ へ移したとき、`'./tree'` 決め打ちの
+      // 正規表現のままだと**契約が黙って無効化される** (テストは緑のまま素通しになる)。
       const offenders = FORBIDDEN.filter((f) =>
-        new RegExp(String.raw`from ['"]\./${f}['"]`).test(source),
+        new RegExp(String.raw`from ['"][^'"]*/${f}['"]`).test(source),
       );
       expect(offenders).toEqual([]);
     });
   }
+});
+
+describe('境界契約の反証: パスの形が変わっても検出できる', () => {
+  const detects = (source: string) =>
+    FORBIDDEN.filter((f) => new RegExp(String.raw`from ['"][^'"]*/${f}['"]`).test(source));
+
+  it('同ディレクトリの import を検出する', () => {
+    expect(detects(`import { buildTree } from './tree';`)).toEqual(['tree']);
+  });
+  it('サブディレクトリへ移した import も検出する', () => {
+    expect(detects(`import { buildTree } from './render-bundle/tree';`)).toEqual(['tree']);
+    expect(detects(`import type { X } from '../render-bundle/renderTracker';`)).toEqual([
+      'renderTracker',
+    ]);
+  });
+  it('名前が前方一致するだけの別モジュールは誤検出しない', () => {
+    expect(detects(`import { TreeView } from './treeView';`)).toEqual(['treeView']);
+    expect(detects(`import { normalizeSourcePath } from './source';`)).toEqual([]);
+  });
 });

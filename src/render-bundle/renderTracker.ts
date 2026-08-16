@@ -1,4 +1,4 @@
-import { COMPONENT_TAGS, getFiberName } from './fiber';
+import { COMPONENT_TAGS, getFiberName } from '../fiber';
 import { classifyRenderCause, type RenderCause } from './renderCause';
 
 type Fiber = any;
