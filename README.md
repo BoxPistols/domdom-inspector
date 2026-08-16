@@ -58,6 +58,41 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 
 ページを読むだけで、ページ内容の保存もリモートコード実行もしない。**第三者への送信はゼロ**。発行するネットワーク要求は**ただ 1 種類** — 「このファイルを開いて」と利用者自身のローカル開発サーバに頼むエディタ起動要求だけで、`looksLocalDev` が真のとき (localhost / 127.0.0.1 / `*.local` / `*.test` 等) にしか出さず、送るのはページ自身が生成したソースパスだけ。詳細は [`SECURITY.md`](./SECURITY.md) (経路が 1 つであることは `pnpm check:submission` が毎回実測する)。
 
+### エディタで開く — 1 回だけの設定 / One-time setup for "open in editor"
+
+**ほとんどの場合、設定は不要です。** `⌘/Ctrl+Click` で開発サーバ経由でエディタが開きます。
+
+開かなかったときだけ、拡張が「設定コマンドをコピー」を出します。押して貼って実行し、
+**開発サーバを起動し直せば終わり**です。以降は不要です。
+
+なぜ拡張側で消せないのか: 開発サーバ (Vite / Next / CRA) がどのエディタを起動するかは
+**サーバ側の環境変数でしか決まりません**。エンドポイントにエディタを指定する口が無く、
+ブラウザからサーバの環境変数は変えられません。拡張にできるのは「正しい 1 行を、
+考えなくていい形で渡すこと」までです。
+
+| エディタ | 設定 |
+|---|---|
+| VS Code / Cursor / WebStorm | `export LAUNCH_EDITOR=code`(または `cursor` / `webstorm`) |
+| Antigravity IDE などそれ以外 | 下記の 3 行 (拡張の「設定コマンドをコピー」がこれを出します) |
+
+```sh
+mkdir -p ~/.local/launch-editor
+ln -sfn "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" ~/.local/launch-editor/code
+export LAUNCH_EDITOR="$HOME/.local/launch-editor/code"
+```
+
+`launch-editor` は**エディタ名で引数の形を決めます**。`code` / `cursor` / `codium` /
+`trae` / `vscodium` のときだけ `-g file:line:column` を渡すため、一覧に無い名前
+(Antigravity 等) では**行番号が別のファイル名として渡り、開いても該当箇所に飛びません**。
+そこで `code` という名前だけを借ります。**PATH には載せない**ので既存の
+`code` / `cursor` は影響を受けません。
+
+> 値に引数を含めると必ず失敗します (`LAUNCH_EDITOR="code --wait"` は不可)。
+> `EDITOR="code --wait"` を設定している場合も同じ理由で開きません
+> — `LAUNCH_EDITOR` の方が優先されるので、上記を設定すれば解決します。
+
+詳細と実測は [`docs/editor-jump-support.md`](docs/editor-jump-support.md)。
+
 ## Shortcuts / ショートカット
 
 - `Alt+Shift+I` — インスペクトモード切替(popup の「切替ショートカットを変更」から `chrome://extensions/shortcuts` で再割当可能)

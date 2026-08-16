@@ -184,9 +184,10 @@ export interface UiStrings {
    * dev サーバへ依頼したときの通知。**「開いた」と言わない** — dev サーバは
    * launch-editor の完了を待たずに 200 を返すので、拡張は結果を知りようがない。
    */
+  editorDevServerNoOpen: string;
+  editorCopySetup: string;
+  editorSetupCopied: string;
   editorOpenedViaDevServer: string;
-  /** 依頼が空振りしたときにスキーム起動へ逃げる導線 */
-  editorOpenDirect: string;
   editorCopyMapping: string;
   editorMappingCopied: string;
   ownerPanelTitle: string;
@@ -296,8 +297,11 @@ export const DEFAULT_STRINGS: UiStrings = {
   editorPathCopied: 'Path copied',
   editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}',
   editorRemoteSource: 'Source is at {path} in that site’s project — not on this computer, so it cannot be opened.',
+  editorDevServerNoOpen:
+    "Your editor did not come to the front. The dev server needs to be told which editor to use — a one-time setup.",
+  editorCopySetup: "Copy the setup command",
+  editorSetupCopied: "Copied. Run it, then restart your dev server.",
   editorOpenedViaDevServer: "Asked the dev server to open it. If nothing opened, its terminal will say why.",
-  editorOpenDirect: "Open directly",
   editorTildePath: 'The path mapping contains “~”, which editors do not expand — the open will always fail. In the popup → Advanced → Path mappings, replace ~ with the full absolute path (e.g. /Users/you/…).',
   editorCopyMapping: 'Copy the line',
   editorMappingCopied: 'Copied — paste it into Path mappings and replace the placeholder with your project path',

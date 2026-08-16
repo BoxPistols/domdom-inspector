@@ -53,6 +53,41 @@ Permissions are minimized. Only `localhost` / `127.0.0.1` are enabled automatica
 
 The extension only reads the page — it never stores page content and never executes remote code. **Nothing is sent to any third party.** It issues exactly **one kind** of network request: asking your own local dev server to open a file in your editor. That request is made only when `looksLocalDev` is true (localhost / 127.0.0.1 / `*.local` / `*.test` …), and it carries nothing but the source path the page itself produced. See [`SECURITY.md`](./SECURITY.md) — that there is exactly one such route is measured on every run by `pnpm check:submission`.
 
+### One-time setup for "open in editor"
+
+**Usually nothing to set up.** `⌘/Ctrl+Click` opens your editor through the dev server.
+
+If it does not open, the extension offers a **"Copy the setup command"** button. Paste, run,
+restart your dev server — done, once and for all.
+
+Why the extension cannot do this for you: which editor the dev server launches is decided
+**only by an environment variable on the server**. The endpoint takes no editor parameter,
+and a browser cannot change the server's environment. All the extension can do is hand you
+the correct line so you do not have to work it out.
+
+| Editor | Setup |
+|---|---|
+| VS Code / Cursor / WebStorm | `export LAUNCH_EDITOR=code` (or `cursor` / `webstorm`) |
+| Anything else (e.g. Antigravity IDE) | the three lines below — this is what the button copies |
+
+```sh
+mkdir -p ~/.local/launch-editor
+ln -sfn "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" ~/.local/launch-editor/code
+export LAUNCH_EDITOR="$HOME/.local/launch-editor/code"
+```
+
+`launch-editor` picks the argument form **from the editor's name**. Only `code` / `cursor` /
+`codium` / `trae` / `vscodium` get `-g file:line:column`; any other name falls back to
+passing the line and column as **extra file names**, so the file opens but the cursor does
+not jump. Borrowing the name `code` fixes that. The shim is **not on your PATH**, so your
+real `code` / `cursor` are untouched.
+
+> The value must not contain arguments — `LAUNCH_EDITOR="code --wait"` always fails.
+> If you have `EDITOR="code --wait"` set (common for git), that is exactly why nothing opens;
+> `LAUNCH_EDITOR` takes precedence, so the setup above resolves it.
+
+Measurements and the full failure path: [`docs/editor-jump-support.md`](docs/editor-jump-support.md).
+
 ## Shortcuts
 
 - `Alt+Shift+I` — toggle inspect mode (rebindable at `chrome://extensions/shortcuts` via "Change toggle shortcut" in the popup)

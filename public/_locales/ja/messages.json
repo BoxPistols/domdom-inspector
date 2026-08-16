@@ -538,7 +538,13 @@
   "panelHighlightStale": {
     "message": "この数字はいま見ているページのものではないため、ハイライトは止めています。"
   },
-  "editorOpenDirect": {
-    "message": "直接開く"
+  "editorDevServerNoOpen": {
+    "message": "エディタが前面に出てきませんでした。どのエディタを使うかは dev サーバ側にしか設定できません (1 回だけの作業です)。"
+  },
+  "editorCopySetup": {
+    "message": "設定コマンドをコピー"
+  },
+  "editorSetupCopied": {
+    "message": "コピーしました。実行してから dev サーバを起動し直してください。"
   }
 }

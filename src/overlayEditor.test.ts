@@ -304,31 +304,44 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
     for (let i = 0; i < 30; i += 1) await Promise.resolve();
   };
 
-  it('依頼が空振りしたとき、トーストの導線からスキーム起動へ逃げられる', async () => {
-    // スキーム経路は絶対パスなら対応表なしで開ける (相対パスだと案内トーストに化ける)
-    const ABSOLUTE_LOC = { fileName: '/Users/me/app/src/page.tsx', lineNumber: 12, columnNumber: 3 };
+  it('**開いたら何も出さない** (エディタが前に出ること自体が結果。毎回のトーストはノイズ)', async () => {
+    vi.useFakeTimers();
     const restore = stubFetch(() => Promise.resolve({ status: 200, headers: new Headers() }));
-    const clicks: string[] = [];
-    const origClick = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-      clicks.push(this.href);
-    };
     try {
       withHost('localhost:3000', () =>
-        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(ABSOLUTE_LOC),
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC),
       );
       await flush();
-      expect(clicks, '依頼の時点ではスキームを開かない').toEqual([]);
-      // 利用者が「直接開く」を押す
-      withHost('localhost:3000', () => {
-        toastEl()?.querySelector('button')?.click();
-      });
+      // エディタが起動した = ページがフォーカスを失う
+      window.dispatchEvent(new Event('blur'));
+      vi.advanceTimersByTime(5000);
       await flush();
     } finally {
-      HTMLAnchorElement.prototype.click = origClick;
       restore();
+      vi.useRealTimers();
     }
-    expect(clicks.length, 'スキーム起動へ到達すること').toBeGreaterThan(0);
+    expect(toastEl()?.style.display, '成功時にトーストを出さない').not.toBe('block');
+  });
+
+  it('開かなかったら、1 回だけの設定をコピーできる導線を出す', async () => {
+    vi.useFakeTimers();
+    const restore = stubFetch(() => Promise.resolve({ status: 200, headers: new Headers() }));
+    try {
+      withHost('localhost:3000', () =>
+        new Overlay(DEFAULT_SETTINGS, DEFAULT_STRINGS).openEditor(RELATIVE_LOC),
+      );
+      await flush();
+      // blur を起こさない = エディタは前に出てこなかった
+      vi.advanceTimersByTime(5000);
+      await flush();
+    } finally {
+      restore();
+      vi.useRealTimers();
+    }
+    // **黙って終わらせない。** dev サーバのエディタ選択はサーバ側でしか決められないので、
+    // 拡張にできるのは「正しい 1 行を考えなくていい形で渡す」ところまで
+    expect(toastEl()?.textContent).toContain(DEFAULT_STRINGS.editorDevServerNoOpen);
+    expect(toastEl()?.querySelector('button')?.textContent).toBe(DEFAULT_STRINGS.editorCopySetup);
   });
 
   it('dev サーバが開いたら、設定に関する案内を一切出さない', async () => {
@@ -352,18 +365,9 @@ describe('Overlay.openEditor — dev サーバ経路が本線', () => {
       HTMLAnchorElement.prototype.click = origClick;
       restore();
     }
-    expect(toastEl()?.textContent).toContain(DEFAULT_STRINGS.editorOpenedViaDevServer);
-    expect(toastEl()?.textContent).not.toContain('/src=');
-    // **成功と断定しない。** dev サーバは launch-editor の完了を待たず 200 を返すので、
-    // 拡張は結果を知りようがない (実測: EDITOR="code --wait" だと ENOENT で落ちるが 200)
-    expect(
-      DEFAULT_STRINGS.editorOpenedViaDevServer,
-      '「開いた」と断定する文言にしない',
-    ).not.toMatch(/\bopened it\b|開きました/);
-    // 空振りしたときの逃げ道が同じトーストにあること。以前はここで成功扱いにしていたため
-    // **実際には動くスキーム起動へ二度と到達しなかった**
-    const action = toastEl()?.querySelector('button');
-    expect(action?.textContent, '直接開く導線が無い').toBe(DEFAULT_STRINGS.editorOpenDirect);
+    // 対応表の話は出さない (絶対パスを書かせないことが dev サーバ経路の目的)
+    expect(toastEl()?.textContent ?? '').not.toContain('/src=');
+    expect(toastEl()?.textContent ?? '').not.toContain(DEFAULT_STRINGS.editorCopyMapping);
     expect(clicks).toEqual([]); // スキームは使わない
   });
 

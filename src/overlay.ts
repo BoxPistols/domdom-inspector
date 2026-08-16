@@ -1,5 +1,6 @@
 import { isColorValue } from './designStyle';
 import { buildEditorUrl, formatSourceRef, needsPathMapping, resolvedPath } from './editor';
+import { devServerSetup } from './devServerSetup';
 import { openViaDevServer } from './openInEditor';
 import { isBundledSource, looksLocalDev, suggestMapping } from './source';
 import { buildSearchHints } from './sourceAttr';
@@ -44,6 +45,13 @@ export interface OverlaySurfaceHost {
  * 短すぎると起動が遅いエディタで誤検知し、長すぎると気づくのが遅れる。
  */
 const EDITOR_LAUNCH_GRACE_MS = 1200;
+
+/**
+ * dev サーバ経由のときの猶予。スキーム起動より長く取る — こちらは
+ * 「ブラウザ → サーバ → エディタ起動」と 1 段多く、サーバがプロセスを spawn する
+ * ぶんだけ遅い (実測でエディタのプロセスが立つまで約 1 秒)。
+ */
+const DEV_SERVER_LAUNCH_GRACE_MS = 2500;
 
 export class Overlay {
   private host: HTMLElement | null = null;
@@ -441,12 +449,20 @@ export class Overlay {
           // よって (1) 成功と断定しない (2) **空振りしたときの逃げ道を同じトーストに置く**。
           // 以前はここで成功扱いにしていたため、実際には動くスキーム起動へ二度と
           // 到達しなかった (押しても何も起きないまま、原因も分からない状態になる)。
-          this.toastAction(
-            this.strings.editorOpenedViaDevServer,
-            this.strings.editorOpenDirect,
-            () => this.openEditorViaScheme(loc, host),
-            12000,
-          );
+          // **成功したら何も出さない。** エディタが前に出てくること自体が結果なので、
+          // 毎回トーストを出すのはノイズにしかならない。
+          // 開かなかったときだけ、**1 回だけの設定**をそのまま貼れる形で渡す
+          // (dev サーバのエディタ選択はサーバ側の環境変数でしか決められず、
+          //  ブラウザからは変えられない。拡張にできるのはここまで)
+          this.watchLaunch(DEV_SERVER_LAUNCH_GRACE_MS, () => {
+            const setup = devServerSetup(this.settings.editor);
+            this.toastAction(
+              this.strings.editorDevServerNoOpen,
+              this.strings.editorCopySetup,
+              () => void this.copyToClipboard(setup.snippet, this.strings.editorSetupCopied),
+              14000,
+            );
+          });
         } else {
           this.openEditorViaScheme(loc, host);
         }
@@ -461,6 +477,28 @@ export class Overlay {
    * ブラウザが知り得ない情報 (プロジェクトのディスク上の位置) を利用者に設定させる
    * 必要がある。dev サーバ経路が使えないときだけここへ来る。
    */
+  /**
+   * 外部アプリが起動したかを**猶予内の離脱で観測する**。
+   *
+   * エディタが起動すると OS がそちらへフォーカスを移すのでページは blur する。
+   * 成否を直接取れない経路 (スキーム起動 / dev サーバ依頼) 共通の唯一の手がかり。
+   * **イベント受信時にフラグへ残し、遅延側はフラグだけで判断する** — 遅延の中で
+   * `document.hasFocus()` を読み直すと、その間に別の理由で変わった状態を見てしまう。
+   */
+  private watchLaunch(graceMs: number, onNotLaunched: () => void) {
+    let leftPage = false;
+    const mark = () => {
+      leftPage = true;
+    };
+    window.addEventListener('blur', mark, { once: true });
+    document.addEventListener('visibilitychange', mark, { once: true });
+    setTimeout(() => {
+      window.removeEventListener('blur', mark);
+      document.removeEventListener('visibilitychange', mark);
+      if (!leftPage) onNotLaunched();
+    }, graceMs);
+  }
+
   private openEditorViaScheme(
     loc: { fileName: string; lineNumber: number; columnNumber: number },
     host: string,
@@ -504,15 +542,16 @@ export class Overlay {
     const url = buildEditorUrl(this.settings, loc);
     const ref = formatSourceRef(this.settings, loc);
 
-    // 外部アプリが起動するとページはフォーカスを失う。それを**イベントで捕まえてフラグに残し**、
-    // 遅延側ではフラグだけで判定する (遅延の中で document.hasFocus() を読み直すと、
-    // その間に別の理由で変わった状態を見てしまう)。
-    let leftPage = false;
-    const mark = () => {
-      leftPage = true;
-    };
-    window.addEventListener('blur', mark, { once: true });
-    document.addEventListener('visibilitychange', mark, { once: true });
+    // 離脱の観測は watchLaunch に集約 (dev サーバ経路と同じ手)
+    this.watchLaunch(EDITOR_LAUNCH_GRACE_MS, () => {
+      // 何も起きなかった = エディタ未インストール / scheme 未登録の可能性。
+      // 黙って終わらせず、手で辿れるパスとコピー導線を出す
+      this.toastAction(
+        `${this.strings.editorNotOpened} ${ref}`,
+        this.strings.editorCopyPath,
+        () => void this.copyToClipboard(ref, this.strings.editorPathCopied),
+      );
+    });
 
     try {
       const a = document.createElement('a');
@@ -527,19 +566,6 @@ export class Overlay {
     }
     // 「開いています」と断定しない (成否が取れないため)。送った先と場所だけ言う
     this.toast(this.strings.editorOpening.replace('{file}', ref));
-
-    setTimeout(() => {
-      window.removeEventListener('blur', mark);
-      document.removeEventListener('visibilitychange', mark);
-      if (leftPage) return;
-      // 何も起きなかった = エディタ未インストール / scheme 未登録の可能性。
-      // 黙って終わらせず、手で辿れるパスとコピー導線を出す
-      this.toastAction(
-        `${this.strings.editorNotOpened} ${ref}`,
-        this.strings.editorCopyPath,
-        () => void this.copyToClipboard(ref, this.strings.editorPathCopied),
-      );
-    }, EDITOR_LAUNCH_GRACE_MS);
   }
 
   /**

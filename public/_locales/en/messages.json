@@ -538,7 +538,13 @@
   "panelHighlightStale": {
     "message": "These numbers are not from the page you are looking at, so highlighting is off."
   },
-  "editorOpenDirect": {
-    "message": "Open directly"
+  "editorDevServerNoOpen": {
+    "message": "Your editor did not come to the front. The dev server needs to be told which editor to use — a one-time setup."
+  },
+  "editorCopySetup": {
+    "message": "Copy the setup command"
+  },
+  "editorSetupCopied": {
+    "message": "Copied. Run it, then restart your dev server."
   }
 }
