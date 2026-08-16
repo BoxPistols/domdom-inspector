@@ -8,11 +8,11 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 > - 判定: `flags & PerformedWork` + alternate 差分走査(bailout サブツリーをスキップ)。
 >   production ビルドでも回数・原因が正確(時間計測のみ dev/profiling ビルド必要)。
 > - why-did-render: 原因分類 `mount / state(hook index 付き) / props(変化キー付き) / parent(無駄=memo 候補) / other`
->   (`src/renderCause.ts`)。統計パネルの行 hover で内訳表示。
-> - Page vitals: LCP/CLS/INP/FCP/TTFB/LongTasks を PerformanceObserver で常時観測(`src/vitals.ts`)。
+>   (`src/render-bundle/renderCause.ts`)。統計パネルの行 hover で内訳表示。
+> - Page vitals: LCP/CLS/INP/FCP/TTFB/LongTasks を PerformanceObserver で常時観測(`src/render-bundle/vitals.ts`)。
 >   Closed 環境での Lighthouse 代替。
 > - AI レポート: 記録スナップショット + vitals から Markdown 分析レポートを生成しクリップボードへ
->   (`src/report.ts`)。AI アシスタントに貼ってチューニング対話を始められる。
+>   (`src/render-bundle/report.ts`)。AI アシスタントに貼ってチューニング対話を始められる。
 > - popup: darkmode ファースト + WCAG AA コントラスト + 職域スイッチ(designer/engineer、
 >   `Settings.role`)でエンジニア専用 UI の表示を切替。
 >
@@ -36,8 +36,9 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 >   設計は `docs/design-coverage-screen.md` に確定済み (Phase E は 2026-08-06 完了) →
 >   [#10](https://github.com/BoxPistols/domdom-inspector/issues/10)
 > - **AI 監査**: これがあるだけで CWS の Data usage 申告に Website content と
->   Authentication information の 2 カテゴリが必要になる。外したことで**申告は「収集なし」に戻り**、
->   `fetch` の発生箇所が 0 件になった →
+>   Authentication information の 2 カテゴリが必要になる。外したことで**申告は「収集なし」に戻った**
+>   (当時は送信経路そのものが無くなった。v0.4.23 でローカル dev サーバへのエディタ起動依頼を
+>   1 経路だけ足している) →
 >   [#11](https://github.com/BoxPistols/domdom-inspector/issues/11)
 > - **表示設定**: 「設定」ではなく**計測条件**。率の隣に出すべき情報だった →
 >   [#12](https://github.com/BoxPistols/domdom-inspector/issues/12)
@@ -51,9 +52,11 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 
 > **v1 スコープ決定(2026-08-03)— 上記「Phase 1 機能の再配線」を v1 では巻き戻す**
 > コンポーネントツリー / レンダープロファイリング v2 / Page Vitals / Markdown レポートを
-> **再び v1 の配線から外した。実装は温存(削除ではなく到達不能)** — `src/treeView.ts` /
-> `src/tree.ts` / `src/renderDebug.ts` / `src/renderTracker.ts` / `src/renderCause.ts` /
-> `src/vitals.ts` / `src/report.ts` はそのまま残っている。
+> **再び v1 の配線から外した。実装は温存(削除ではなく到達不能)** — v0.4.24 以降は
+> **`src/render-bundle/`** にまとまっている (`treeView.ts` / `tree.ts` / `renderDebug.ts` /
+> `renderTracker.ts` / `renderCause.ts` / `vitals.ts` / `report.ts` + 描画の
+> `overlayDebug.ts` / `overlayDebugStyles.ts` / `heatColor.ts`)。**出荷 JS には載らない** —
+> 再配線するときは `new OverlayDebugSurfaces(overlay.surfaceHost())` で描画側を繋ぐ (issue #17)。
 > 理由(実機フィードバックと競合調査で確定):
 > - production ビルドでは React がコンポーネント名を minify するため**原理的に判読不能**
 >   (実機で `0e` / `je` / `Anonymous` が 1064 行並ぶツリーを確認)。
@@ -114,13 +117,14 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
 ### FR-05 ビジュアル・コンポーネントツリー 【Must】
 - Fiber の論理階層をツリー描画。Portal をまたいで親子を保つ。
 - 再利用: `getOwnerChain` / `getHostElementOfFiber` / `getFiberName` / `classify`。
-- 新規: `src/tree.ts`(root からの Fiber ウォークでツリーモデル構築、`hook.roots` を起点)、
-  `overlay.ts` にツリーパネル描画を追加。
+- **実装済み・温存**: `src/render-bundle/tree.ts`(root からの Fiber ウォークでツリーモデル
+  構築、`hook.roots` を起点)。描画は `src/render-bundle/overlayDebug.ts` の `showTree`。
+  新規に作るのではなく**配線を戻す**作業になる。
 - データ量対策: 遅延展開(ノード開閉時に子を構築)、仮想スクロール。
 
 ### FR-06 ツリーのノイズ抑制 【Must】
 - HostComponent 折りたたみ、Provider / Styled / Fragment 非表示のフィルタ。
-- 新規: `src/tree.ts` にフィルタ述語(`COMPONENT_TAGS` を流用 + 除外タグ集合)。
+- **実装済み・温存**: `src/render-bundle/tree.ts` の `filterTree`(`COMPONENT_TAGS` を流用 + 除外タグ集合)。
 
 ### FR-07 ツリー ⇔ DOM 双方向ハイライト連動 【Should】
 - ツリーのノード hover → 実 DOM をハイライト(既存 `overlay.show` を流用)。
@@ -141,7 +145,8 @@ Phase 1(インスペクタ MVP)+ レンダーデバッグは実装済み。本�
   親↔子フレームは postMessage 集約(bridge 側で frame 識別)。
 - Portal: Fiber 上は親子が繋がるため論理ツリーは自然に対応。DOM ハイライトのみ座標に注意。
 
-**新規モジュール**: `src/tree.ts`(+ `tree.test.ts`)、overlay へツリー/デザインパネル追加。
+**モジュール**: `src/render-bundle/tree.ts`(+ `tree.test.ts`)は実装済みで温存。
+再配線は `new OverlayDebugSurfaces(overlay.surfaceHost())` で描画側を繋ぐ (issue #17)。
 **受け入れ条件**: 1,000 ノード規模で展開が 60fps を割らない / Storybook の iframe 内コンポーネントを識別できる / デザインモードで対象ページを一切壊さない。
 **見積**: 4〜6 人日。
 

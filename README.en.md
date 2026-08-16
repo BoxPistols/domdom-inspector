@@ -14,12 +14,12 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Design token matching (zero config)** — on MUI pages the theme is auto-detected from `ThemeProvider`; matched values are annotated with the token name, unmatched values flagged as rogue with the nearest token (`muiTheme.ts` / `tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
-- **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only; bundled/minified sources are detected and skipped
+- **Open in editor** (zero-config since v0.4.23) — `⌘/Ctrl+Click` (or the context menu) opens the element's source in your editor. It goes through your **dev server's `/__open-in-editor`** endpoint (Vite / Next.js / CRA — the same route Vue DevTools uses), so there is no editor setting and no path mapping to configure. If no dev server answers, it falls back to the older editor URL scheme. Dev builds only; bundled/minified sources are detected and skipped. **What actually works where is measured in [`docs/editor-jump-support.md`](docs/editor-jump-support.md)**
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
 - **Bilingual** — English / Japanese UI, switches with the browser locale
 
-> **Not in v1** — the component tree and render profiling (plus Page Vitals and the Markdown report) are **unwired from v1**. The implementation is kept in the repository (`src/treeView.ts`, `src/renderDebug.ts`, `src/renderTracker.ts`, `src/vitals.ts`, …) but no shortcut or message path reaches it. Why: on production builds React minifies component names, so they are fundamentally unreadable; on dev builds React DevTools does the job better; and render visualization is already covered by the react-scan extension. Re-wiring is tracked in [`docs/ROADMAP.md`](./docs/ROADMAP.md) (restoring a mode means restoring the "4-point wiring" described in `CLAUDE.md`).
+> **Not in v1** — the component tree and render profiling (plus Page Vitals and the Markdown report) are **unwired from v1**. The implementation is kept in the repository (`src/render-bundle/`) but no shortcut or message path reaches it. Since v0.4.24 it is also **excluded from the shipped JS** — not merely unreachable, but not present at all (`pnpm check:submission` scans the built output and measures this on every run). Why: on production builds React minifies component names, so they are fundamentally unreadable; on dev builds React DevTools does the job better; and render visualization is already covered by the react-scan extension. Re-wiring is tracked in [`docs/ROADMAP.md`](./docs/ROADMAP.md) (restoring a mode means restoring the "4-point wiring" described in `CLAUDE.md`).
 
 ## Setup
 
@@ -51,7 +51,7 @@ Permissions are minimized. Only `localhost` / `127.0.0.1` are enabled automatica
 2. Inspecting starts right away (the permission is permanent for that origin from then on; it can also be revoked from the popup)
 3. A toggle to allow all sites at once is also available in the popup (optional)
 
-The extension only reads the page — it never stores page content, executes remote code, or **makes any network request at all** (zero occurrences of `fetch`/XHR/WebSocket/beacon). See [`SECURITY.md`](./SECURITY.md) for details.
+The extension only reads the page — it never stores page content and never executes remote code. **Nothing is sent to any third party.** It issues exactly **one kind** of network request: asking your own local dev server to open a file in your editor. That request is made only when `looksLocalDev` is true (localhost / 127.0.0.1 / `*.local` / `*.test` …), and it carries nothing but the source path the page itself produced. See [`SECURITY.md`](./SECURITY.md) — that there is exactly one such route is measured on every run by `pnpm check:submission`.
 
 ## Shortcuts
 
@@ -84,7 +84,7 @@ entrypoints/
   background.ts         Keyboard shortcuts → toggle commands to tabs
   popup/                Site enablement, mode toggle, editor settings, help
 src/
-  hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ shim (installed before React loads)
+  hook.ts        Piggybacks on __REACT_DEVTOOLS_GLOBAL_HOOK__ (never installs it)
   fiber.ts       Element info resolution (3-tier fallback: design-only / safe / dev)
   designStyle.ts Design value extraction from computed styles (pure functions)
   tokenDict.ts   Design token JSON parsing and matching (pure functions)

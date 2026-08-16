@@ -29,9 +29,12 @@ background が全フレームへ冪等な `inspect-on`/`inspect-off` を配る�
 (`frameId: 0`) だけに送り、ピルとトーストもトップだけが出す
 ([#14](https://github.com/BoxPistols/domdom-inspector/issues/14))。
 
-**外部送信はゼロ** (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件)。この事実に
-`SECURITY.md` / `PRIVACY.md` / `STORE_LISTING.md` / `PUBLISHING.md` の申告が依存しているので、
-送信経路を足すときは 4 文書を同時に直す。
+**第三者への送信はゼロ**。発行するネットワーク要求は**ただ 1 種類** — 利用者自身のローカル
+dev サーバへの「このファイルをエディタで開いて」(`src/openInEditor.ts`、v0.4.23〜。
+`looksLocalDev` が真のときだけ)。この事実に `SECURITY.md` / `PRIVACY.md` /
+`STORE_LISTING.md` / `PUBLISHING.md` の申告と **README (ja/en)** が依存しているので、
+送信経路を増やすときは 5 箇所を同時に直す (v0.4.23 で README を取り残した。
+`src/docsConsistency.test.ts` が「0 件」の主張が残っていないか毎回走査する)。
 
 **トークンカバレッジ計測 / BYOK AI デザイン監査 / 表示設定 (3 つ) も v1 の配線から外した**
 (2026-08-06。実装は `coverage.ts` / `designScan.ts` / `aiProviders.ts` / `aiPrompt.ts` /
@@ -110,8 +113,9 @@ popup/ ── 設定 UI (browser.* 可)
 
 ## セキュリティ / リリース
 
-- セキュリティ: `SECURITY.md`(要点: 読むが**送らない**。v1 は送信経路ゼロで、
-  `fetch`/XHR/WebSocket/beacon の発生箇所が 0 件であることを grep で再現証明できる。
+- セキュリティ: `SECURITY.md`(要点: 読むが**第三者へは送らない**。要求は 1 経路のみで、
+  それが `src/openInEditor.ts` だけであること・localhost ガードの内側にあることを
+  grep で再現証明できる (`pnpm check:submission` が毎回実測)。
   リモートコード/ページ内容保存なし。**AI を再導入するなら API キーは aiConfig/aiKeys 専用
   ストレージキー — Settings に混ぜない** (settings は bridge → MAIN world へ流れるため))。
 - 配布: `PUBLISHING.md`(A=ローカル zip / B=Chrome Web Store の2通り)。`pnpm zip` → 更新は version を上げる。

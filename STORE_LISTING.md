@@ -215,7 +215,8 @@ Phase 3 の残り (リントエンジン FR-15〜18) は `docs/ROADMAP.md` で�
 データ申告も同時に広げる必要がある (審査リスクは上がる):
 
 - コンポーネントツリー / レンダープロファイリング / Page Vitals
-  (`src/treeView.ts` / `src/renderDebug.ts` / `src/vitals.ts`)
+  (`src/render-bundle/` 一式) — v0.4.24 以降は**出荷 JS にも含まれない**
+  (到達不能なだけでなく 1 バイトも載らない。`pnpm check:submission` が実測する)
 - トークンカバレッジ計測 (`src/coverage.ts` / `src/designScan.ts`) —
   https://github.com/BoxPistols/domdom-inspector/issues/10
 - BYOK AI デザイン監査 (`src/aiProviders.ts` / `src/aiPrompt.ts` / `src/aiCost.ts`) —

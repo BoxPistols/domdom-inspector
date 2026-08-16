@@ -107,9 +107,11 @@ pnpm install && pnpm build && pnpm check:submission
 - **v1 のスコープは絞り込み済み。** ホバー計測 + MUI テーマ自動検出によるトークン照合 +
   右クリック/エディタ起動。カバレッジ計測 / AI 監査 / 表示設定 / トークン貼り付けは
   配線から外して issue 化 (#10 #11 #12 #13)。実装は温存 = 到達不能
-- **外部送信ゼロ。** `fetch`/XHR/WebSocket/beacon の発生箇所が 0 件。この事実に
+- **第三者への送信はゼロ。** 発行する要求は 1 種類だけ (利用者自身のローカル dev サーバへ
+  「このファイルをエディタで開いて」= `src/openInEditor.ts`、v0.4.23〜)。この事実に
   SECURITY / PRIVACY / STORE_LISTING / PUBLISHING の 4 文書が依存している。
-  送信経路を足すなら 4 文書を同時に直す (`check:submission` が根拠を毎回測る)
+  送信経路を増やすなら 4 文書を同時に直す (`check:submission` が根拠を毎回測る)。
+  **README (ja/en) もこの主張を持つ**ので忘れない (v0.4.23 で実際に取り残した)
 
 ### ⚠️ 最優先: push していないと他の PC に何も届かない
 

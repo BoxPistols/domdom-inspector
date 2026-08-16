@@ -16,12 +16,12 @@ A zero-config Chrome extension for design measurement on any website: MUI, Tailw
 - **Design token matching (zero config)** — on MUI pages the theme is auto-detected from `ThemeProvider`; matched values are annotated with the token name, unmatched values flagged as rogue with the nearest token (`muiTheme.ts` / `tokenDict.ts`)
 - **MUI theme auto-detection** — when the page uses MUI, the theme (palette / spacing / border radius / font sizes) is read from its `ThemeProvider` and merged into token matching automatically — no JSON pasting needed (pasted tokens take precedence; toggle in the popup)
 - **CSS variable names** — when a value is declared with a CSS variable (`var(--text)`), the badge shows the variable name so you can verify the UI is built on your design tokens; toggle to raw values in the popup
-- **Open in editor** (v0.3.0) — `⌘/Ctrl+Click` an element to open its source in your editor (Cursor / VS Code / Antigravity IDE / WebStorm). Dev builds only, and only for code on your own machine; bundled/minified sources are detected and skipped. **What actually works where is measured in [`docs/editor-jump-support.md`](docs/editor-jump-support.md)**
+- **Open in editor** (v0.4.23〜 設定ゼロ) — `⌘/Ctrl+Click` (または右クリックメニュー) で要素のソースをエディタで開く。**開発サーバの `/__open-in-editor` 経由**なので、エディタの選択もパスの対応表も設定不要 (Vite / Next.js / CRA。Vue DevTools と同じ方式)。dev サーバに届かない場合だけ従来のスキーム起動へフォールバックする。開発ビルドのみ / バンドル済み・minify されたソースは検出して抑止。**どの環境で実際に動くかは [`docs/editor-jump-support.md`](docs/editor-jump-support.md) に実測で書いてある**
 - **Parent/child navigation** — `↑` moves to the parent element, `↓` back to the child; works on any site including plain HTML/CSS (DOM ancestry, not just React)
 - **Works anywhere** — React apps (dev or production build) and non-React pages alike. When React is present, component names are shown as context (blue = MUI / green = your code / gray = other); design measurement itself never requires React
 - **Bilingual** — English / Japanese UI, switches with the browser locale
 
-> **v1 の対象外 / Not in v1** — コンポーネントツリーとレンダープロファイリング(+ Page Vitals・Markdown レポート)は **v1 の配線から外している**。実装は `src/treeView.ts` / `src/renderDebug.ts` / `src/renderTracker.ts` / `src/vitals.ts` などにそのまま温存してあるが、ショートカット・メッセージ経路を通していないため到達しない。理由: production ビルドでは React がコンポーネント名を minify するため原理的に判読できず、開発ビルドなら React DevTools の方が優れ、レンダー可視化は react-scan の拡張が同じ土俵にいるため。再配線の判断と手順は [`docs/ROADMAP.md`](./docs/ROADMAP.md)(復活時は `CLAUDE.md` の「4 点配線」を戻す)。
+> **v1 の対象外 / Not in v1** — コンポーネントツリーとレンダープロファイリング(+ Page Vitals・Markdown レポート)は **v1 の配線から外している**。実装は `src/render-bundle/` にそのまま温存してあるが、ショートカット・メッセージ経路を通していないため到達しない。v0.4.24 で**出荷される JS からも完全に外した**(到達不能なだけでなく 1 バイトも載らない。`pnpm check:submission` が出荷 JS を走査して毎回実測する)。理由: production ビルドでは React がコンポーネント名を minify するため原理的に判読できず、開発ビルドなら React DevTools の方が優れ、レンダー可視化は react-scan の拡張が同じ土俵にいるため。再配線の判断と手順は [`docs/ROADMAP.md`](./docs/ROADMAP.md)(復活時は `CLAUDE.md` の「4 点配線」を戻す)。
 
 ## Setup / セットアップ
 
@@ -56,7 +56,7 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 2. そのままインスペクトが始まる(以後そのオリジンでは permanent。取り消しも popup から)
 3. 全サイト一括許可のトグルも popup にある(任意)
 
-ページを読むだけで、ページ内容保存・リモートコード実行・**外部送信は一切ない** (`fetch`/XHR/WebSocket/beacon の発生箇所が 0 件)。詳細は [`SECURITY.md`](./SECURITY.md)。
+ページを読むだけで、ページ内容の保存もリモートコード実行もしない。**第三者への送信はゼロ**。発行するネットワーク要求は**ただ 1 種類** — 「このファイルを開いて」と利用者自身のローカル開発サーバに頼むエディタ起動要求だけで、`looksLocalDev` が真のとき (localhost / 127.0.0.1 / `*.local` / `*.test` 等) にしか出さず、送るのはページ自身が生成したソースパスだけ。詳細は [`SECURITY.md`](./SECURITY.md) (経路が 1 つであることは `pnpm check:submission` が毎回実測する)。
 
 ## Shortcuts / ショートカット
 
@@ -89,7 +89,7 @@ entrypoints/
   background.ts         キーボードショートカット → タブへトグル指示
   popup/                サイト有効化・モード切替・エディタ設定・ヘルプ
 src/
-  hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ シム (React 読み込み前に設置)
+  hook.ts        __REACT_DEVTOOLS_GLOBAL_HOOK__ への piggyback (自分からは設置しない)
   fiber.ts       要素情報の解決 (design-only / safe / dev の 3 段フォールバック)
   designStyle.ts computed style からのデザイン値抽出 (純関数)
   tokenDict.ts   デザイントークン JSON の解析と照合 (純関数)

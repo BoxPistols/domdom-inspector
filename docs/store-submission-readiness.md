@@ -20,7 +20,9 @@ pnpm check:submission                   # 20 項目を実測して PASS/FAIL
 スクリプトが測るもの: 版数の一致 (package.json ↔ manifest) / 提出 zip が今の版で存在 /
 permissions と optional_host_permissions / minimum_chrome_version / default_locale /
 commands / アイコン 5 サイズ / _locales / description と Summary の文字数 (上限 132) /
-**送信 API の発生箇所が 0 件** / 成果物に外部エンドポイントが残っていない /
+**送信 API が許可した 1 経路のみ**かつその経路が実在すること / その経路がローカル
+開発オリジンのガードの内側にあること / 成果物に外部エンドポイントが残っていない /
+**温存実装が出荷 JS に載っていない** /
 **スクリーンショットが 1280×800** (PNG ヘッダから実寸を読む) / 旧画像の残骸 /
 **未 push のコミット**。
 
@@ -66,7 +68,7 @@ pnpm e2e                                                  # 実 Chromium に拡�
 | ✅ 掲載文内の競合名・誇張表現 | **なし** (react-scan / React DevTools / best / 最高 / No.1 等を機械検索) |
 | ✅ 単一目的の四者同一 | `STORE_LISTING.md` / `PUBLISHING.md` §4-2 / `PRIVACY.md` / `SECURITY.md` |
 | ✅ Data usage 申告 | **全カテゴリ「収集しない」** |
-| ✅ 送信経路 | **ゼロ** — `fetch`/XHR/WebSocket/beacon の発生箇所が 0 件 (grep で再現可能) |
+| ✅ 送信経路 | **第三者へはゼロ**。要求は 1 種類 (利用者自身のローカル dev サーバへのエディタ起動依頼) だけで、`looksLocalDev` ガードの内側 (grep で再現可能) |
 | ✅ 永続化するもの | ユーザー設定のみ (ページ由来のデータなし) |
 | ✅ v1 に無い機能の宣言 | **全廃** (ツリー / レンダー計測 / カバレッジ / AI / トークン貼り付け) |
 
@@ -85,7 +87,7 @@ UI を変えたら **`pnpm shots` を回し直す**。popup の画像だけは�
 
 | 項目 | 実測 |
 |---|---|
-| ✅ ネットワーク送信 API | 0 件 |
+| ✅ ネットワーク送信 API | 1 経路のみ (`src/openInEditor.ts`)。宛先はローカル dev サーバに限定 |
 | ✅ 動的コード評価 / 外部 script 注入 | 0 件 |
 | ✅ 認証情報の保存 | なし |
 | ✅ ページからの postMessage 偽装 | 特権操作なし。エディタ起動は**信頼済み右クリック直後 (15 秒) に限定**し、合成イベントを無視 (e2e で偽装と本物の両方を固定) |
