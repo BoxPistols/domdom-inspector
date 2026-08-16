@@ -114,6 +114,30 @@ function deriveFreshness(
 }
 
 /**
+ * 「今アクティブなタブ」に対して、計測時の document 世代を**引き継いでよいか**を決める。
+ *
+ * これを素朴に「タブが変わったら捨てる」で書くと、**タブを離れて戻っただけで
+ * 遷移したことになる** — 戻ってきたときに世代を復元できず `stale-navigation` が出て、
+ * 「このページは遷移しました」と**起きていないことを言う**。欠測ではなく誤答。
+ *
+ * 正しい条件は「同じタブ **かつ** そのタブの遷移を観測していない」。遷移の観測は
+ * 呼び出し側が `tabs.onUpdated` (status: 'loading') で集める — **見ていないタブの遷移も
+ * 記録する**必要がある (計測したタブが裏で遷移したのに、戻ったとき fresh に見えるのが
+ * 一番危ない)。
+ */
+export function carryDocumentKey(input: {
+  tabId: number | null;
+  measurement: PanelMeasurement | null;
+  navigatedTabs: ReadonlySet<number>;
+}): string | null {
+  const { tabId, measurement, navigatedTabs } = input;
+  if (tabId === null || measurement === null) return null;
+  if (tabId !== measurement.tabId) return null;
+  if (navigatedTabs.has(tabId)) return null;
+  return measurement.documentKey;
+}
+
+/**
  * 辞書の署名を作る。**件数だけでは足りない** — 同じ件数で中身が入れ替わった編集を
  * 見逃す。名前の集合まで含めて、同じ辞書なら同じ文字列になるようにする。
  *

@@ -403,9 +403,6 @@
   "panelStaleNavigation": {
     "message": "This page navigated after the measurement. These numbers describe the previous page."
   },
-  "panelStaleTokens": {
-    "message": "The token dictionary changed after the measurement. Measure again to match against the current tokens."
-  },
   "panelTargetUnreadable": {
     "message": "This panel cannot read this page. If it is a normal web page, enable it from the toolbar popup; some pages (browser settings, the Web Store) cannot be inspected at all."
   },
@@ -421,7 +418,7 @@
   "btnOpenPanel": {
     "message": "Open coverage panel"
   },
-  "hintOpenPanel": {
-    "message": "Opens a side panel that stays open while you click around the page, so you can check the numbers against the page itself."
+  "panelOpenFailed": {
+    "message": "Could not open the coverage panel. Your Chrome may not support side panels, or the tab could not be resolved — try reopening this popup."
   }
 }

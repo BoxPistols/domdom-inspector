@@ -181,13 +181,22 @@ $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect
  * 呼び出し元フレームの破棄と IPC を競合させる理由が無い (実機で挙動を確認する)。
  */
 $('openPanel').addEventListener('click', () => {
-  if (siteTabId === null) return;
-  // 失敗しても popup を閉じない = 理由を出せる状態のまま残す
-  void browser.sidePanel.open({ tabId: siteTabId }).catch(() => {
+  const showFailure = () => {
+    // **黙って終わらせない。** 押したのに何も起きないのが一番わかりにくい壊れ方
     const notice = $('modeUnavailable');
     notice.hidden = false;
-    notice.textContent = msg('panelFailUnreachable');
-  });
+    notice.textContent = msg('panelOpenFailed');
+  };
+  // 対象タブが解決できていない = 開く先が無い。理由を言ってから降りる
+  if (siteTabId === null) {
+    showFailure();
+    return;
+  }
+  // 失敗しても popup を閉じない = 理由を出せる状態のまま残す。
+  // **専用の文言を使う。** 以前はここで「インスペクタが動いていません。有効化して
+  // 再読み込みしてください」を流用していたが、パネルが開けなかった理由はそれではない
+  // (理由が嘘になる類型 — commit 459db69 で一度潰したもの)
+  void browser.sidePanel.open({ tabId: siteTabId }).catch(showFailure);
 });
 
 // 任意オリジン (デプロイ済み App) をユーザー明示許可で有効化 (M1)。

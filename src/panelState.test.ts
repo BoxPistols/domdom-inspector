@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  carryDocumentKey,
   derivePanelState,
   tokenSignatureOf,
   type PanelMeasurement,
@@ -179,5 +180,74 @@ describe('tokenSignatureOf', () => {
     expect(tokenSignatureOf({ colors: [], sizes: [] })).toBe(
       tokenSignatureOf({ colors: [], sizes: [] }),
     );
+  });
+});
+
+/**
+ * 「タブを離れて戻る」で遷移したことにしない (セルフレビューで見つけた誤答)。
+ *
+ * 実装が「タブが変わったら世代を捨てる」だけだったため、戻ってきたときに復元できず
+ * `stale-navigation` = 「このページは遷移しました」と**起きていないこと**を出していた。
+ */
+describe('carryDocumentKey — 世代を引き継いでよいか', () => {
+  const m = (over: Partial<PanelMeasurement> = {}): PanelMeasurement => ({
+    tabId: 1,
+    documentKey: 'doc-1',
+    tokenSignature: SIG,
+    at: 0,
+    ...over,
+  });
+
+  it('同じタブで遷移を観測していなければ引き継ぐ (離れて戻っただけ)', () => {
+    expect(
+      carryDocumentKey({ tabId: 1, measurement: m(), navigatedTabs: new Set() }),
+    ).toBe('doc-1');
+  });
+
+  it('そのタブの遷移を観測していたら引き継がない', () => {
+    expect(
+      carryDocumentKey({ tabId: 1, measurement: m(), navigatedTabs: new Set([1]) }),
+    ).toBeNull();
+  });
+
+  it('**裏で遷移したタブに戻った場合も引き継がない** (fresh に見えるのが一番危ない)', () => {
+    // 別タブを見ている間に計測済みタブが遷移した、という並び
+    const navigated = new Set<number>();
+    navigated.add(1); // onUpdated は見ていないタブでも届く
+    expect(carryDocumentKey({ tabId: 1, measurement: m(), navigatedTabs: navigated })).toBeNull();
+  });
+
+  it('別のタブなら引き継がない', () => {
+    expect(
+      carryDocumentKey({ tabId: 2, measurement: m(), navigatedTabs: new Set() }),
+    ).toBeNull();
+  });
+
+  it('計測がまだ無い / タブが未解決なら引き継ぐものが無い', () => {
+    expect(carryDocumentKey({ tabId: 1, measurement: null, navigatedTabs: new Set() })).toBeNull();
+    expect(carryDocumentKey({ tabId: null, measurement: m(), navigatedTabs: new Set() })).toBeNull();
+  });
+
+  it('離れて戻る往復で fresh に戻る (この誤答の再現ケース)', () => {
+    const measurement = m();
+    const navigatedTabs = new Set<number>();
+    // タブ 2 へ離れる
+    let key = carryDocumentKey({ tabId: 2, measurement, navigatedTabs });
+    expect(
+      derivePanelState({
+        target: { tabId: 2, origin: 'https://other.test', documentKey: key },
+        measurement,
+        tokenSignature: SIG,
+      }).freshness,
+    ).toBe('stale-tab');
+    // タブ 1 へ戻る (ページは何も遷移していない)
+    key = carryDocumentKey({ tabId: 1, measurement, navigatedTabs });
+    expect(
+      derivePanelState({
+        target: { tabId: 1, origin: 'https://example.com', documentKey: key },
+        measurement,
+        tokenSignature: SIG,
+      }).freshness,
+    ).toBe('fresh');
   });
 });

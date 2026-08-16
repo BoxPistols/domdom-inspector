@@ -1,5 +1,6 @@
 import type { DesignScan } from '../../src/designScan';
 import {
+  carryDocumentKey,
   derivePanelState,
   tokenSignatureOf,
   type PanelMeasurement,
@@ -37,6 +38,14 @@ function applyI18n() {
 
 let target: PanelTarget = { tabId: null, origin: null, documentKey: null };
 let measurement: PanelMeasurement | null = null;
+/**
+ * 計測後に**実際に遷移した**タブ。
+ *
+ * これが無いと「タブを離れて戻る」だけで遷移扱いになる: 離れた時点で世代を捨て、
+ * 戻っても復元できないため `stale-navigation` が出て「このページは遷移しました」と
+ * **起きていないことを言う**。欠測ではなく誤答なので、観測した遷移だけを記録する。
+ */
+const navigatedTabs = new Set<number>();
 let lastScan: DesignScan | null = null;
 /** 直近の計測失敗。**成功と同じ扉から出さない** — 理由ごとに説明が違う */
 let lastFailure: 'timeout' | 'unreachable' | 'empty' | null = null;
@@ -125,7 +134,12 @@ function bannerFor(
   if (lastFailure === 'empty') return msg('panelFailEmpty');
   if (freshness === 'stale-tab') return msg('panelStaleTab');
   if (freshness === 'stale-navigation') return msg('panelStaleNavigation');
-  if (freshness === 'stale-tokens') return msg('panelStaleTokens');
+  // **`stale-tokens` は v1 では構造的に起きない**ので文言を持たない。
+  // v1 の辞書供給元はページのテーマ自動検出だけで、署名も計測結果から作るため、
+  // 比較する 2 つの署名は同じスキャン由来 = 必ず一致する。到達しない分岐に文言を
+  // 用意すると「あるのに出ないもの」を抱えることになる。トークン貼り付けを戻す
+  // (issue #13) と辞書がスキャンと独立に変わるようになり、そこで初めて到達する。
+  // 状態としては `src/panelState.ts` に残してある (テストも含めて #13 用の土台)
   // **理由を断定しない** (§6-2): パネルは activeTab を受けないので、
   // 「http(s) だが未許可」と「そもそも検査できないページ」を区別できない
   if (availability === 'unknown' && target.tabId !== null) return msg('panelTargetUnreadable');
@@ -166,8 +180,8 @@ async function resolveTarget() {
         origin = null;
       }
     }
-    // タブが変わったら、前のページの世代は捨てる (残すと別ページを fresh に見せる)
-    const documentKey = tabId === measurement?.tabId ? target.documentKey : null;
+    // 引き継ぎ条件の判断は純関数へ (UI 層に埋めると検査できない)
+    const documentKey = carryDocumentKey({ tabId, measurement, navigatedTabs });
     target = { tabId, origin, documentKey };
   } catch {
     target = { tabId: null, origin: null, documentKey: null };
@@ -193,6 +207,7 @@ async function measure() {
     return;
   }
   lastScan = outcome.scan;
+  navigatedTabs.delete(tabId);
   target = { ...target, documentKey: outcome.documentKey };
   measurement = {
     tabId,
@@ -210,11 +225,18 @@ void resolveTarget();
 // タブ切替とページ遷移で対象を引き直す。**url を読む必要は無い** —
 // 「変わった」ことだけ分かれば、鮮度の判定は panelState が行う
 browser.tabs.onActivated.addListener(() => void resolveTarget());
+/**
+ * 経過時間を定期的に描き直す。**パネルの存在理由が「この数字がいつのものか」の明示**
+ * なのに、再描画の契機が操作しか無いと「たった今」が何十分も貼り付いたままになる。
+ * 30 秒間隔にしているのは、表示の粒度が分単位だから (それ以上細かく回す意味が無い)。
+ */
+setInterval(() => {
+  if (measurement) render();
+}, 30_000);
 browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (tabId !== target.tabId) return;
-  // loading = そのタブで新しい document が始まった。世代を捨てて stale へ倒す
-  if (changeInfo.status === 'loading') {
-    target = { ...target, documentKey: null };
-  }
+  // **見ていないタブの遷移も記録する。** 計測したタブが裏で遷移したのに、
+  // 戻ってきたとき fresh に見えるのが一番危ない (別ページの率を新鮮な顔で出す)
+  if (changeInfo.status === 'loading') navigatedTabs.add(tabId);
+  if (tabId !== target.tabId && tabId !== measurement?.tabId) return;
   void resolveTarget();
 });

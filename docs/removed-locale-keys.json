@@ -552,5 +552,17 @@
         "message": "再描画されたコンポーネントを明滅させ、操作したときに何が描き直されているかを見ます。R を押すと記録が始まり、もう一度 R で「何が何回・なぜ再描画されたか」のランキングが出ます。React アプリの表示が重い原因を探すための機能です。"
       }
     }
+  },
+  "hintOpenPanel": {
+    "en": "Opens a side panel that stays open while you click around the page, so you can check the numbers against the page itself.",
+    "ja": "ページをクリックしている間も開いたままの side panel を開きます。数字をページ上で検算できます。",
+    "removedAt": "2026-08-16 (v0.4.26)",
+    "reason": "popup の 600px 上限に収めるため説明 div を撤去した際の残骸。ボタン名だけで足りる"
+  },
+  "panelStaleTokens": {
+    "en": "The token dictionary changed after the measurement. Measure again to match against the current tokens.",
+    "ja": "計測後にトークン辞書が変わりました。いまのトークンで照合するには計測し直してください。",
+    "removedAt": "2026-08-16 (v0.4.26)",
+    "reason": "v1 では構造的に到達しない。辞書供給元がページのテーマ自動検出だけで、署名も計測結果から作るため 2 つの署名は必ず一致する。トークン貼り付けの再導入 (issue #13) で到達するようになるので、そのとき戻す。状態自体は src/panelState.ts に残してある"
   }
 }
