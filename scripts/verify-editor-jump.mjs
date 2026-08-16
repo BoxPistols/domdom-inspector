@@ -18,7 +18,7 @@
 // 使い方: pnpm verify:editor
 // 終了コード: 1 = 鎖のどこかが壊れている
 
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -38,20 +38,34 @@ const PORT = 5391;
 const rows = [];
 const check = (name, ok, detail) => rows.push({ name, ok, detail });
 
-/** 拡張自身の URL 組み立てを使う (ここを別実装にすると検証の意味が消える) */
-const { ENDPOINTS, handledByEditor } = await import(join(ROOT, 'src', 'openInEditor.ts')).catch(async () => {
-  // .ts を直接 import できない環境では esbuild 経由で読む
-  const { build } = await import('esbuild');
-  const out = join(mkdtempSync(join(tmpdir(), 'vej-')), 'openInEditor.mjs');
-  await build({
-    entryPoints: [join(ROOT, 'src', 'openInEditor.ts')],
-    outfile: out,
-    format: 'esm',
-    bundle: true,
-    platform: 'node',
-  });
+/**
+ * 拡張自身のコードを読む (別実装で検証すると意味が消える)。
+ *
+ * **必ず esbuild で束ねてから読む。** Node の型ストリップは拡張子なしの相対 import
+ * (`./sourceMap`) を解決できず、依存が 1 つ増えた瞬間に `ERR_MODULE_NOT_FOUND` で
+ * 落ちる。実際に source map 対応を足した直後、この検証スクリプトだけが壊れた
+ * (「検証が壊れていることに気づけない」が一番まずいので、直接 import に頼らない)。
+ */
+const bundleEntry = async (relative) => {
+  const esbuildBin = (() => {
+    const store = join(ROOT, 'node_modules', '.pnpm');
+    for (const dir of readdirSync(store).filter((d) => d.startsWith('esbuild@')).sort().reverse()) {
+      const bin = join(store, dir, 'node_modules', 'esbuild', 'bin', 'esbuild');
+      if (existsSync(bin)) return bin;
+    }
+    throw new Error('esbuild が見つからない');
+  })();
+  const out = join(mkdtempSync(join(tmpdir(), 'vej-')), 'entry.mjs');
+  execFileSync(esbuildBin, [
+    join(ROOT, relative),
+    '--bundle',
+    '--format=esm',
+    '--platform=node',
+    `--outfile=${out}`,
+  ]);
   return import(out);
-});
+};
+const { ENDPOINTS, handledByEditor, resolveViaSourceMap } = await bundleEntry('src/openInEditor.ts');
 
 /**
  * vite の実体を探す。**この repo は WXT 経由で vite を持つので `.bin/vite` に出ない。**
@@ -206,6 +220,60 @@ try {
     argvMissing === '',
     argvMissing || 'なし',
   );
+  // ---- ⑤-b **source map で元ソースへ戻せること** (React 19 対応の本体) ----
+  // React 19 は `_debugSource` を削除したので、位置は必ずバンドル後の座標で来る。
+  // ここが動かないと React 19 のアプリではジャンプが一度も成立しない。
+  // 実 HTTP + 実ファイルで、拡張自身の `resolveViaSourceMap` を通す
+  const bundlePath = join(projectDir, 'bundle.js');
+  writeFileSync(bundlePath, 'var a=1;\nvar b=2;\n//# sourceMappingURL=bundle.js.map\n');
+  const targetAbs = realpathSync(join(projectDir, 'src', 'Target.tsx'));
+  writeFileSync(
+    join(projectDir, 'bundle.js.map'),
+    JSON.stringify({
+      version: 3,
+      // 実測の Turbopack と同じ **indexed** 形式で置く (素の map だけ通っても意味が薄い)
+      sections: [
+        {
+          offset: { line: 1, column: 0 },
+          map: {
+            version: 3,
+            sources: [`file://${targetAbs}`],
+            // 生成 2 行目の先頭 → 元 1 行目
+            mappings: 'AACA',
+          },
+        },
+      ],
+    }),
+  );
+  const outcome = await resolveViaSourceMap({
+    fileName: `http://localhost:${PORT}/bundle.js`,
+    lineNumber: 2,
+    columnNumber: 1,
+  });
+  const resolved = outcome.ok ? outcome.loc : null;
+  check(
+    'source map でバンドル座標を元ソースへ戻せる (React 19 の唯一の経路)',
+    resolved?.fileName === targetAbs,
+    resolved ? `${resolved.fileName}:${resolved.lineNumber}` : `解決できなかった (${outcome.reason})`,
+  );
+  check(
+    '戻した先が**絶対パス**である (パスの対応表が要らなくなる根拠)',
+    !!resolved && resolved.fileName.startsWith('/'),
+    resolved?.fileName ?? '(なし)',
+  );
+  // **失敗理由が層ごとに分かること。** 潰すと「バンドル出力です」とだけ出て、
+  // dev サーバが落ちているのか対応が無いのか誰にも分からない
+  const noMap = await resolveViaSourceMap({
+    fileName: `http://localhost:${PORT}/no-such-bundle.js`,
+    lineNumber: 1,
+    columnNumber: 1,
+  });
+  check(
+    'map を取れないときは理由を no-map として返す (層を特定できる)',
+    !noMap.ok && noMap.reason === 'no-map',
+    noMap.ok ? '解決してしまった' : noMap.reason,
+  );
+
   // ---- ⑥ **この検査が壊れ方を検出できることを示す。**
   // 一覧に無い名前 (myeditor) で同じことをすると、行と桁が別の引数として渡る。
   // 「9/9 pass」だけでは検査が何も見ていない可能性を否定できないので、

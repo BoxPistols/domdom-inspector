@@ -191,6 +191,10 @@ export interface UiStrings {
    * 利用者が原因を切り分けられる唯一の材料になる。
    */
   editorDevServerSent: string;
+  /** source map 解決の失敗理由 (層を特定できるようにする) */
+  srcMapNoMap: string;
+  srcMapNoMapping: string;
+  srcMapNotLocal: string;
   editorCopySetup: string;
   editorSetupCopied: string;
   editorOpenedViaDevServer: string;
@@ -304,6 +308,9 @@ export const DEFAULT_STRINGS: UiStrings = {
   editorNeedsMapping: '{path} is a project-relative path, so the editor cannot find it. Open the popup → Advanced → Path mappings and add: {mapping}',
   editorRemoteSource: 'Source is at {path} in that site’s project — not on this computer, so it cannot be opened.',
   editorDevServerSent: 'Asked the dev server for {ref}',
+  srcMapNoMap: "Could not fetch the source map for that bundle \u2014 the dev server may not be running.",
+  srcMapNoMapping: "The source map has no entry for that position, so the original line is unknown.",
+  srcMapNotLocal: "The original file is a virtual path, so its location on disk is unknown.",
   editorCopySetup: "Copy the setup command",
   editorSetupCopied: "Copied. Run it, then restart your dev server.",
   editorOpenedViaDevServer: "Asked the dev server to open it. If nothing opened, its terminal will say why.",

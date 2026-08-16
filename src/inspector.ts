@@ -429,9 +429,22 @@ export class Inspector {
     // ソースジャンプが原理的に一度も成功しない** (実機で確認した状態)。
     // 送信はローカル開発オリジンのときだけ (他人のサイトへは何も出さない)
     if (jt && looksLocalDev(location.host)) {
-      void resolveViaSourceMap(jt).then((resolved) => {
-        if (resolved) this.overlay.openEditor(resolved);
-        else this.reportUnjumpable(element, info);
+      void resolveViaSourceMap(jt).then((outcome) => {
+        if (outcome.ok) {
+          this.overlay.openEditor(outcome.loc);
+          return;
+        }
+        // **どの層で失敗したかを言う。** 潰すと「バンドル出力です」とだけ出て、
+        // dev サーバが落ちているのか対応が無いのか誰にも分からない (実際に起きた)
+        this.overlay.toast(
+          outcome.reason === 'no-map'
+            ? this.strings.srcMapNoMap
+            : outcome.reason === 'no-mapping'
+              ? this.strings.srcMapNoMapping
+              : this.strings.srcMapNotLocal,
+          8000,
+        );
+        this.reportUnjumpable(element, info);
       });
       return;
     }

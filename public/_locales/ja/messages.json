@@ -552,5 +552,14 @@
   },
   "editorSetupCopyFailed": {
     "message": "コピーできませんでした。README のコマンドを直接ご利用ください。"
+  },
+  "srcMapNoMap": {
+    "message": "そのバンドルの source map を取得できませんでした。開発サーバが動いていない可能性があります。"
+  },
+  "srcMapNoMapping": {
+    "message": "source map にその位置の対応が無く、元の行が分かりませんでした。"
+  },
+  "srcMapNotLocal": {
+    "message": "元ファイルが仮想パスのため、ディスク上の場所が分かりませんでした。"
   }
 }

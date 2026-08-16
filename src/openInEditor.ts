@@ -192,18 +192,31 @@ async function loadSourceMap(
 }
 
 /**
- * バンドル出力の位置を元ソースの位置へ戻す。戻せなければ null
- * (**開けないものを開けると言わない**)。
+ * 解決の結果。**失敗を 1 つの null に潰さない** — 理由ごとに利用者へ出す説明が違う:
+ * - `no-map`: dev サーバが応答しない / map が無い → **サーバが落ちている**ことが多い
+ * - `no-mapping`: map はあるがその位置の対応が無い
+ * - `not-local`: 元ソースが仮想パス (`webpack://` 等) でディスク上の場所が分からない
+ *
+ * 潰すと「バンドル出力です」とだけ出て、**どの層で失敗したのか誰にも分からなくなる**
+ * (実際にその状態で報告を受けた)。
  */
+export type SourceMapOutcome =
+  | { ok: true; loc: SourceLocation }
+  | { ok: false; reason: 'no-map' | 'no-mapping' | 'not-local' };
+
+/** バンドル出力の位置を元ソースの位置へ戻す (**開けないものを開けると言わない**) */
 export async function resolveViaSourceMap(
   loc: SourceLocation,
   request: (url: string) => Promise<Response> = requestText,
-): Promise<SourceLocation | null> {
+): Promise<SourceMapOutcome> {
   const map = await loadSourceMap(loc.fileName, request);
-  if (!map) return null;
+  if (!map) return { ok: false, reason: 'no-map' };
   const original = resolveOriginalPosition(map, loc.lineNumber, loc.columnNumber || 1);
-  if (!original) return null;
+  if (!original) return { ok: false, reason: 'no-mapping' };
   const path = toLocalPath(original.source);
-  if (!path) return null;
-  return { fileName: path, lineNumber: original.line, columnNumber: original.column };
+  if (!path) return { ok: false, reason: 'not-local' };
+  return {
+    ok: true,
+    loc: { fileName: path, lineNumber: original.line, columnNumber: original.column },
+  };
 }

@@ -552,5 +552,14 @@
   },
   "editorSetupCopyFailed": {
     "message": "Could not copy. Select the command in the README instead."
+  },
+  "srcMapNoMap": {
+    "message": "Could not fetch the source map for that bundle — the dev server may not be running."
+  },
+  "srcMapNoMapping": {
+    "message": "The source map has no entry for that position, so the original line is unknown."
+  },
+  "srcMapNotLocal": {
+    "message": "The original file is a virtual path, so its location on disk is unknown."
   }
 }

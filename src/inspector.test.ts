@@ -362,7 +362,9 @@ describe('エディタ起動 — 開けないときは必ず理由を言う (無
     }
 
     expect(calls.editorOpened, 'バンドル出力をそのまま開かない').toEqual([]);
-    expect(calls.toasts).toEqual([DEFAULT_STRINGS.sourceMinified]);
+    // **どの層で失敗したかを先に言う。** 潰すと「バンドル出力です」だけが出て、
+    // dev サーバが落ちているのか対応が無いのか誰にも分からない (実際に報告を受けた)
+    expect(calls.toasts).toEqual([DEFAULT_STRINGS.srcMapNoMap, DEFAULT_STRINGS.sourceMinified]);
   });
 
   it('dev の実ソースならエディタを開く (localhost の主導線)', () => {
