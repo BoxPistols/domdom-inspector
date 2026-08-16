@@ -165,6 +165,35 @@ LAUNCH_EDITOR=code   pnpm dev
 `LAUNCH_EDITOR` は他の用途に影響しないので、こちらを勧める。
 **dev サーバの再起動が要る** (環境変数は起動時に固定される)。
 
+## Next.js の実測 (2026-08-17, Next 16.3.0 + Turbopack + React 19)
+
+実サーバに対して、`REACT_EDITOR` を「引数を記録するだけの偽エディタ」に向けて計測した。
+
+**① 環境変数は `REACT_EDITOR`。`LAUNCH_EDITOR` は見ない。**
+
+```
+LAUNCH_EDITOR=<recorder> → status=204 / エディタは起動せず
+REACT_EDITOR=<recorder>  → status=204 / -g /Users/…/Dropzone.tsx:…
+```
+
+Next は `launch-editor` パッケージではなく独自実装を持ち、`REACT_EDITOR` と
+`process.env.EDITOR` しか参照しない (`next/dist` の grep で 14 件 / 8 件)。
+
+**② 行番号のパラメータ名は `line1` / `column1`。**
+
+```
+line1=178&column1=5        → …/Dropzone.tsx:178:5   ✅
+lineNumber=178&column=5    → …/Dropzone.tsx:1:1     ← 旧実装
+lineNumber=178&colNumber=5 → …/Dropzone.tsx:1:1
+```
+
+**旧実装は必ず 1 行目を開いていた。** エディタには届いているのでログにもエラーは出ず、
+「開くけど該当箇所に飛ばない」としてしか観測できなかった。
+
+**③ パスは絶対でも repo 相対でも同じ結果。** Next が相対を自分で解決する
+(`components/input/Dropzone.tsx` と絶対パスで、記録された argv が完全一致)。
+したがって source map から得た絶対パスをそのまま渡してよい。
+
 ## 目視をやめる — `pnpm verify:editor`
 
 この機能は「拡張 → dev サーバ → エディタ」と 3 者にまたがり、成否がレスポンスから取れない。

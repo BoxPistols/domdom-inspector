@@ -120,3 +120,37 @@ describe('openViaDevServer', () => {
     expect(request.mock.calls[0][0]).toContain('__nextjs_launch-editor');
   });
 });
+
+/**
+ * **Next.js の行番号パラメータ名** (2026-08-17 実測、Next 16.3.0 の実サーバに対して)。
+ *
+ * ```
+ * line1 / column1        → …/Dropzone.tsx:178:5   ✅
+ * lineNumber / colNumber → …/Dropzone.tsx:1:1     ← 旧実装。必ず 1 行目が開いていた
+ * ```
+ *
+ * 「開くけど該当箇所に飛ばない」の直接の原因。エディタには届いていたので、
+ * ログにもエラーは出ず、目視でしか気づけなかった。
+ */
+describe('Next.js エンドポイントは line1 / column1 を送る', () => {
+  const next = ENDPOINTS.find((e) => e.name === 'next');
+  const url = next!.url('http://localhost:3001', {
+    fileName: '/Users/me/app/components/Dropzone.tsx',
+    lineNumber: 178,
+    columnNumber: 5,
+  });
+
+  it('line1 / column1 を含む (これが無いと必ず 1 行目が開く)', () => {
+    expect(url).toContain('line1=178');
+    expect(url).toContain('column1=5');
+  });
+
+  it('旧版のために lineNumber / column も併記する (余分なクエリは無害)', () => {
+    expect(url).toContain('lineNumber=178');
+    expect(url).toContain('column=5');
+  });
+
+  it('絶対パスをそのまま渡す (Next は相対でも絶対でも解決する — 実測で同結果)', () => {
+    expect(url).toContain(encodeURIComponent('/Users/me/app/components/Dropzone.tsx'));
+  });
+});

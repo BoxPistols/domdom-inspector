@@ -67,14 +67,19 @@ the correct line so you do not have to work it out.
 
 | Editor | Setup |
 |---|---|
-| VS Code / Cursor / WebStorm | `export LAUNCH_EDITOR=code` (or `cursor` / `webstorm`) |
+| VS Code / Cursor / WebStorm | `export LAUNCH_EDITOR=code REACT_EDITOR=code` (or `cursor` / `webstorm`) |
 | Anything else (e.g. Antigravity IDE) | the three lines below — this is what the button copies |
 
 ```sh
 mkdir -p ~/.local/launch-editor
 ln -sfn "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" ~/.local/launch-editor/code
 export LAUNCH_EDITOR="$HOME/.local/launch-editor/code"
+export REACT_EDITOR="$HOME/.local/launch-editor/code"
 ```
+
+> **Two variables are needed.** Vite/webpack read `LAUNCH_EDITOR`; **Next.js only reads
+> `REACT_EDITOR`** (measured against Next 16.3.0 on 2026-08-17). Setting only one makes the
+> other framework silently do nothing.
 
 `launch-editor` picks the argument form **from the editor's name**. Only `code` / `cursor` /
 `codium` / `trae` / `vscodium` get `-g file:line:column`; any other name falls back to

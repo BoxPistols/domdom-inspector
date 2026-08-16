@@ -72,14 +72,19 @@ pnpm e2e        # popup スモーク (playwright、要 pnpm build)
 
 | エディタ | 設定 |
 |---|---|
-| VS Code / Cursor / WebStorm | `export LAUNCH_EDITOR=code`(または `cursor` / `webstorm`) |
+| VS Code / Cursor / WebStorm | `export LAUNCH_EDITOR=code REACT_EDITOR=code`(または `cursor` / `webstorm`) |
 | Antigravity IDE などそれ以外 | 下記の 3 行 (拡張の「設定コマンドをコピー」がこれを出します) |
 
 ```sh
 mkdir -p ~/.local/launch-editor
 ln -sfn "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide" ~/.local/launch-editor/code
 export LAUNCH_EDITOR="$HOME/.local/launch-editor/code"
+export REACT_EDITOR="$HOME/.local/launch-editor/code"
 ```
+
+> **環境変数は 2 つ要ります。** Vite / webpack 系は `LAUNCH_EDITOR` を、
+> **Next.js は `REACT_EDITOR` しか見ません** (2026-08-17 に Next 16.3.0 で実測)。
+> 片方だけだと、もう片方のフレームワークで黙って効きません。
 
 `launch-editor` は**エディタ名で引数の形を決めます**。`code` / `cursor` / `codium` /
 `trae` / `vscodium` のときだけ `-g file:line:column` を渡すため、一覧に無い名前

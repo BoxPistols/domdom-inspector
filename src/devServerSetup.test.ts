@@ -14,11 +14,11 @@ const EDITORS: Settings['editor'][] = ['vscode', 'cursor', 'antigravity', 'webst
 describe('devServerSetup — 名前が一覧にあるエディタ', () => {
   it('vscode / cursor / webstorm は 1 行で済む (shim 不要)', () => {
     expect(devServerSetup('vscode')).toEqual({
-      snippet: 'export LAUNCH_EDITOR=code',
+      snippet: 'export LAUNCH_EDITOR=code REACT_EDITOR=code',
       needsShim: false,
     });
     expect(devServerSetup('cursor')).toEqual({
-      snippet: 'export LAUNCH_EDITOR=cursor',
+      snippet: 'export LAUNCH_EDITOR=cursor REACT_EDITOR=cursor',
       needsShim: false,
     });
     expect(devServerSetup('webstorm').needsShim).toBe(false);
@@ -26,7 +26,7 @@ describe('devServerSetup — 名前が一覧にあるエディタ', () => {
 
   it('渡す名前は必ず行・桁まで飛べるものにする', () => {
     for (const editor of ['vscode', 'cursor', 'webstorm'] as const) {
-      const name = devServerSetup(editor).snippet.split('=').pop() ?? '';
+      const name = devServerSetup(editor).snippet.split('REACT_EDITOR=').pop() ?? '';
       expect({ editor, canJump: canJumpToLine(name) }).toEqual({ editor, canJump: true });
     }
   });
@@ -86,5 +86,18 @@ describe('canJumpToLine — 実測した仕様', () => {
 
   it('**antigravity-ide は飛べない** (launch-editor に登録が無い = 既定分岐に落ちる)', () => {
     expect(canJumpToLine('antigravity-ide')).toBe(false);
+  });
+});
+
+describe('**Next.js は REACT_EDITOR しか見ない** (2026-08-17 実測)', () => {
+  it('どのエディタでも LAUNCH_EDITOR と REACT_EDITOR の両方を設定する', () => {
+    for (const editor of EDITORS) {
+      const snippet = devServerSetup(editor).snippet;
+      expect({ editor, launch: snippet.includes('LAUNCH_EDITOR') }).toEqual({ editor, launch: true });
+      expect(
+        { editor, react: snippet.includes('REACT_EDITOR') },
+        'Next.js は LAUNCH_EDITOR を無視するので片方だけだと黙って効かない',
+      ).toEqual({ editor, react: true });
+    }
   });
 });

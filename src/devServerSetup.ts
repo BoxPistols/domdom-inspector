@@ -64,8 +64,11 @@ export interface DevServerSetup {
 export function devServerSetup(editor: Settings['editor']): DevServerSetup {
   const known = KNOWN_CLI[editor];
   if (known) {
-    // 名前が一覧にあるので、そのまま渡すだけで行・桁まで飛ぶ
-    return { snippet: `export LAUNCH_EDITOR=${known}`, needsShim: false };
+    // 名前が一覧にあるので、そのまま渡すだけで行・桁まで飛ぶ。
+    // **2 つ設定する**: Vite/webpack 系は `LAUNCH_EDITOR`、Next.js は `REACT_EDITOR`
+    // しか見ない (2026-08-17 実測、Next 16.3.0)。片方だけだと片方のフレームワークで
+    // 黙って効かない
+    return { snippet: `export LAUNCH_EDITOR=${known} REACT_EDITOR=${known}`, needsShim: false };
   }
 
   const unknown = UNKNOWN_CLI[editor];
@@ -76,7 +79,9 @@ export function devServerSetup(editor: Settings['editor']): DevServerSetup {
     snippet: [
       'mkdir -p ~/.local/launch-editor',
       `ln -sfn "${target}" ~/.local/launch-editor/code`,
+      // Vite/webpack 系は LAUNCH_EDITOR、Next.js は REACT_EDITOR しか見ない
       'export LAUNCH_EDITOR="$HOME/.local/launch-editor/code"',
+      'export REACT_EDITOR="$HOME/.local/launch-editor/code"',
     ].join('\n'),
     needsShim: true,
   };

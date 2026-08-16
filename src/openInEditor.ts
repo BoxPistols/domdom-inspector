@@ -62,9 +62,15 @@ export const ENDPOINTS: EditorEndpoint[] = [
   },
   {
     // Next.js (dev overlay の「エディタで開く」が使っている経路)
+    //
+    // **パラメータ名は `line1` / `column1`** (2026-08-17 実測、Next 16.3.0)。
+    // `lineNumber` / `column` は**無視され、必ず 1 行目が開く**。
+    // 「開くけど該当箇所に飛ばない」の直接の原因がこれだった。
+    // 旧版のために `lineNumber` / `column` も併記する (余分なクエリは無害)。
     name: 'next',
     url: (origin, loc) =>
       `${origin}/__nextjs_launch-editor?file=${encodeURIComponent(devServerPath(loc.fileName))}` +
+      `&line1=${loc.lineNumber}&column1=${loc.columnNumber || 1}` +
       `&lineNumber=${loc.lineNumber}&column=${loc.columnNumber || 1}`,
   },
   {
