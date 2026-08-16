@@ -70,7 +70,7 @@
 
       /* 動線 (サイトで使う → モード → 表示設定 → 詳細) を群で区切る */
       /* 既定表示を 600px 未満に保つ (Chrome の popup 上限でスクロールが出る)。余白で調整し文字は削らない */
-      .section { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+      .section { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
       .section h2, summary.h2 {
         margin: 0 0 2px;
         font-size: 11px;
@@ -108,6 +108,8 @@
         cursor: pointer;
       }
       button:hover { filter: brightness(1.08); }
+      /* 副次導線 (パネルを開く) は主導線より軽く。popup の 600px 上限を守る */
+      button.compact { margin-top: 8px; padding: 6px; font-size: 12px; }
       button.secondary {
         background: var(--surface-2);
         color: var(--text);
@@ -175,6 +177,9 @@
       <button id="toggle" data-i18n="popupToggleInspect">Toggle inspect mode on this tab</button>
       <div class="hint" id="hintInspect">Shortcut: Alt+Shift+I / Exit: Esc</div>
       <div class="hint" id="modeUnavailable" hidden></div>
+      <!-- カバレッジは side panel に置く。popup では率の意味を保つ情報が入りきらず、
+           外側クリックで必ず閉じるので「率 → ページ上で検算」の往復が作れない (issue #10) -->
+      <button id="openPanel" class="secondary compact" data-i18n="btnOpenPanel">Open coverage panel</button>
     </section>
 
     <!-- ⑥ 開発者向け: エンジニア専用設定 (既定で閉じ、開閉状態は保存)。

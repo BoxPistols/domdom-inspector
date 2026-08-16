@@ -193,6 +193,16 @@ async function restoreRegistrations(): Promise<void> {
 }
 
 export default defineBackground(() => {
+  // **ツールバーのアイコンは popup のままにする** (issue #10)。
+  // `action.default_popup` と `openPanelOnActionClick` の優先順位は公式に記載が無いので、
+  // その未定義に依存しない。パネルは popup の「カバレッジのパネルを開く」から開く。
+  // 失敗しても拡張の起動を止めない (この API が無い Chrome では単に popup のまま)
+  browser.sidePanel
+    ?.setPanelBehavior({ openPanelOnActionClick: false })
+    .catch(() => {
+      // 古い Chrome / 未対応環境。既定 (popup) のままで問題ない
+    });
+
   // 拡張の再読込・更新・ブラウザ起動のいずれでも登録を復元する
   browser.runtime.onInstalled.addListener(() => void restoreRegistrations());
   browser.runtime.onStartup.addListener(() => void restoreRegistrations());

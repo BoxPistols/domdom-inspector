@@ -169,6 +169,27 @@ async function sendToActiveTab(type: string) {
 
 $('toggle').addEventListener('click', () => void sendToActiveTab('toggle-inspect'));
 
+/**
+ * カバレッジのパネルを開く (issue #10)。
+ *
+ * **`await` を一切挟まずに `sidePanel.open()` を呼ぶ。** これは `permissions.request` と
+ * 同じ user gesture の規律で、await を跨ぐと gesture が失効して**無言で拒否される**
+ * (handoff_notes.md が「崩すと権限フローが無言で死ぬ」と警告している領域)。
+ * よって tabId は click 時点で既に手元にある `siteTabId` を使い、tabs.query しない。
+ *
+ * `window.close()` は呼ばない。パネルが開けばフォーカスが移って popup は閉じるので、
+ * 呼び出し元フレームの破棄と IPC を競合させる理由が無い (実機で挙動を確認する)。
+ */
+$('openPanel').addEventListener('click', () => {
+  if (siteTabId === null) return;
+  // 失敗しても popup を閉じない = 理由を出せる状態のまま残す
+  void browser.sidePanel.open({ tabId: siteTabId }).catch(() => {
+    const notice = $('modeUnavailable');
+    notice.hidden = false;
+    notice.textContent = msg('panelFailUnreachable');
+  });
+});
+
 // 任意オリジン (デプロイ済み App) をユーザー明示許可で有効化 (M1)。
 // 重要: permissions.request はユーザー操作直後 (await を挟まず) に呼ぶ必要があるため、
 // origin/tabId はポップアップ表示時に先読みしておく。
@@ -230,6 +251,10 @@ async function applyAvailability(origin: string | null, injectable = false) {
   }
 
   toggleBtn.disabled = !available;
+  // **カバレッジのパネルも同じ規律で閉じる** (issue #10 §6-7)。計測できないページで
+  // 押せてしまうと、パネルが開いてから「読めません」と言う二度手間になる。
+  // commit 459db69 の「押せるのに無反応が一番わかりにくい」を移設先でも守る
+  $<HTMLButtonElement>('openPanel').disabled = !available;
   notice.hidden = available;
   if (!available) {
     notice.textContent = msg(reason === 'notEnabled' ? 'modeNotEnabledHere' : 'modeNotInspectable');

@@ -11,6 +11,44 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.25 (2026-08-16) — カバレッジの side panel を立てる (issue #10 Phase A/B)
+
+`docs/design-coverage-screen.md` の Phase A (面を立てる) と Phase B (状態モデル)。
+率と内訳の描画 (§4-1 ③〜⑦) は Phase C、ページ上ハイライトは Phase D。
+
+**なぜ popup ではなくパネルか**: popup は外側にフォーカスすると必ず閉じる (公式仕様)。
+つまり「率 → その率を作った要素をページ上で指す」検算ループが**原理的に作れない**。
+率の隣に自分で確かめる手段を置くことが、率の独り歩き (Goodhart 化) への唯一の構造的な対策。
+
+- **新規 `src/panelState.ts`** — パネル常駐が新しく生む唯一の嘘 (別ページの率を新鮮な顔で
+  出す) を潰す純関数。優先順位は tab > navigation > tokens。曖昧なときは安全側に倒すが、
+  **両方とも世代不明なら stale にしない** (常時 stale は「いつも嘘」と同じ)
+- **新規 `src/scanClient.ts`** — 失敗を 1 つの `null` に潰さず timeout / unreachable / empty
+  で返す。理由ごとに利用者へ出す説明が違うのに、以前は区別できなかった
+- **新規 `entrypoints/sidepanel/`** — 対象と鮮度の sticky header + 状態バナー + 計測。
+  ページ遷移は `tab.url` ではなく **content script が持つ document 世代**で検出する
+  (パネルは activeTab を受けないので未許可タブでは URL が読めない)
+- design-scan の往復 (bridge 中継 + MAIN world 受信) を復活。**タイムアウトは null ではなく
+  理由つきで返す**。ページからの偽装で起きるのは「そのページ自身を数えて同じページへ返す」
+  だけなので受けてよい (辞書注入 `tokens` を閉じてあるのとは事情が違う — issue #16)
+- popup に「カバレッジのパネルを開く」。`sidePanel.open()` は **await を挟まず**呼ぶ
+  (user gesture の規律。跨ぐと無言で拒否される)。計測できないページでは
+  `#toggle` と同じく disabled + 理由 (issue #10 §6-7 の移設)
+- background は `setPanelBehavior({openPanelOnActionClick:false})` を明示。
+  `action.default_popup` との優先順位は公式に記載が無いので、その未定義に依存しない
+- 権限に `sidePanel` が増える (WXT が自動で足す)。**公式 permissions-list で警告文を持たない**
+  ので利用者に見える権限表示は変わらない。SECURITY / PRIVACY / STORE_LISTING の 3 文書と
+  `check:submission` の期待値を同時に更新した (side_panel の宣言先が成果物に実在するかも実測)
+
+**popup の高さ**: ボタンが 1 つ増えて ja が 600px を超えた (665px)。**説明文は削らず**、
+全サイト許可の同意文を 5 つの事実を保ったまま言い回しで詰め、区切りの余白を 2px ずつ
+縮めて 583px に収めた (器の制約は、利用者に渡す情報を減らす理由にならない)。
+
+- 既存の潜在バグを 1 件同梱: オーバーレイのパネル上で ↑↓ を押すと選択が動いていた
+  (`onIntercept` には同型のガードがあるのに keydown だけ無かった)
+
+---
+
 ## 0.4.24 (2026-08-16) — 温存実装を出荷 JS から外す / 分類を色以外でも示す / 選択中の追従
 
 監査 (2026-08-07) の残り 3 件 (issue #17 / #18 / #19) を閉じた。

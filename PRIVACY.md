@@ -58,6 +58,9 @@ extension offers a **Copy path** button. It writes only the source file path and
 - `scripting` — to inject the inspector into origins you have enabled.
 - `contextMenus` — to add "Inspect this element" / "Open source in editor" to the
   right-click menu. This grants no additional access to page content.
+- `sidePanel` — to show the coverage result next to the page being measured. This grants no
+  additional access to page content, and the result is held in memory only — it is never
+  stored and never sent.
 - Host access — `localhost` / `127.0.0.1` is covered by a static content script. Any other
   origin is covered by `optional_host_permissions` (`*://*/*`), which is **not granted by
   default** and is requested only when you click "Enable on current site" / "Enable on all
@@ -134,6 +137,8 @@ React を使用している場合は、コンポーネント名の補足表示�
 - `scripting` — あなたが有効化したオリジンにインスペクタを注入するため。
 - `contextMenus` — 右クリックメニューに「この要素を検査 / ソースをエディタで開く」を
   追加するため。ページ内容への追加アクセス権は生じません。
+- `sidePanel` — 計測結果を対象ページと並べて表示するため。ページ内容への追加アクセス権は
+  生じません。計測結果はメモリ上にのみ保持し、保存も送信もしません。
 - ホストアクセス — `localhost` / `127.0.0.1` は静的コンテンツスクリプトで対応。その他の
   オリジンは `optional_host_permissions`(`*://*/*`)で対応しますが、これは **既定では未付与** で、
   「現在のサイトで有効化」(または「全サイトで許可」)を押した時のみ要求します。

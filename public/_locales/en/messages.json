@@ -24,7 +24,7 @@
     "message": "Enable on current site…"
   },
   "hintEnableSite": {
-    "message": "For deployed/production sites, not just localhost. Grants access and starts inspecting this page immediately."
+    "message": "For deployed/production sites, not just localhost — grants access and starts inspecting right away."
   },
   "ctxInspectElement": {
     "message": "Inspect this element"
@@ -39,7 +39,7 @@
     "message": "Revoke all-sites access"
   },
   "hintAllSites": {
-    "message": "Convenience option for when you inspect many different sites. Chrome will warn that the extension can read all sites — that is inherent to inspecting arbitrary pages. If you would rather not, use \"Enable on current site\" each time instead; nothing is lost. Revoke anytime with the same button. Already-open tabs need one reload."
+    "message": "For inspecting many sites in a row. Chrome will warn that the extension can \"read all your data on all websites\" — unavoidable for a tool that inspects any page. Per-site enabling works just as well (no feature difference). Revoke from the same button; already-open tabs need one reload."
   },
   "allSitesEnabled": {
     "message": "Enabled on all sites."
@@ -354,5 +354,74 @@
   },
   "editorOpenedViaDevServer": {
     "message": "Asked the dev server to open it in your editor"
+  },
+  "panelTitle": {
+    "message": "Token coverage"
+  },
+  "panelNoTarget": {
+    "message": "No page selected"
+  },
+  "panelUnknownName": {
+    "message": "This page"
+  },
+  "panelMeasure": {
+    "message": "Measure this page"
+  },
+  "panelMeasuring": {
+    "message": "Measuring…"
+  },
+  "panelElements": {
+    "message": "{n} elements"
+  },
+  "panelAgeJustNow": {
+    "message": "just now"
+  },
+  "panelAgeMinutes": {
+    "message": "{n} min ago"
+  },
+  "panelAgeHours": {
+    "message": "{n} h ago"
+  },
+  "panelFactElements": {
+    "message": "Elements measured"
+  },
+  "panelFactTokens": {
+    "message": "Tokens in the dictionary"
+  },
+  "panelTokenCounts": {
+    "message": "{colors} colors · {sizes} sizes"
+  },
+  "panelNoteTruncated": {
+    "message": "Measurement stopped early, so these counts describe part of this page, not the whole page."
+  },
+  "panelNoteNoDict": {
+    "message": "No design tokens were found on this page, so nothing could be matched. Off-grid spacing is still detected."
+  },
+  "panelStaleTab": {
+    "message": "You switched tabs. These numbers are from the page you measured, not the one you are looking at."
+  },
+  "panelStaleNavigation": {
+    "message": "This page navigated after the measurement. These numbers describe the previous page."
+  },
+  "panelStaleTokens": {
+    "message": "The token dictionary changed after the measurement. Measure again to match against the current tokens."
+  },
+  "panelTargetUnreadable": {
+    "message": "This panel cannot read this page. If it is a normal web page, enable it from the toolbar popup; some pages (browser settings, the Web Store) cannot be inspected at all."
+  },
+  "panelFailTimeout": {
+    "message": "The page took too long to measure and the request was given up. Large pages can hit this; try again, or measure a smaller view."
+  },
+  "panelFailUnreachable": {
+    "message": "The inspector is not running on this page. Enable this site from the toolbar popup, then reload the page."
+  },
+  "panelFailEmpty": {
+    "message": "The page replied but sent no measurement. Reload the page and try again."
+  },
+  "btnOpenPanel": {
+    "message": "Open coverage panel"
+  },
+  "hintOpenPanel": {
+    "message": "Opens a side panel that stays open while you click around the page, so you can check the numbers against the page itself."
   }
 }

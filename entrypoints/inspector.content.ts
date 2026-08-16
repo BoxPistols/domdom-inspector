@@ -4,9 +4,18 @@ import { Inspector } from '../src/inspector';
 import { findMuiTheme, findMuiThemeFromDom } from '../src/muiTheme';
 import { Overlay } from '../src/overlay';
 import { DEV_MATCHES } from '../src/matches';
+import { scanDesign } from '../src/designScan';
 import { extractRootCandidates } from '../src/sourceRoots';
 import { EMPTY_TOKEN_DICT, parseMuiTheme, type TokenDict } from '../src/tokenDict';
 import { BRIDGE_SOURCE, DEFAULT_SETTINGS, DEFAULT_STRINGS, PAGE_SOURCE } from '../src/types';
+
+/**
+ * この document の世代を表す鍵。**ページ遷移で content script ごと作り直される**ので、
+ * 遷移すれば必ず別の値になる。side panel は `tab.url` を読めないことがある (activeTab を
+ * 受けないため) ので、ナビゲーション検出をこの値の変化で行う (`src/panelState.ts`)。
+ * ページ内容は一切含まない (乱数だけ)。
+ */
+const DOCUMENT_KEY = Math.random().toString(36).slice(2);
 
 /**
  * MAIN world / document_start: React 読み込み前に DevTools フックを確立し、
@@ -299,11 +308,41 @@ export default defineContentScript({
         const target = freshContextTarget();
         if (target) inspector.openEditorAt(target);
       }
-      // **design-scan (ページ全体の集計) の受信は v1 の配線から外した** (issue #10)。
-      // 送信側 (popup のカバレッジ UI) が存在しないのに受信側だけ残すと、
-      // ページからの postMessage 偽装で全ページスキャンを起動できる攻撃面と、
-      // designScan/coverage 一式 (約 5.7 kB) を bundle に引き込む理由だけが残る。
-      // side panel として再導入するとき、この位置に受信側を戻す (実装は温存)。
+      // side panel からのページスキャン依頼 (bridge が往復中継する。issue #10)。
+      // 集計はスタイル値と件数のみで、テキスト・URL 等のページ内容は含めない。
+      //
+      // **ページが偽装できる経路である**ことを踏まえた上で受けている: MAIN world は
+      // ページと同一の信頼境界なので、ページ側 JS は同じ postMessage を投げられる。
+      // ただしこの依頼で起きるのは「そのページ自身の computed style を数えて、結果を
+      // 同じページへ返す」だけで、ページが元から持っている情報を超えるものは出ない。
+      // **辞書の注入 (`tokens`) を受けないのとは事情が違う** — あちらは注入された辞書で
+      // 「一致」を偽装でき、検証結果そのものが嘘になるので閉じてある (issue #16)。
+      if (data.type === 'design-scan' && typeof data.id === 'string') {
+        // 辞書の出所内訳。v1 の供給元はテーマ自動検出だけなので pasted は常に 0 だが、
+        // 率の意味 (「自動テーマの密なラダーで一致率が上がっている」) を読むために内訳の
+        // 形は保つ (貼り付けを戻すのは issue #13)
+        const themeInUse = currentTokens();
+        const scan = scanDesign(document, themeInUse, {
+          skip: (el) => overlay.containsTarget(el),
+          tokenSources: {
+            pasted: { colors: 0, sizes: 0 },
+            theme: { colors: themeInUse.colors.length, sizes: themeInUse.sizes.length },
+          },
+        });
+        window.postMessage(
+          {
+            source: PAGE_SOURCE,
+            type: 'design-scan-result',
+            id: data.id,
+            payload: scan,
+            // **この document の世代**。パネルは `tab.url` を読めないことがある (§6-2) ので、
+            // ナビゲーション検出をここから受け取る。content script はページ遷移で
+            // 作り直されるため、遷移すれば必ず別の値になる
+            documentKey: DOCUMENT_KEY,
+          },
+          '*',
+        );
+      }
     });
 
     // **リスナ登録が済んだことを bridge に知らせる。**

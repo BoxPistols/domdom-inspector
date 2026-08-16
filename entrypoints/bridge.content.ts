@@ -8,6 +8,13 @@ import {
 } from '../src/types';
 
 /**
+ * ページスキャンの往復に待つ上限。超えたら諦めるが、**null ではなく理由を返す** —
+ * 「重すぎて時間切れ」と「そもそも失敗」を呼び出し側が区別できないと、
+ * 利用者に出す説明が嘘になる (どちらも「計測できませんでした」になってしまう)。
+ */
+const SCAN_TIMEOUT_MS = 5000;
+
+/**
  * ISOLATED world ブリッジ: browser.storage の設定と background からのトグル指示を
  * postMessage で MAIN world に中継する。MAIN world は browser.i18n を使えないため、
  * ロケール解決済みの UI 文字列もここで作って渡す。
@@ -161,7 +168,7 @@ export default defineContentScript({
     );
 
     safe(() =>
-      browser.runtime.onMessage.addListener((message) => {
+      browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         if (message?.type === 'toggle-inspect') {
           window.postMessage({ source: BRIDGE_SOURCE, type: 'toggle' }, '*');
         }
@@ -184,9 +191,29 @@ export default defineContentScript({
             '*',
           );
         }
-        // **design-scan の中継は v1 の配線から外した** (issue #10 — 送信側の popup UI が
-        // 存在しない)。再導入時は「sendResponse + return true」の往復中継をここに戻す
-        // (Chrome ネイティブ API ではリスナから Promise を返しても応答にならない)。
+        // side panel のページスキャン依頼を MAIN world へ**往復**中継する (issue #10)。
+        // 非同期応答は `sendResponse` + `return true`。**Promise を返しても応答にならない**
+        // (Chrome ネイティブ API の仕様。ここの順序を崩すと無言で null が返る)。
+        if (message?.type === 'design-scan') {
+          const id = Math.random().toString(36).slice(2);
+          // 5 秒で諦める。**「重すぎて時間切れ」と「失敗」を呼び出し側が区別できる**よう、
+          // タイムアウトは null ではなく理由つきで返す (前は両方 null で潰れていた)
+          const timer = setTimeout(() => {
+            window.removeEventListener('message', onResult);
+            sendResponse({ ok: false, reason: 'timeout' });
+          }, SCAN_TIMEOUT_MS);
+          const onResult = (event: MessageEvent) => {
+            const d = event.data;
+            if (event.source !== window || !d || d.source !== PAGE_SOURCE) return;
+            if (d.type !== 'design-scan-result' || d.id !== id) return;
+            clearTimeout(timer);
+            window.removeEventListener('message', onResult);
+            sendResponse({ ok: true, scan: d.payload ?? null, documentKey: d.documentKey ?? null });
+          };
+          window.addEventListener('message', onResult);
+          window.postMessage({ source: BRIDGE_SOURCE, type: 'design-scan', id }, '*');
+          return true;
+        }
         return false;
       }),
     );

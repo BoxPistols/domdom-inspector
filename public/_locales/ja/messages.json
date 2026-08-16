@@ -24,7 +24,7 @@
     "message": "現在のサイトで有効化…"
   },
   "hintEnableSite": {
-    "message": "デプロイ済み/本番サイト用(localhost 以外)。許可すると、このページですぐインスペクトを開始します。"
+    "message": "localhost だけでなくデプロイ済みの本番サイトでも。許可して、すぐ検査を始めます。"
   },
   "ctxInspectElement": {
     "message": "この要素を検査"
@@ -39,7 +39,7 @@
     "message": "全サイト許可を解除"
   },
   "hintAllSites": {
-    "message": "いろいろなサイトを次々に検査するとき用の省力オプションです。Chrome は「すべてのサイトを読み取れる」と警告します — 任意のページを検査する以上これは避けられません。抵抗があるなら都度「現在のサイトで有効化」で構いません (機能差はありません)。解除は同じボタンから。すでに開いているタブは 1 回リロードが必要です。"
+    "message": "次々にサイトを検査するとき用です。Chrome は「すべてのサイトを読み取れる」と警告します — 任意のページを検査する以上避けられません。都度「現在のサイトで有効化」でも機能差はありません。解除は同じボタンから。開いているタブは 1 回リロードが必要です。"
   },
   "allSitesEnabled": {
     "message": "全サイトで有効化しました。"
@@ -354,5 +354,74 @@
   },
   "editorOpenedViaDevServer": {
     "message": "開発サーバにエディタで開くよう依頼しました"
+  },
+  "panelTitle": {
+    "message": "トークンカバレッジ"
+  },
+  "panelNoTarget": {
+    "message": "対象のページがありません"
+  },
+  "panelUnknownName": {
+    "message": "このページ"
+  },
+  "panelMeasure": {
+    "message": "このページを計測"
+  },
+  "panelMeasuring": {
+    "message": "計測中…"
+  },
+  "panelElements": {
+    "message": "{n} 要素"
+  },
+  "panelAgeJustNow": {
+    "message": "たった今"
+  },
+  "panelAgeMinutes": {
+    "message": "{n} 分前"
+  },
+  "panelAgeHours": {
+    "message": "{n} 時間前"
+  },
+  "panelFactElements": {
+    "message": "計測した要素数"
+  },
+  "panelFactTokens": {
+    "message": "照合に使ったトークン"
+  },
+  "panelTokenCounts": {
+    "message": "色 {colors} 件 · サイズ {sizes} 件"
+  },
+  "panelNoteTruncated": {
+    "message": "途中で打ち切ったため、この数字はページの一部についてのものです。ページ全体の値ではありません。"
+  },
+  "panelNoteNoDict": {
+    "message": "このページからデザイントークンが見つからなかったため、照合は行っていません。グリッド外の余白検出は動きます。"
+  },
+  "panelStaleTab": {
+    "message": "タブが切り替わりました。この数字は計測したページのもので、いま見ているページのものではありません。"
+  },
+  "panelStaleNavigation": {
+    "message": "計測後にページが遷移しました。この数字は前のページについてのものです。"
+  },
+  "panelStaleTokens": {
+    "message": "計測後にトークン辞書が変わりました。いまのトークンで照合するには計測し直してください。"
+  },
+  "panelTargetUnreadable": {
+    "message": "このパネルからはこのページを読めません。通常の web ページなら、ツールバーのポップアップから有効化してください。ブラウザの設定ページなど、そもそも検査できないページもあります。"
+  },
+  "panelFailTimeout": {
+    "message": "計測に時間がかかりすぎたため要求を打ち切りました。大きなページで起こります。もう一度試すか、表示範囲を狭めてください。"
+  },
+  "panelFailUnreachable": {
+    "message": "このページでインスペクタが動いていません。ツールバーのポップアップからこのサイトを有効化し、ページを再読み込みしてください。"
+  },
+  "panelFailEmpty": {
+    "message": "ページから応答はありましたが計測結果が空でした。ページを再読み込みして、もう一度試してください。"
+  },
+  "btnOpenPanel": {
+    "message": "カバレッジのパネルを開く"
+  },
+  "hintOpenPanel": {
+    "message": "ページをクリックしている間も開いたままの side panel を開きます。数字をページ上で検算できます。"
   }
 }

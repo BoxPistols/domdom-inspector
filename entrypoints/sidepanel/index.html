@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DomDom Inspector — Coverage</title>
+    <style>
+      /*
+       * popup と同じトークン体系 (darkmode ファースト + prefers-color-scheme: light)。
+       * 色値は popup/index.html と揃える — 2 面で違う色を使うと「別の拡張」に見える。
+       * コントラストは src/overlayContrast.test.ts が色定数から毎回計算して検証する。
+       */
+      :root {
+        color-scheme: dark light;
+        --bg: #0f1116;
+        --surface: #171a21;
+        --surface-2: #1e2230;
+        --border: #2a2f3d;
+        --border-input: #6b7486;
+        --text: #e8ebf1;
+        --muted: #a3abbb;
+        --accent-text: #8ec2ff;
+        --accent-bg: #8ec2ff;
+        --on-accent: #0b1220;
+        --focus: #8ec2ff;
+        --warn-text: #ffd43b;
+        --warn-bg: rgba(255, 212, 59, 0.12);
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --surface: #f5f7fa;
+          --surface-2: #edf0f6;
+          --border: #d7dde7;
+          --border-input: #6a7386;
+          --text: #1a1f2b;
+          --muted: #525d75;
+          --accent-text: #12569f;
+          --accent-bg: #1668d4;
+          --on-accent: #ffffff;
+          --focus: #1668d4;
+          --warn-text: #8a5a00;
+          --warn-bg: rgba(255, 212, 59, 0.22);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 0 0 16px;
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      /*
+       * ① 対象と鮮度 (sticky header)。パネルは popup と違い**開いたまま残る**ので、
+       * 「この数字がどのページのいつのものか」を失うと popup 版より不誠実になる。
+       * パネル化が新しく生む嘘なので最上段に固定する (設計 §4-1 ①)。
+       */
+      .head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 10px 14px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+      .head h1 { margin: 0 0 2px; font-size: 13px; letter-spacing: 0.01em; }
+      .target {
+        display: flex; flex-wrap: wrap; gap: 4px 8px;
+        font-size: 11.5px; color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+      .target .sep { opacity: 0.5; }
+
+      .body { padding: 12px 14px 0; }
+
+      /* ② stale バナー。数字は消さず dim にして視覚的に切り離す (設計 §4-1 ②) */
+      .banner {
+        margin: 0 0 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 11.5px;
+        color: var(--text);
+      }
+      .banner.warn {
+        border-color: var(--warn-text);
+        background: var(--warn-bg);
+        color: var(--warn-text);
+      }
+      .banner[hidden] { display: none; }
+
+      /* stale のとき数字を dim にする。消さないのは前の値と見比べたいから */
+      .result.stale { opacity: 0.45; }
+
+      button {
+        width: 100%;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        background: var(--accent-bg);
+        color: var(--on-accent);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) { filter: brightness(1.08); }
+      button:disabled {
+        background: var(--surface-2); color: var(--muted);
+        cursor: not-allowed; border: 1px solid var(--border); filter: none;
+      }
+      button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+      .fact { margin: 10px 0 0; font-size: 12px; }
+      .fact dt { color: var(--muted); font-size: 11px; }
+      .fact dd { margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+      .note { margin-top: 10px; font-size: 11px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <header class="head">
+      <h1 data-i18n="panelTitle">Token coverage</h1>
+      <div class="target">
+        <span id="targetName" data-i18n="panelNoTarget">No page selected</span>
+        <span class="sep" id="targetSep" hidden>·</span>
+        <span id="targetAge" hidden></span>
+        <span class="sep" id="targetSep2" hidden>·</span>
+        <span id="targetElements" hidden></span>
+      </div>
+    </header>
+
+    <div class="body">
+      <!-- 状態バナー: 対象が読めない / 結果が古い / 計測に失敗した の 1 本 -->
+      <p class="banner" id="banner" role="status" aria-live="polite" hidden></p>
+
+      <button id="measure" data-i18n="panelMeasure">Measure this page</button>
+
+      <section class="result" id="result" hidden>
+        <dl class="fact">
+          <dt data-i18n="panelFactElements">Elements measured</dt>
+          <dd id="factElements">—</dd>
+          <dt data-i18n="panelFactTokens">Tokens in the dictionary</dt>
+          <dd id="factTokens">—</dd>
+        </dl>
+        <p class="note" id="factNotes"></p>
+      </section>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

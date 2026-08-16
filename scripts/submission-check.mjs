@@ -63,12 +63,23 @@ if (zips.length > 1) {
 }
 
 // ---- ② manifest の中身 ------------------------------------------------------
-const wantPerms = ['storage', 'activeTab', 'scripting', 'contextMenus'];
+// sidePanel は WXT が entrypoints/sidepanel/ を検出して自動で足す (issue #10)。
+// **公式 permissions-list で警告文を持たない** ので、利用者に見える権限表示は増えない
+// (storage / activeTab / scripting / contextMenus と同じ扱い)
+const wantPerms = ['storage', 'activeTab', 'scripting', 'contextMenus', 'sidePanel'];
 const perms = manifest.permissions ?? [];
 check(
   'permissions が想定どおり',
   wantPerms.every((p) => perms.includes(p)) && perms.length === wantPerms.length,
   perms.join(' / '),
+);
+// side_panel の宣言と成果物の実在を突き合わせる。**手書きしていない** (WXT が
+// entrypoints から生成する) ので、パスがズレたら宣言だけ残って面が開かなくなる
+const panelPath = manifest.side_panel?.default_path;
+check(
+  'side_panel の宣言先が成果物に存在する',
+  !!panelPath && existsSync(join(OUT, panelPath)),
+  panelPath ? `${panelPath} (${existsSync(join(OUT, panelPath)) ? '実在' : '見つからない'})` : '未宣言',
 );
 check(
   'optional_host_permissions が *://*/* のみ (既定未付与)',

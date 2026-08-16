@@ -87,6 +87,10 @@ PRIVACY
 - `contextMenus`: add "Inspect this element" / "Open this element's source in my editor"
   to the right-click menu. This grants no additional access to pages, and the items are
   shown only where the inspector actually runs (localhost plus origins you enabled).
+- `sidePanel`: show the coverage result **next to** the page being measured, so the user can
+  check a number against the page itself without the panel closing. This grants no additional
+  access to pages (the permission carries no user-facing warning), and the panel is opened
+  only from the popup.
 - `optional_host_permissions` (`*://*/*`): not granted by default; requested only when
   you click "Enable on current site" / "Enable on all sites" so deployed apps can be
   inspected. localhost is covered by a static content script.
@@ -204,7 +208,7 @@ web ページの UI のデザイン値を計測し、そのページが依拠す
 
 - [x] `default_locale: en` + `_locales/en`, `_locales/ja`
 - [x] アイコン 16/32/48/96/128
-- [x] permissions は `storage`/`activeTab`/`scripting`/`contextMenus`(host は localhost 静的 + `optional_host_permissions: *://*/*` はユーザー明示許可時のみ)。正当化は SECURITY.md
+- [x] permissions は `storage`/`activeTab`/`scripting`/`contextMenus`/`sidePanel`(host は localhost 静的 + `optional_host_permissions: *://*/*` はユーザー明示許可時のみ)。正当化は SECURITY.md
 - [ ] デベロッパー登録($5)・スクショ・プライバシーポリシー URL
 
 ## 将来機能 (このリスティングには含めない)
