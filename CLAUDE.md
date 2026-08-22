@@ -29,18 +29,19 @@ background が全フレームへ冪等な `inspect-on`/`inspect-off` を配る�
 (`frameId: 0`) だけに送り、ピルとトーストもトップだけが出す
 ([#14](https://github.com/BoxPistols/domdom-inspector/issues/14))。
 
-**第三者への送信はゼロ**。発行するネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛て。(1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ずバンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、送るのはページ自身が配信している URL とソースパスだけ。 旧記述: 利用者自身のローカル
-dev サーバへの「このファイルをエディタで開いて」(`src/openInEditor.ts`、v0.4.23〜。
-`looksLocalDev` が真のときだけ)。この事実に `SECURITY.md` / `PRIVACY.md` /
+**第三者への送信はゼロ**。発行するネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛て。(1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ずバンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、送るのはページ自身が配信している URL とソースパスだけ
+(送信 API は `src/openInEditor.ts` の 1 ファイルに集約、v0.4.23〜)。この事実に `SECURITY.md` / `PRIVACY.md` /
 `STORE_LISTING.md` / `PUBLISHING.md` の申告と **README (ja/en)** が依存しているので、
 送信経路を増やすときは 5 箇所を同時に直す (v0.4.23 で README を取り残した。
 `src/docsConsistency.test.ts` が「0 件」の主張が残っていないか毎回走査する)。
 
-**トークンカバレッジ計測 / BYOK AI デザイン監査 / 表示設定 (3 つ) も v1 の配線から外した**
-(2026-08-06。実装は `coverage.ts` / `designScan.ts` / `aiProviders.ts` / `aiPrompt.ts` /
-`aiCost.ts` に温存)。カバレッジは popup では率の意味を保てず検算もできないため side panel として
-再導入する (issues [#10](https://github.com/BoxPistols/domdom-inspector/issues/10) /
-[#11](https://github.com/BoxPistols/domdom-inspector/issues/11) /
+**トークンカバレッジ計測は side panel として v1 に復帰済み**
+([#10](https://github.com/BoxPistols/domdom-inspector/issues/10) 完了 —
+`entrypoints/sidepanel/` + `src/coverageView.ts` / `src/panelState.ts` / `src/scanClient.ts`。
+manifest に `sidePanel` 権限が載り、掲載文・単一目的・権限正当化に含めてある)。
+**BYOK AI デザイン監査 / 表示設定 (2 つ) は v1 の配線から外したまま**
+(2026-08-06。実装は `aiProviders.ts` / `aiPrompt.ts` / `aiCost.ts` に温存。
+issues [#11](https://github.com/BoxPistols/domdom-inspector/issues/11) /
 [#12](https://github.com/BoxPistols/domdom-inspector/issues/12))。
 
 **コンポーネントツリー (旧 Alt+Shift+T) / レンダープロファイリング v2 (旧 Alt+Shift+R) /

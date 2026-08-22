@@ -25,10 +25,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # console.log の commit 禁止 (CLAUDE.md 規約) を機械化。untrusted input は使用しない
+      # console.log の commit 禁止 (CLAUDE.md 規約) を機械化。untrusted input は使用しない。
+      # *.test.ts は除外 — テストの検体文字列 ('console.log(1)' 等) は呼び出しではない。
+      # テスト内の実呼び出しは ESLint no-console (全 .ts に適用) が別途弾く
       - name: No console.log
         run: |
-          if grep -rn "console\.log" src/ entrypoints/ --include='*.ts'; then
+          if grep -rn "console\.log" src/ entrypoints/ --include='*.ts' --exclude='*.test.ts'; then
             echo "::error::console.log found (CLAUDE.md 規約違反)"; exit 1
           fi
 

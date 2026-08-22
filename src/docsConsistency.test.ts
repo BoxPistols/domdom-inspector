@@ -64,16 +64,22 @@ describe('送信経路の申告が実装とズレていない', () => {
     'CHANGELOG.md',
     // 日付つきの監査記録。「当時 0 件と申告していた」ことを含めて記録である
     'docs/audit-20260807-deep.md',
-    // claude-memory-sync が生成する (マーカー内は毎プロンプト自動生成)。ここでは直せない
-    'CLAUDE.local.md',
   ];
+
+  /**
+   * 生成物 (非コミット)。走査から外すが、**実在は要求しない** — claude-memory-sync が
+   * ローカルで生成するファイルで、クリーン clone (CI / 別環境) には存在しないのが正常。
+   * 実在を assert すると CI が構造的に赤になる (v0.4.41 まで実際にそうなっていた)。
+   */
+  const GENERATED = ['CLAUDE.local.md'];
 
   it('走査から外した文書はすべて実在する (リストが腐っていないこと)', () => {
     const missing = HISTORICAL.filter((f) => !existsSync(f));
     expect(missing).toEqual([]);
   });
 
-  const docs = collectDocs().filter((f) => !HISTORICAL.includes(f.replace(/^\.\//, '')));
+  const EXCLUDED = [...HISTORICAL, ...GENERATED];
+  const docs = collectDocs().filter((f) => !EXCLUDED.includes(f.replace(/^\.\//, '')));
 
   /**
    * 「1 つも要求を出さない」系の主張。実際には 1 経路あるので、どの文書にも書けない。

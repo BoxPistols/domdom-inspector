@@ -11,6 +11,39 @@ CWS は同一バージョンの再アップロードを拒否するため、公�
 
 ---
 
+## 0.4.42 (2026-08-22) — 提出前の申告整合と、赤いままだった CI の修復
+
+出荷 JS は 0.4.41 から**無変更** (docs / CI / テストのみ)。CWS へ提出する版。
+
+**掲載文・申告の整合** — 実物と文書のズレを 3 種直した:
+
+- **カバレッジ side panel が掲載文に居なかった。** issue #10 完了で side panel は
+  v1 に搭載済み (manifest に `sidePanel` 権限も載る) なのに、`STORE_LISTING.md` は
+  「カバレッジは配線から外してある = 掲載しない」と主張したままだった。掲載文 (en/ja)
+  に TOKEN COVERAGE PANEL 節を追加し、Single purpose・PUBLISHING の権限転記・審査手順
+  (§5-0 に step 6) も同期。**説明と機能の不一致は CWS の代表的な却下理由**なので提出前に潰す。
+- **「発行する要求は 1 種類」が 4 箇所に残っていた。** v0.4.33 で source map 取得が
+  増えて 2 種類になった後も、STORE_LISTING (en) / PRIVACY (en 権限節 + ja 末尾) /
+  PUBLISHING / store-submission-readiness に旧記述が残存。全て「2 種類、どちらも
+  ローカル dev サーバ宛て」へ統一し、PRIVACY / SECURITY / CLAUDE.md の編集残骸
+  (「旧:」の取り残し) も除去。
+- **PUBLISHING §0 の permissions チェックリストに `sidePanel` が無かった**
+  (実 manifest と不一致)。
+
+**CI の修復** — main が v0.4.38 から赤いままだった。原因は 2 つとも検査側:
+
+- 「No console.log」の grep が `src/sourceMap.test.ts` の**検体文字列**
+  `'console.log(1)'` (呼び出しではない) を誤検出。`--exclude='*.test.ts'` を追加。
+  テスト内の実呼び出しは ESLint `no-console` (全 .ts に適用) が引き続き弾く。
+- `docsConsistency.test.ts` が `CLAUDE.local.md` (claude-memory-sync がローカル生成する
+  非コミットファイル) の**実在を要求**していた。クリーン clone (CI / 別環境) には
+  存在しないのが正常なので、HISTORICAL (実在必須) と GENERATED (実在不要・あれば除外)
+  に分離した。「ローカルは緑 / CI は赤」の恒常状態はこれで解消。
+
+ゲート: lint / 594 tests / typecheck / build / check:submission 23/23。
+
+---
+
 ## 0.4.41 (2026-08-17) — 対応環境を全部実測して固定する
 
 「React Vite / Turbopack Next / Vue / Nuxt / 素の HTML / Express に対応しているか」への回答を
