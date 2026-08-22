@@ -1,6 +1,6 @@
 # Privacy Policy — DomDom Inspector
 
-_Last updated: 2026-08-06_
+_Last updated: 2026-08-22_
 
 DomDom Inspector ("the extension") is an inspector for how a web page's UI is implemented:
 it measures the design values (colors, spacing, border-radius, typography) of page elements
@@ -16,9 +16,13 @@ one purpose, and no data is collected for any purpose at all.
 
 - **No telemetry, no analytics, no tracking.** The extension does not collect usage data.
 - **Nothing is sent to us or to any third party.** The extension has no backend. It issues
-  exactly **two kinds**, both addressed to **your own local dev server**: (1) asking it to open a file in your editor, and (2) fetching a source map so a bundled position can be mapped back to the original file (React 19 removed `_debugSource`, so positions always arrive as bundled coordinates). Both are issued only when `looksLocalDev` is true, and carry nothing but URLs the page itself serves. It is never sent while you are on someone else's
-  site, and it carries only a source file path and line number — no page content, no input,
-  no usage data. **Nothing you inspect leaves your machine.**
+  exactly **two kinds of network requests**, both addressed to **your own local dev server**:
+  (1) asking it to open a file in your editor, and (2) fetching a source map so a bundled
+  position can be mapped back to the original file (React 19 removed `_debugSource`, so
+  positions always arrive as bundled coordinates). Both are issued only when the page is a
+  local dev origin (`looksLocalDev`) — never while you are on someone else's site — and they
+  carry only URLs the page itself serves and a source file path and line number — no page
+  content, no input, no usage data. **Nothing you inspect leaves your machine.**
 - **All data stays local.** Your settings are stored only in your browser via
   `chrome.storage.local`. Nothing else is persisted.
 - **Localhost works out of the box; other sites are opt-in.** The extension activates
@@ -67,8 +71,9 @@ extension offers a **Copy path** button. It writes only the source file path and
 
 The extension does not fetch or execute any remote code, and reads the page only to render
 the on-screen overlay — page content is never stored, and never transmitted, on any origin.
-The only request it ever issues goes to **your own machine** (a local dev server, to open a
-file in your editor), so there is no outbound path for your data to leave your device.
+The only requests it ever issues go to **your own local dev server** — to open a file in
+your editor, or to fetch a source map — so there is no outbound path for your data to
+leave your device.
 
 ## Contact
 
@@ -78,7 +83,7 @@ Questions or requests: open an issue at the project's repository, or email the d
 
 # プライバシーポリシー — DomDom Inspector
 
-_最終更新: 2026-08-06_
+_最終更新: 2026-08-22_
 
 DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を検査するツールです。
 ページ上の要素のデザイン値(色・余白・角丸・タイポグラフィ)を計測し、利用者のデザイン
@@ -93,11 +98,13 @@ DomDom Inspector(以下「本拡張機能」)は、web ページの UI 実装を
 ## 要約
 
 - **テレメトリ・分析・トラッキングは一切なし。** 利用状況データを収集しません。
-- **外部送信は一切ありません。** バックエンドを持ちません。拡張が発行する
-  ネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛て。(1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ずバンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、送るのはページ自身が配信している URL とソースパスだけ。 旧: 「エディタでこのファイルを開いて」と
-  **利用者自身のローカル開発サーバ (localhost 等) に頼む**要求だけです。
-  他のサイトを見ているときは 1 バイトも送りません。送る内容はソースファイルの
-  パスと行番号だけで、ページの内容・入力値・利用状況は含みません。
+- **第三者への送信は一切ありません。** バックエンドを持ちません。拡張が発行する
+  ネットワーク要求は**2 種類**で、どちらも**利用者自身のローカル開発サーバ**宛てです。
+  (1) 「このファイルをエディタで開いて」と頼む要求 (2) バンドル後の位置を元ソースへ
+  戻すための source map の取得 (React 19 が `_debugSource` を削除したため、位置は必ず
+  バンドル座標で来る)。どちらも `looksLocalDev` が真のときだけ発行し、他のサイトを
+  見ているときは 1 バイトも送りません。送る内容はページ自身が配信している URL と
+  ソースファイルのパス・行番号だけで、ページの内容・入力値・利用状況は含みません。
   **検査した内容が端末外へ出ることはありません。**
 - **すべてのデータはローカルに留まります。** 保存するのは設定だけで、
   `chrome.storage.local` にのみ置きます。それ以外は永続化しません。
@@ -143,9 +150,9 @@ React を使用している場合は、コンポーネント名の補足表示�
   「現在のサイトで有効化」(または「全サイトで許可」)を押した時のみ要求します。
 
 リモートコードの取得・実行は行いません。ページの読み取りは画面オーバーレイの描画のためだけに行い、
-ページ内容はどのオリジンでも保存・送信しません。発行する要求は**あなた自身の端末** (ローカルの
-開発サーバにファイルを開いてもらう要求) 宛ての 1 種類だけなので、データが端末外へ出る経路そのものが
-存在しません。
+ページ内容はどのオリジンでも保存・送信しません。発行する要求は**あなた自身のローカル開発サーバ**宛て
+の 2 種類 (エディタでファイルを開いてもらう / source map を取得する) だけなので、データが端末外へ
+出る経路そのものが存在しません。
 
 ## お問い合わせ
 

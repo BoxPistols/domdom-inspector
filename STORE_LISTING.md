@@ -14,13 +14,14 @@
 > - コンポーネントツリー / レンダープロファイリング (2026-08-03)。production では React が
 >   名前を minify するため原理的に判読不能 / dev なら React DevTools が優れる /
 >   react-scan の拡張が同じ土俵にいる
-> - **トークンカバレッジ計測 (ページ全体の集計) — 2026-08-06。**
->   popup では率の意味を保つ情報が入りきらず、検算ループも作れない。side panel として
->   再導入する → https://github.com/BoxPistols/domdom-inspector/issues/10
 > - **BYOK AI デザイン監査 — 2026-08-06。** これがあるだけで Data usage 申告に
 >   Website content と Authentication information の 2 カテゴリが必要になり審査が重くなる。
 >   外した結果、**申告は「収集なし」に戻った** →
 >   https://github.com/BoxPistols/domdom-inspector/issues/11
+>
+> **トークンカバレッジ計測は side panel として v1 に復帰済み** (issue #10 完了)。
+> 掲載文・単一目的・権限正当化 (`sidePanel`) に**含める**。集計はメモリ内のみで、
+> データ申告 (全カテゴリ「収集しない」) は変わらない。
 >
 > **「Single purpose」と「Data usage disclosure」は下記が確定文言。**
 > `PUBLISHING.md` §4-2 / `PRIVACY.md` / `SECURITY.md` と**四者同一**であること。
@@ -65,6 +66,14 @@ MATCH AGAINST YOUR DESIGN TOKENS — ZERO CONFIG
 - On pages without a theme, the badge still shows the declared CSS variable
   name behind each value, plus off-grid spacing warnings.
 
+TOKEN COVERAGE PANEL
+- Click "Open coverage panel" in the popup to aggregate the same measurement
+  over the whole page: per-family match rates (color / spacing / radius /
+  typography) against the tokens found on the page.
+- The values that drift the most are listed with the nearest token, and
+  "Show on page" highlights the elements behind a number — so you can verify
+  every rate on the page itself.
+
 WORKS ANYWHERE
 - Any site, any styling method. React apps (dev or production build) and
   non-React pages alike. When React is present, component names are shown
@@ -73,8 +82,9 @@ WORKS ANYWHERE
 PRIVACY
 - No telemetry, no servers of our own, no tracking. Settings stay in local
   storage.
-- Nothing is sent to us or to any third party. The extension has no backend. The one
-  request it makes goes to your own local dev server, to open a file in your editor.
+- Nothing is sent to us or to any third party. The extension has no backend. The only
+  requests it makes go to your own local dev server: to open a file in your editor,
+  and to fetch a source map so a bundled position can be mapped back to your source file.
 - Localhost dev servers work out of the box. Any other site is inspected only
   after you explicitly enable it ("Enable on current site"), and even then the
   extension only reads the page — it never stores page content or runs remote code.
@@ -94,18 +104,21 @@ PRIVACY
 - `optional_host_permissions` (`*://*/*`): not granted by default; requested only when
   you click "Enable on current site" / "Enable on all sites" so deployed apps can be
   inspected. localhost is covered by a static content script.
-- No remote code. Exactly one network request exists: "open this file in my editor",
-  sent to the user's own local dev server and only when the page is a local dev origin
-  (`looksLocalDev`). It carries a source path and line number, nothing else.
-  Nothing is sent to the developer or to any third party.
+- No remote code. Exactly two kinds of network requests exist, both sent to the user's
+  own local dev server and only when the page is a local dev origin (`looksLocalDev`):
+  (1) "open this file in my editor", carrying a source path and line number, nothing
+  else; (2) fetching a source map the page itself serves, so a bundled position can be
+  mapped back to the original file. Nothing is sent to the developer or to any third party.
 
 **Single purpose:** Measure the design values of a web page's UI and check them against the
 design system that page is built on — read the values of the element the user points at
 (colors, spacing, border-radius, typography) and match them against the design tokens found
 on the page. Every feature serves that one purpose: MUI theme auto-detection builds the
-token dictionary from the page itself; the right-click menu and "open in editor" reach the
-element and its source while it is being measured (React dev builds only).
-All inspection is local and read-only, and the extension sends nothing anywhere.
+token dictionary from the page itself; the coverage side panel aggregates the same
+per-element measurement over the whole page; the right-click menu and "open in editor"
+reach the element and its source while it is being measured (React dev builds only).
+All inspection is local and read-only, and nothing is sent to the developer or to any
+third party.
 
 **Data usage disclosure (CWS form):** — v1 は**第三者への送信を一切持たない**
 (BYOK AI 監査を v1 の配線から外したため。issue #11)。以下をそのまま選択・記入する。
@@ -166,6 +179,12 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 - テーマが無いページでも、値の背後で宣言されている CSS 変数名と、
   グリッド外の余白警告は表示されます。
 
+トークンカバレッジ パネル
+- popup の「カバレッジのパネルを開く」で、同じ計測をページ全体に集計します:
+  色 / 余白 / 角丸 / タイポグラフィごとの、ページ内トークンへの一致率。
+- 直すと効く値は最近傍トークン付きで一覧され、「ページ上で示す」でその値を使っている
+  要素をハイライト — どの率も自分の目でページ上で検算できます。
+
 どこでも動作
 - サイト・スタイル手法を問いません。React アプリ (開発・本番ビルドとも) でも
   React を使わないページでも動作します。React がある場合はコンポーネント名も
@@ -173,8 +192,9 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 
 プライバシー
 - テレメトリ・独自サーバー・トラッキングなし。設定はローカル保存のみ。
-- 外部送信は一切ありません。 バックエンドを持たず、第三者へのネットワークリクエストを
-  1 つも発行しません。
+- 第三者への送信は一切ありません。バックエンドを持たず、第三者へのネットワーク
+  リクエストを 1 つも発行しません。発行する要求は「自分のローカル開発サーバに
+  エディタでファイルを開くよう頼む / source map を取得する」の 2 種類だけです。
 - localhost の開発サーバはそのまま動作。その他のサイトは「現在のサイトで有効化」
   した時のみ検査対象になり、その場合もページを読むだけで、ページ内容の保存・
   リモートコード実行は行いません。
@@ -184,9 +204,10 @@ DomDom Inspector は、web ページの UI 実装を検査するツールです�
 web ページの UI のデザイン値を計測し、そのページが依拠するデザインシステムと照合する —
 利用者が指した要素の値 (色 / 余白 / 角丸 / タイポグラフィ) を読み取り、ページから
 見つけたデザイントークンと照合する。全機能がこの単一目的に奉仕する: MUI テーマ自動取得は
-ページ自身からトークン辞書を組み立て、右クリックメニューとエディタジャンプは計測中の
+ページ自身からトークン辞書を組み立て、カバレッジ side panel は同じ要素単位の計測を
+ページ全体へ集計し、右クリックメニューとエディタジャンプは計測中の
 要素とそのソースへ到達する (React の開発ビルドのみ)。
-検査はすべてローカルの読み取り専用で、外部への送信は一切ない。
+検査はすべてローカルの読み取り専用で、第三者への送信は一切ない。
 
 **データ利用の申告 (対訳):** **全カテゴリを「収集しない」**。v1 は第三者への送信を持たず
 (BYOK AI 監査は v1 の配線から外した — issue #11)、ページの DOM と computed style は
@@ -196,20 +217,21 @@ web ページの UI のデザイン値を計測し、そのページが依拠す
 
 ---
 
-## Assets checklist (未作成)
+## Assets checklist
 
-- [ ] スクリーンショット 1280×800 または 640×400 を 1〜5 枚
-      (インスペクト中のデザインバッジ / トークン照合の注釈 / 野良値警告 / 設定ポップアップ)
+- [x] スクリーンショット 1280×800 × 4 枚 × 2 言語 (`docs/store-assets/{en,ja}/`。
+      `pnpm shots` で実物から自動生成。実寸は `pnpm check:submission` が実測)
 - [ ] 小さなプロモタイル 440×280 (任意)
 - [x] アイコン 128×128 (`public/icon/128.png`)
-- [ ] プライバシーポリシーを公開 URL でホスト (`PRIVACY.md`)
+- [x] プライバシーポリシーを公開 URL でホスト (`PRIVACY.md` — GitHub Pages 有効化済み。
+      **push 後に公開 URL の内容が最新か目視すること**)
 
 ## 提出前チェック
 
 - [x] `default_locale: en` + `_locales/en`, `_locales/ja`
 - [x] アイコン 16/32/48/96/128
 - [x] permissions は `storage`/`activeTab`/`scripting`/`contextMenus`/`sidePanel`(host は localhost 静的 + `optional_host_permissions: *://*/*` はユーザー明示許可時のみ)。正当化は SECURITY.md
-- [ ] デベロッパー登録($5)・スクショ・プライバシーポリシー URL
+- [ ] デベロッパー登録($5)・ダッシュボードへの入力・送信 (人間の操作。手順は PUBLISHING.md)
 
 ## 将来機能 (このリスティングには含めない)
 
@@ -224,12 +246,14 @@ Phase 3 の残り (リントエンジン FR-15〜18) は `docs/ROADMAP.md` で�
 - コンポーネントツリー / レンダープロファイリング / Page Vitals
   (`src/render-bundle/` 一式) — v0.4.24 以降は**出荷 JS にも含まれない**
   (到達不能なだけでなく 1 バイトも載らない。`pnpm check:submission` が実測する)
-- トークンカバレッジ計測 (`src/coverage.ts` / `src/designScan.ts`) —
-  https://github.com/BoxPistols/domdom-inspector/issues/10
 - BYOK AI デザイン監査 (`src/aiProviders.ts` / `src/aiPrompt.ts` / `src/aiCost.ts`) —
   https://github.com/BoxPistols/domdom-inspector/issues/11
 
+(トークンカバレッジ計測は **side panel として v1 に復帰済み** —
+https://github.com/BoxPistols/domdom-inspector/issues/10 完了。掲載文に含めてある)
+
 **搭載しているもの**: ホバーバッジ (デザイン値 + トークン照合注釈 + 野良値警告) /
-右クリックメニュー / エディタジャンプ / ↑↓ 親子ナビ / MUI テーマ自動取得 /
+トークンカバレッジ side panel / 右クリックメニュー / エディタジャンプ / ↑↓ 親子ナビ /
+MUI テーマ自動取得 /
 判断の根拠は `docs/assessment-20260802-store-readiness.md` と
 `docs/ROADMAP.md`。

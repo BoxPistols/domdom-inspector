@@ -76,8 +76,9 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 > UI を変えたら回し直す (§7)。
 
 > **v1 は「データを一切収集しない」拡張である。** BYOK AI 監査 (唯一の送信経路だった) を
-> v1 の配線から外した。残る `fetch` は「ローカル dev サーバにエディタで開くよう頼む」
-> 1 経路のみ (v0.4.23)。データ申告は §4-2 のとおり
+> v1 の配線から外した。残る `fetch` は「ローカル dev サーバにエディタで開くよう頼む /
+> source map を取得する」2 種類のみで、どちらも `src/openInEditor.ts` に集約
+> (v0.4.23 / v0.4.33)。データ申告は §4-2 のとおり
 > 全カテゴリ「収集しない」で出す (`STORE_LISTING.md` / `PRIVACY.md` / `SECURITY.md` と四者同一)。
 > **再導入するときは申告を戻すこと**: https://github.com/BoxPistols/domdom-inspector/issues/11
 
@@ -90,7 +91,7 @@ pnpm zip                      # → .output/domdom-inspector-<version>-chrome.zi
 ```sh
 pnpm install
 pnpm lint        # ESLint (any / @ts-ignore / console.log / 境界契約)
-pnpm test        # 295 tests (26 files) — 2026-08-06 時点
+pnpm test        # vitest (件数は書かない — 実行して測る)
 pnpm typecheck   # tsc --noEmit
 pnpm build       # .output/chrome-mv3
 ```
@@ -98,7 +99,7 @@ pnpm build       # .output/chrome-mv3
 - [ ] lint / test / typecheck / build が通る
 - [ ] `public/icon/{16,32,48,96,128}.png` が存在する
 - [ ] `public/_locales/{en,ja}/messages.json` が存在する
-- [ ] 本番 manifest の permissions が `storage`/`activeTab`/`scripting`/`contextMenus` + `optional_host_permissions: *://*/*`(`.output/chrome-mv3/manifest.json` で確認。正当化は SECURITY.md)
+- [ ] 本番 manifest の permissions が `storage`/`activeTab`/`scripting`/`contextMenus`/`sidePanel` + `optional_host_permissions: *://*/*`(`.output/chrome-mv3/manifest.json` で確認。正当化は SECURITY.md)
 - [ ] `minimum_chrome_version` が manifest に入っている(依存 API の下限。現在 119)
 - [ ] `package.json` の `version` が公開したい版になっている(`CHANGELOG.md` の最新と一致)
 - [ ] **未 push のコミットが無い** — `PRIVACY.md` を GitHub Pages で公開する場合、
@@ -186,21 +187,25 @@ CWS はプライバシー慣行の申告にあたり、公開された URL を�
   そのまま貼る(英文が正)。要旨:
   「web ページ UI のデザイン値を計測し、そのページが依って立つデザインシステムと照合する —
   ユーザーが指した要素の色/余白/角丸/タイポグラフィを読み取り、ページから見つかった
-  デザイントークンと突合する。」(**ページ全体の集計は v1 に無い** — issue #10 で外した。
-  ここに書くと確定文言 (STORE_LISTING の Single purpose) より広くなり不一致になる)
+  デザイントークンと突合する。」
   - **v1 の搭載機能はすべてこの 1 目的に奉仕する**ことを示す: MUI テーマ自動取得は
-    ページ自身から照合辞書を作るため / 右クリックメニューとエディタジャンプは計測中の
+    ページ自身から照合辞書を作るため / カバレッジ side panel は同じ要素単位の計測を
+    ページ全体へ集計するため (issue #10 で復帰済み — STORE_LISTING の Single purpose に
+    含めてある) / 右クリックメニューとエディタジャンプは計測中の
     要素とそのソースへ到達するため。
   - コンポーネントツリーとレンダープロファイリングは **v1 の配線から外してある**ので
     申告に含めない(実装は温存しているが到達不能)。再配線するなら、この単一目的も
     同時に広げ直すこと (2026-08-01 施行の新ポリシー: 収集データは開示済み単一目的に
     厳密に必要な範囲のみ)
-- **権限の正当化 (Permission justification)** — SECURITY.md の 4 権限表を転記:
+- **権限の正当化 (Permission justification)** — SECURITY.md の権限表を転記:
   - `storage`: ユーザー設定のローカル保存
   - `activeTab`: ポップアップから現タブ origin の取得
   - `scripting`: ユーザーが有効化したオリジンへのインスペクタ動的注入
   - `contextMenus`: 右クリックに「この要素を検査 / ソースをエディタで開く」を追加
     (ページへのアクセス権限は増えない。メニューは実際に動作する範囲にのみ表示)
+  - `sidePanel`: カバレッジ計測の結果を対象ページと並べて表示するため
+    (ページへのアクセス権限は増えない。パネルは popup の「カバレッジのパネルを開く」
+    からのみ開く。結果はメモリ内のみ — 保存も送信もしない)
   - `optional_host_permissions` (`*://*/*`): デプロイ済みサイト検査用。既定未付与、ユーザーが
     「有効化」した時のみ要求(localhost は静的コンテンツスクリプトで対応)
 - **リモートコード**: 「使用しない」を選択(動的コード取得なし。発行する
@@ -250,7 +255,11 @@ How to test:
 5. On a page built with MUI, the badge additionally shows design-token names
    (palette / spacing / radius / typography) read from the app's own theme —
    no configuration needed.
-6. "Open this element's source in my editor" (right-click, or Cmd/Ctrl+Click
+6. Click "Open coverage panel" in the popup, then "Measure this page": the side
+   panel aggregates the same measurement over the whole page (per-family match
+   rates and the values that drift the most). "Show on page" highlights the
+   elements behind a number. The result is held in memory only.
+7. "Open this element's source in my editor" (right-click, or Cmd/Ctrl+Click
    while inspecting) needs a React development build. On production builds the
    extension says why instead of doing nothing.
 Note: localhost / 127.0.0.1 works without step 2 (static content script).
