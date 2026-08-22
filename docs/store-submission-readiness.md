@@ -10,7 +10,7 @@
 
 ```sh
 pnpm build && pnpm shots && pnpm zip   # 成果物を作る
-pnpm check:submission                   # 20 項目を実測して PASS/FAIL
+pnpm check:submission                   # 提出前チェックを実測して PASS/FAIL (件数は出力が示す)
 ```
 
 **この文書に数字を書かない。** 実際に「対象版」と「未 push 件数」を書いた直後、自分の
@@ -51,7 +51,7 @@ pnpm e2e                                                  # 実 Chromium に拡�
 | 項目 | 値 |
 |---|---|
 | ✅ version | `package.json` ↔ manifest ↔ zip の一致を実測 |
-| ✅ permissions | `storage` / `activeTab` / `scripting` / `contextMenus` |
+| ✅ permissions | `storage` / `activeTab` / `scripting` / `contextMenus` / `sidePanel` |
 | ✅ optional_host_permissions | `*://*/*` (**既定では未付与**) |
 | ✅ minimum_chrome_version | `119` (依存 API の下限の最大値 = `matchOriginAsFallback`) |
 | ✅ default_locale | `en` |
@@ -70,7 +70,7 @@ pnpm e2e                                                  # 実 Chromium に拡�
 | ✅ Data usage 申告 | **全カテゴリ「収集しない」** |
 | ✅ 送信経路 | **第三者へはゼロ**。要求は 2 種類 (エディタ起動依頼 / source map 取得) で、どちらも利用者自身のローカル dev サーバ宛て・`looksLocalDev` ガードの内側 (grep で再現可能) |
 | ✅ 永続化するもの | ユーザー設定のみ (ページ由来のデータなし) |
-| ✅ v1 に無い機能の宣言 | **全廃** (ツリー / レンダー計測 / カバレッジ / AI / トークン貼り付け) |
+| ✅ v1 に無い機能の宣言 | **全廃** (ツリー / レンダー計測 / AI / トークン貼り付け。カバレッジは side panel として v1 に復帰済みのため掲載文に**含める**) |
 
 ## 4. スクリーンショット (自動生成済み)
 
