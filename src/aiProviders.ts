@@ -5,7 +5,8 @@
  * モデル ID はハードコードせず設定値 (ここにあるのは「最安クラス既定 + 次点」の初期値)。
  */
 
-export type AiProviderId = 'openai' | 'gemini';
+// Geminiは既定のgemini-2.5-flash-liteが新規利用者に404を返すため外した
+export type AiProviderId = 'openai';
 
 export interface AiProviderDef {
   id: AiProviderId;
@@ -28,14 +29,8 @@ export const AI_PROVIDERS: Record<AiProviderId, AiProviderDef> = {
     label: 'OpenAI',
     originPattern: 'https://api.openai.com/*',
     defaultModel: 'gpt-6-luna',
-    supersededDefaults: ['gpt-5-nano', 'gpt-5.6-luna'],
-  },
-  gemini: {
-    id: 'gemini',
-    label: 'Google Gemini',
-    originPattern: 'https://generativelanguage.googleapis.com/*',
-    defaultModel: 'gemini-2.5-flash-lite',
-    supersededDefaults: [],
+    // gemini-2.5-flash-liteはGemini時代の既定。保存値に残っていたら既定へ戻す
+    supersededDefaults: ['gpt-5-nano', 'gpt-5.6-luna', 'gemini-2.5-flash-lite'],
   },
 };
 
@@ -54,31 +49,20 @@ export function buildAiRequest(
   system: string,
   user: string,
 ): AiHttpRequest {
-  if (provider === 'openai') {
-    return {
-      url: 'https://api.openai.com/v1/chat/completions',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: {
-        model,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-      },
-    };
-  }
+  // 現在はOpenAIのみ。プロバイダを戻すときに分岐できるよう引数は残す
+  void provider;
   return {
-    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    url: 'https://api.openai.com/v1/chat/completions',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: {
-      systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: 'user', parts: [{ text: user }] }],
+      model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
     },
   };
 }
@@ -87,21 +71,12 @@ export function buildAiRequest(
 export function parseAiResponse(provider: AiProviderId, json: unknown): string | null {
   if (json === null || typeof json !== 'object') return null;
   const j = json as Record<string, unknown>;
+  // 現在はOpenAIのみ（引数はbuildAiRequestと同じ理由で残す）
+  void provider;
   try {
-    if (provider === 'openai') {
-      const choices = j.choices as { message?: { content?: unknown } }[] | undefined;
-      const content = choices?.[0]?.message?.content;
-      return typeof content === 'string' && content.trim() ? content : null;
-    }
-    const candidates = j.candidates as
-      | { content?: { parts?: { text?: unknown }[] } }[]
-      | undefined;
-    const parts = candidates?.[0]?.content?.parts;
-    if (!Array.isArray(parts)) return null;
-    const text = parts
-      .map((p) => (typeof p.text === 'string' ? p.text : ''))
-      .join('');
-    return text.trim() ? text : null;
+    const choices = j.choices as { message?: { content?: unknown } }[] | undefined;
+    const content = choices?.[0]?.message?.content;
+    return typeof content === 'string' && content.trim() ? content : null;
   } catch {
     return null;
   }
