@@ -66,7 +66,8 @@ describe('parseAiError', () => {
 describe('migrateModelId — 既定の差し替えを保存済み設定に反映する', () => {
   it('旧既定のまま保存されていれば現在の既定へ移行する', () => {
     // 既定を変えても、一度でも AI 設定を触った利用者には反映されない問題への対処
-    expect(migrateModelId('openai', 'gpt-5-nano')).toBe('gpt-5.6-luna');
+    expect(migrateModelId('openai', 'gpt-5-nano')).toBe('gpt-6-luna');
+    expect(migrateModelId('openai', 'gpt-5.6-luna')).toBe('gpt-6-luna');
   });
 
   it('ユーザーが自分で入れた値は尊重して移行しない', () => {
@@ -75,7 +76,7 @@ describe('migrateModelId — 既定の差し替えを保存済み設定に反映
   });
 
   it('未設定なら現在の既定', () => {
-    expect(migrateModelId('openai', undefined)).toBe('gpt-5.6-luna');
+    expect(migrateModelId('openai', undefined)).toBe('gpt-6-luna');
     expect(migrateModelId('gemini', '')).toBe('gemini-2.5-flash-lite');
   });
 });

@@ -27,8 +27,8 @@ export const AI_PROVIDERS: Record<AiProviderId, AiProviderDef> = {
     id: 'openai',
     label: 'OpenAI',
     originPattern: 'https://api.openai.com/*',
-    defaultModel: 'gpt-5.6-luna',
-    supersededDefaults: ['gpt-5-nano'],
+    defaultModel: 'gpt-6-luna',
+    supersededDefaults: ['gpt-5-nano', 'gpt-5.6-luna'],
   },
   gemini: {
     id: 'gemini',
