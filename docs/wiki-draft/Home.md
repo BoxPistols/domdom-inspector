@@ -13,6 +13,8 @@ DomDom Inspector is a Chrome extension for **designers and engineers** working o
 
 ## Pages
 
+### For users (English)
+
 | Page | Summary |
 |---|---|
 | [Background & Problem](Background) | Why this tool was built and what pain it solves |
@@ -20,7 +22,14 @@ DomDom Inspector is a Chrome extension for **designers and engineers** working o
 | [For Engineers](For-Engineers) | How engineers use it to debug design drift |
 | [Competitive Landscape](Competitive-Landscape) | How it compares to React DevTools and others |
 | [Support the Project](Support-the-Project) | Tip jar / donation options |
-| [Store Submission Steps](Store-Submission-Steps) | Chrome Web Store へ出展するまでの具体的手順 (日本語 / maintainer 向け) |
+
+### For maintainers (日本語)
+
+Internal operations notes, kept in Japanese. No personal or credential information is ever stored here.
+
+| ページ | 内容 |
+|---|---|
+| [Store Submission Steps](Store-Submission-Steps) | Chrome Web Store へ出展するまでの具体的手順 (登録 → 入力 → 審査 → 公開後) |
 
 ---
 

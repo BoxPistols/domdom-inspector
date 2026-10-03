@@ -1,5 +1,7 @@
 # Chrome Web Store 出展までの具体的ステップ
 
+> *Maintainer-facing operations page, kept in Japanese. For product pages in English, see [Home](Home).*
+
 > DomDom Inspector を Chrome Web Store に **Public(一般公開)・全地域** で出展するための実手順。
 > 手順の正本はリポジトリの [`PUBLISHING.md`](https://github.com/BoxPistols/domdom-inspector/blob/main/PUBLISHING.md) と
 > [`docs/store-submission-readiness.md`](https://github.com/BoxPistols/domdom-inspector/blob/main/docs/store-submission-readiness.md)。
