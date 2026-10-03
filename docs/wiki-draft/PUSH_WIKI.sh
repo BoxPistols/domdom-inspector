@@ -1,11 +1,17 @@
 #!/bin/bash
 # Wiki コンテンツを GitHub Wiki へプッシュするスクリプト
 # 実行前提: https://github.com/BoxPistols/domdom-inspector/wiki で
-# 「Create the first page」ボタンを押して初期化済みであること
+# 「Create the first page」ボタンを押して初期化済みであること (済)
+#
+# 使い方: ./PUSH_WIKI.sh ["コミットメッセージ"]
+#   メッセージ省略時は "docs: wiki update"。
+#   クラウドセッション (Claude Code on the web) からは wiki リポジトリへの
+#   credential が無いため push できない — ローカルで実行すること。
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MSG="${1:-docs: wiki update}"
 TOKEN=$(gh auth token)
 TMP=$(mktemp -d)
 
@@ -13,8 +19,11 @@ git clone "https://${TOKEN}@github.com/BoxPistols/domdom-inspector.wiki.git" "$T
 cp "$SCRIPT_DIR"/*.md "$TMP/"
 cd "$TMP"
 git add .
-git commit -m "docs: Wiki 初版 — 背景/デザイナー向け/エンジニア向け/競合/支援"
-git push
-
-echo "✅ Wiki pushed: https://github.com/BoxPistols/domdom-inspector/wiki"
+if git diff --cached --quiet; then
+  echo "変更なし — wiki は既に最新です"
+else
+  git commit -m "$MSG"
+  git push
+  echo "✅ Wiki pushed: https://github.com/BoxPistols/domdom-inspector/wiki"
+fi
 rm -rf "$TMP"
