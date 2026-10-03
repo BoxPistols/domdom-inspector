@@ -8,10 +8,10 @@ DomDom Inspector occupies a niche that no existing tool fills: **design token ve
 
 ## Comparison
 
-| Tool | Target user | Works on production | Token match | Rogue detection | Render profiling |
+| Tool | Target user | Works on production | Token match | Rogue detection | Page-wide coverage |
 |---|---|---|---|---|---|
-| **DomDom Inspector** | Engineers + Designers | ✅ | ✅ | ✅ | Planned (#4) |
-| React DevTools (Meta) | Engineers | ✅ | ❌ | ❌ | ✅ (basic) |
+| **DomDom Inspector** | Engineers + Designers | ✅ | ✅ (MUI themes, auto) | ✅ | ✅ (side panel) |
+| React DevTools (Meta) | Engineers | ✅ | ❌ | ❌ | ❌ |
 | Reactime | Engineers | ❌ (dev only) | ❌ | ❌ | ❌ |
 | VisBug | Designers | ✅ | ❌ | ❌ | ❌ |
 | CSS Scan (paid) | Designers | ✅ | ❌ | ❌ | ❌ |
@@ -32,8 +32,8 @@ DomDom Inspector occupies a niche that no existing tool fills: **design token ve
 
 These tools read computed styles from the DOM — which DomDom Inspector also does. The difference:
 
-1. **No token layer.** They can show you `color: #1565C0` but can't tell you whether that's `primary.dark` or a hardcoded rogue value. There's no way to paste your design token dictionary.
-2. **No rogue-value detection.** They don't flag spacing that falls outside your grid.
+1. **No token layer.** They can show you `color: #1565C0` but can't tell you whether that's `primary.dark` or a hardcoded rogue value. They have no concept of the design system the page is built on.
+2. **No rogue-value detection.** They don't flag spacing that falls outside your grid, and they can't aggregate token adoption over a page.
 
 ---
 
@@ -41,8 +41,9 @@ These tools read computed styles from the DOM — which DomDom Inspector also do
 
 The combination of:
 - Computed style extraction (design values)
-- Design token dictionary matching (Figma JSON, W3C, Tokens Studio)
+- Design token matching with **zero configuration** (the MUI theme is read from the page itself)
 - Rogue-value detection (grid lint)
+- Page-wide coverage measurement with on-page proof ("Show on page")
 - Production compatibility (no dev server required)
 - Designer-friendly UX (no DevTools knowledge required)
 
@@ -51,6 +52,8 @@ The combination of:
 ---
 
 ## Pricing comparison
+
+*Prices as of 2026 — check each vendor for current pricing.*
 
 | Tool | Price |
 |---|---|

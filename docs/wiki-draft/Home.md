@@ -1,13 +1,13 @@
 # DomDom Inspector
 
-> **Chrome extension** that makes design values visible — hover any element to see color, spacing, radius, and typography, and match them against your Figma design tokens.  
+> **Chrome extension** that makes design values visible — hover any element to see color, spacing, radius, and typography, and match them against the design tokens the page itself provides. MUI themes are detected automatically; zero configuration.
 > Free · Read-only · Works on any site · [Support the project ☕](Support-the-Project)
 
 ---
 
 ## What is this?
 
-DomDom Inspector is a Chrome extension for **designers and engineers** working on any web app — React, MUI, Tailwind, CSS Modules, or plain CSS. Hover over any element to see its computed design values and verify them against your design system tokens, without touching source code or a local dev server.
+DomDom Inspector is a Chrome extension for **designers and engineers** working on any web app — React, MUI, Tailwind, CSS Modules, or plain CSS. Hover over any element to see its computed design values and verify them against the design system the page is built on, without touching source code or a local dev server.
 
 ---
 
@@ -37,20 +37,23 @@ Internal operations notes, kept in Japanese. No personal or credential informati
 
 1. Install from [Chrome Web Store](https://github.com/BoxPistols/domdom-inspector) *(link after publish)*
 2. Open any website
-3. Press **Alt+Shift+I** to activate the inspector
+3. Press **Alt+Shift+I** to activate the inspector — or right-click any element and choose **"Inspect this element"**
 4. Hover over any element — a badge shows its design values
 
-*For non-localhost sites, click **Enable on this site** in the extension popup first.*
+*For non-localhost sites, click **Enable on current site** in the extension popup first.*
 
 ---
 
-## Key features (v0.2.0)
+## Key features (v1)
 
-- **Design badge** — computed color, spacing (margin/padding), border-radius, typography on hover
-- **Rogue value detection** — spacing outside the 4/8 px grid is flagged automatically
-- **Figma token matching** — paste your Figma Variables / W3C Design Tokens / Tokens Studio JSON; matched values show the token name, unmatched values flagged as rogue
+- **Design badge** — computed text color, background, spacing (margin/padding), border-radius, and typography on hover
+- **Token matching, zero config** — when the page uses MUI, the theme (palette / spacing / radius / font sizes) is read from its ThemeProvider automatically; matched values are annotated with the token name (e.g. `primary.main`)
+- **CSS variable names** — on pages without a detectable theme, the badge still shows the CSS variable declared behind each value
+- **Rogue value detection** — spacing that is not a multiple of 4 px is flagged automatically
+- **Token coverage panel** — open the side panel from the popup to aggregate the same measurement over the whole page, with per-family match rates and "Show on page" highlighting
+- **Open in editor** — Cmd/Ctrl+Click (or the right-click menu) jumps to the element's source (React dev builds)
 - **Parent / child navigation** — `↑` / `↓` to reach nested elements
-- **Works on production** — React (dev + production builds) and non-React pages alike
+- **Works on production** — React (dev or production builds) and non-React pages alike
 - **Bilingual** — English / Japanese, switches with the browser locale
 
-Render profiling and the component tree are **not** part of v1 — the implementation is kept in the repository but is deliberately unreachable, because production builds strip component names, so the tree is unreadable exactly where this extension is meant to be used ([issues #4–#9](https://github.com/BoxPistols/domdom-inspector/issues)).
+The component tree and render profiling are **not** part of v1 — the implementation is kept in the repository but is deliberately unreachable and is not even included in the shipped JavaScript, because production builds strip component names, so a tree is unreadable exactly where this extension is meant to be used. Pasting your own token JSON is also planned but not wired yet ([#13](https://github.com/BoxPistols/domdom-inspector/issues/13)).
