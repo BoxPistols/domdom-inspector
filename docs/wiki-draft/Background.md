@@ -2,7 +2,7 @@
 
 ## The situation
 
-Modern product teams use React + MUI (or Tailwind, or CSS Modules) to build UIs fast. Design systems define colors, spacing, and typography in Figma as design tokens. But in practice, **the live product drifts from the design system** — and nobody has a good way to catch it before it ships.
+Modern product teams use React + MUI (or Tailwind, or CSS Modules) to build UIs fast. Design systems define colors, spacing, and typography as design tokens. But in practice, **the live product drifts from the design system** — and nobody has a good way to catch it before it ships.
 
 ---
 
@@ -22,24 +22,25 @@ React DevTools shows the component tree, but clicking through it to find the com
 
 ### 3. Token drift accumulates silently
 
-One-off color fixes (`#1a73e8` instead of `primary.main`), hardcoded spacing (`padding: 12px` instead of `spacing(1.5)`) — these accumulate PR by PR. Design review catches some; most slip through. By the time a design audit happens, hundreds of "rogue values" exist with no easy way to find them.
+One-off color fixes (`#1a73e8` instead of `primary.main`), hardcoded spacing (`padding: 14px` instead of `spacing(1.5)`) — these accumulate PR by PR. Design review catches some; most slip through. By the time a design audit happens, hundreds of "rogue values" exist with no easy way to find them.
 
 **Result:** Design system adoption is impossible to measure.
 
 ---
 
-## What DomDom Inspector solves (v0.2.0)
+## What DomDom Inspector solves (v1)
 
 | Problem | Solution |
 |---|---|
-| Designers can't read DevTools | Design-mode view: color chips, spacing readout, border-radius — in plain language |
-| Token drift is invisible | Paste your Figma token JSON → rogue values are flagged as badges on the element |
+| Designers can't read DevTools | Design badge on hover: color chips, spacing readout, border-radius — in plain language |
+| Token drift is invisible | The page's own MUI theme is detected automatically → matched values show the token name, off-token values are flagged as rogue |
+| Adoption can't be measured | The token coverage side panel aggregates match rates over the whole page, and highlights the elements behind each number |
 | Only works on localhost | Works on any site after one-click opt-in; full design inspection on production |
 
-**Coming in future releases:** component identity from Fiber (issue #4/#5), render profiling (issue #4), source jump (issue #6), MUI theme auto-extraction (issue #8), AI-assisted reports (issue #9).
+**Shipped since the first draft of this page:** component names from React Fiber, "open in editor" source jump (React dev builds), automatic MUI theme extraction, and the coverage side panel. **Planned, not wired yet:** pasting your own token JSON ([#13](https://github.com/BoxPistols/domdom-inspector/issues/13)) and AI-assisted audit reports ([#11](https://github.com/BoxPistols/domdom-inspector/issues/11)).
 
 ---
 
 ## Who built this and why
 
-Built by [@BoxPistols](https://github.com/BoxPistols), a designer-turned-engineer who was tired of the gap between Figma and the browser. The goal is a tool that designers and engineers can both use to have the *same conversation* about the live product — starting with the most universally useful piece: design value measurement.
+Built by [@BoxPistols](https://github.com/BoxPistols), a designer-turned-engineer who was tired of the gap between design tools and the browser. The goal is a tool that designers and engineers can both use to have the *same conversation* about the live product — starting with the most universally useful piece: design value measurement.

@@ -42,8 +42,8 @@ Not in a position to tip? That's completely fine. Here's what else helps:
 ## What tips go toward
 
 - Maintaining compatibility with React and MUI major version updates
-- Phase 3: automatic MUI theme token extraction (no copy-paste needed)
-- Phase 4: exportable design audit reports
-- Phase 5: AI-assisted token suggestion
+- Pasting your own Figma / W3C token JSON as a second dictionary source ([#13](https://github.com/BoxPistols/domdom-inspector/issues/13))
+- Exportable design audit reports
+- AI-assisted design audit ([#11](https://github.com/BoxPistols/domdom-inspector/issues/11))
 
 Thank you. 🙏
