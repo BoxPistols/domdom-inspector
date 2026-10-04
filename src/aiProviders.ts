@@ -28,14 +28,17 @@ export const AI_PROVIDERS: Record<AiProviderId, AiProviderDef> = {
     label: 'OpenAI',
     originPattern: 'https://api.openai.com/*',
     defaultModel: 'gpt-5.6-luna',
-    supersededDefaults: ['gpt-5-nano'],
+    supersededDefaults: ['gpt-5-nano'], // ai-api:allow-superseded 移行元なので旧IDが要る
   },
   gemini: {
     id: 'gemini',
     label: 'Google Gemini',
     originPattern: 'https://generativelanguage.googleapis.com/*',
-    defaultModel: 'gemini-2.5-flash-lite',
-    supersededDefaults: [],
+    // 3.8世代はFlashのみでLiteが無いため、最安クラスの現行世代は3.5-flash-lite
+    // （ai.google.dev/gemini-api/docs/models, 2026-09-06確認）。
+    // 単価は2.5-flash-liteの$0.10/$0.40から$0.30/$2.50に上がる。
+    defaultModel: 'gemini-3.5-flash-lite',
+    supersededDefaults: ['gemini-2.5-flash-lite'], // ai-api:allow-superseded 移行元なので旧IDが要る
   },
 };
 

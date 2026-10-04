@@ -1,3 +1,4 @@
+// ai-api:allow-superseded-file 既定の差し替えが保存値に反映されることの確認
 import { describe, expect, it } from 'vitest';
 import { buildAiRequest, migrateModelId, parseAiError, parseAiResponse } from './aiProviders';
 
@@ -16,9 +17,9 @@ describe('buildAiRequest', () => {
   });
 
   it('Gemini: generateContent にキーをヘッダで載せ、モデル名は URL エンコードする', () => {
-    const req = buildAiRequest('gemini', 'gemini-2.5-flash-lite', 'g-key', 'SYS', 'USER');
+    const req = buildAiRequest('gemini', 'gemini-3.5-flash-lite', 'g-key', 'SYS', 'USER');
     expect(req.url).toBe(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
     );
     expect(req.headers['x-goog-api-key']).toBe('g-key');
     expect(req.body).toEqual({
@@ -67,15 +68,16 @@ describe('migrateModelId — 既定の差し替えを保存済み設定に反映
   it('旧既定のまま保存されていれば現在の既定へ移行する', () => {
     // 既定を変えても、一度でも AI 設定を触った利用者には反映されない問題への対処
     expect(migrateModelId('openai', 'gpt-5-nano')).toBe('gpt-5.6-luna');
+    expect(migrateModelId('gemini', 'gemini-2.5-flash-lite')).toBe('gemini-3.5-flash-lite'); // ai-api:allow-superseded
   });
 
   it('ユーザーが自分で入れた値は尊重して移行しない', () => {
     expect(migrateModelId('openai', 'o4-mini')).toBe('o4-mini');
-    expect(migrateModelId('gemini', 'gemini-3-pro')).toBe('gemini-3-pro');
+    expect(migrateModelId('gemini', 'gemini-3-pro')).toBe('gemini-3-pro'); // ai-api:allow-superseded 利用者が自分で入れた値の例
   });
 
   it('未設定なら現在の既定', () => {
     expect(migrateModelId('openai', undefined)).toBe('gpt-5.6-luna');
-    expect(migrateModelId('gemini', '')).toBe('gemini-2.5-flash-lite');
+    expect(migrateModelId('gemini', '')).toBe('gemini-3.5-flash-lite');
   });
 });
